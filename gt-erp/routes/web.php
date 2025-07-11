@@ -17,6 +17,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('users', function () {
         return Inertia::render('users');
     })->name('users');
+    Route::get('pasindu', function () {
+        return Inertia::render('pasindu');
+    })->name('pasindu');
 });
 
 require __DIR__ . '/settings.php';

@@ -23,6 +23,11 @@ const mainNavItems: NavItem[] = [
         href: '/users',
         icon: LayoutGrid,
     },
+    {
+        title: 'Pasindu',
+        href: '/pasindu',
+        icon: LayoutGrid,
+    },
 ];
 
 const footerNavItems: NavItem[] = [
