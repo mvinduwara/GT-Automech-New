@@ -3,47 +3,65 @@ import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { type NavItem } from '@/types';
-import { Link } from '@inertiajs/react';
-import { BookOpen, Folder, LayoutGrid } from 'lucide-react';
+import { Link, usePage } from '@inertiajs/react';
+import { LayoutGrid } from 'lucide-react';
+import { useMemo } from 'react';
 import AppLogo from './app-logo';
 
-const mainNavItems: NavItem[] = [
+const USER_ROLES = {
+    CASHIER: 'cashier',
+    ADMIN: 'admin',
+    SERVICEMANAGER: 'service-manager',
+    DEFAULT: 'cashier',
+};
+
+const mainNavItems: (NavItem & { roles?: string[] })[] = [
     {
         title: 'Dashboard',
         href: '/dashboard',
         icon: LayoutGrid,
+        roles: [USER_ROLES.CASHIER,USER_ROLES.ADMIN,USER_ROLES.SERVICEMANAGER],
     },
     {
-        title: 'Products',
-        href: '/products',
+        title: 'Customer', 
+        href: '/dashboard/customer',
         icon: LayoutGrid,
+        roles: [USER_ROLES.CASHIER,USER_ROLES.ADMIN,USER_ROLES.SERVICEMANAGER],
+        // roles: [USER_ROLES.ADMIN],
     },
     {
-        title: 'Users',
-        href: '/users',
+        title: 'Stock', 
+        href: '/dashboard/stock',
         icon: LayoutGrid,
+        roles: [USER_ROLES.CASHIER,USER_ROLES.ADMIN,USER_ROLES.SERVICEMANAGER],
+        // roles: [USER_ROLES.ADMIN],
     },
     {
-        title: 'Pasindu',
-        href: '/pasindu',
+        title: 'Purchase Order', 
+        href: '/dashboard/purchase-order',
         icon: LayoutGrid,
-    },
-];
-
-const footerNavItems: NavItem[] = [
-    {
-        title: 'Repository',
-        href: 'https://github.com/laravel/react-starter-kit',
-        icon: Folder,
+        roles: [USER_ROLES.CASHIER,USER_ROLES.ADMIN,USER_ROLES.SERVICEMANAGER],
+        // roles: [USER_ROLES.ADMIN],
     },
     {
-        title: 'Documentation',
-        href: 'https://laravel.com/docs/starter-kits#react',
-        icon: BookOpen,
+        title: 'Jobcard',
+        href: '/dashboard/jobcard',
+        icon: LayoutGrid,
+        roles: [USER_ROLES.CASHIER,USER_ROLES.ADMIN,USER_ROLES.SERVICEMANAGER],
+        // roles: [USER_ROLES.SERVICEMANAGER],
     },
 ];
 
 export function AppSidebar() {
+
+    const { auth } = usePage().props;
+    const userRole = auth?.user?.role || USER_ROLES.DEFAULT;
+    const filteredMainNavItems = useMemo(() => {
+        return mainNavItems.filter(
+            (item) => !item.roles || item.roles.includes(userRole)
+        );
+    }, [userRole]);
+
     return (
         <Sidebar collapsible="icon" variant="inset">
             <SidebarHeader>
@@ -59,11 +77,11 @@ export function AppSidebar() {
             </SidebarHeader>
 
             <SidebarContent>
-                <NavMain items={mainNavItems} />
+                <NavMain items={filteredMainNavItems} />
             </SidebarContent>
 
             <SidebarFooter>
-                <NavFooter items={footerNavItems} className="mt-auto" />
+                <NavFooter items={[]} className="mt-auto" />
                 <NavUser />
             </SidebarFooter>
         </Sidebar>
