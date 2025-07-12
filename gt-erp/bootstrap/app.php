@@ -21,6 +21,12 @@ return Application::configure(basePath: dirname(__DIR__))
             HandleInertiaRequests::class,
             AddLinkHeadersForPreloadedAssets::class,
         ]);
+
+         $middleware->alias([
+            'is_cashier' => \App\Http\Middleware\IsCashier::class,
+            'is_admin' => \App\Http\Middleware\IsAdmin::class,
+            'is_service_manager' => \App\Http\Middleware\IsServiceManager::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //

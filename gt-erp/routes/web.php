@@ -17,7 +17,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('users', function () {
         return Inertia::render('users');
     })->name('users');
+    Route::get('pasindu', function () {
+        return Inertia::render('pasindu');
+    })->name('pasindu');
 });
 
 require __DIR__ . '/settings.php';
 require __DIR__ . '/auth.php';
+require __DIR__ . '/stock.php';
+require __DIR__ . '/purchase-order.php';
+require __DIR__ . '/customer.php';
