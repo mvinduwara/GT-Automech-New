@@ -4,7 +4,7 @@ import { NavUser } from '@/components/nav-user';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { type NavItem } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
-import { LayoutGrid } from 'lucide-react';
+import { LayoutGrid,Users,Warehouse,TicketCheck,IdCard,HandCoins,NotepadText,StickyNote       } from 'lucide-react';
 import { useMemo } from 'react';
 import AppLogo from './app-logo';
 
@@ -25,28 +25,49 @@ const mainNavItems: (NavItem & { roles?: string[] })[] = [
     {
         title: 'Customer', 
         href: '/dashboard/customer',
-        icon: LayoutGrid,
+        icon: Users,
         roles: [USER_ROLES.CASHIER,USER_ROLES.ADMIN,USER_ROLES.SERVICEMANAGER],
         // roles: [USER_ROLES.ADMIN],
     },
     {
         title: 'Stock', 
         href: '/dashboard/stock',
-        icon: LayoutGrid,
+        icon: Warehouse,
         roles: [USER_ROLES.CASHIER,USER_ROLES.ADMIN,USER_ROLES.SERVICEMANAGER],
         // roles: [USER_ROLES.ADMIN],
     },
     {
         title: 'Purchase Order', 
         href: '/dashboard/purchase-order',
-        icon: LayoutGrid,
+        icon: TicketCheck,
         roles: [USER_ROLES.CASHIER,USER_ROLES.ADMIN,USER_ROLES.SERVICEMANAGER],
         // roles: [USER_ROLES.ADMIN],
     },
     {
         title: 'Jobcard',
-        href: '/dashboard/jobcard',
-        icon: LayoutGrid,
+        href: '/dashboard/job-card',
+        icon: IdCard ,
+        roles: [USER_ROLES.CASHIER,USER_ROLES.ADMIN,USER_ROLES.SERVICEMANAGER],
+        // roles: [USER_ROLES.SERVICEMANAGER],
+    },
+    {
+        title: 'Petty Cash',
+        href: '/dashboard/petty-cash',
+        icon: HandCoins,
+        roles: [USER_ROLES.CASHIER,USER_ROLES.ADMIN,USER_ROLES.SERVICEMANAGER],
+        // roles: [USER_ROLES.SERVICEMANAGER],
+    },
+    {
+        title: 'GRN',
+        href: '/dashboard/grn',
+        icon: NotepadText,
+        roles: [USER_ROLES.CASHIER,USER_ROLES.ADMIN,USER_ROLES.SERVICEMANAGER],
+        // roles: [USER_ROLES.SERVICEMANAGER],
+    },
+    {
+        title: 'Invoice',
+        href: '/dashboard/invoice',
+        icon: StickyNote,
         roles: [USER_ROLES.CASHIER,USER_ROLES.ADMIN,USER_ROLES.SERVICEMANAGER],
         // roles: [USER_ROLES.SERVICEMANAGER],
     },
