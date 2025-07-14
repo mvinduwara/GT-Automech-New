@@ -78,7 +78,7 @@ export default function Index() {
                                 <TableHead>Status</TableHead>
                                 <TableHead>Method</TableHead>
                                 <TableHead>Amount</TableHead>
-                                <TableHead>Actions</TableHead>
+                                <TableHead className='text-center'>Actions</TableHead>
                             </TableRow>
                         </TableHeader>
 
@@ -90,14 +90,14 @@ export default function Index() {
                                     <TableCell>{stock.paymentMethod}</TableCell>
                                     <TableCell>{stock.totalAmount}</TableCell>
                                     <TableCell className="pr-0">
-                                        <div className="flex items-center justify-start space-x-2">
+                                        <div className="flex items-center justify-center space-x-2">
                                             <Link href={route('dashboard.stock.edit', { stock_id: stock.stock })}>
-                                                <Button variant={'secondary'} className="flex items-center justify-center p-2">
+                                                <Button variant={'ghost'} className="flex items-center justify-center p-2 text-neutral-800">
                                                     <UserPen className="h-5 w-5" />
                                                 </Button>
                                             </Link>
 
-                                            <Button variant="destructive" className="flex items-center justify-center p-2">
+                                            <Button className="flex items-center justify-center p-2 bg-red-100 text-red-800 hover:bg-red-200 hover:text-red-950">
                                                 <TrashIcon className="h-5 w-5" />
                                             </Button>
                                         </div>
