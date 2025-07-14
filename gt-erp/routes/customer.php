@@ -14,7 +14,7 @@ Route::middleware(['auth', 'is_cashier'])->group(function () {
 
             Route::get('/', [CustomerController::class, 'index'])->name('index');
             Route::get('/create', [CustomerController::class, 'create'])->name('create');
-            Route::get('/{product}/edit', [CustomerController::class, 'edit'])->name('edit');
+            Route::get('/{customer_id}/edit', [CustomerController::class, 'edit'])->name('edit');
 
         });
 });
