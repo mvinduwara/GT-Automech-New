@@ -1,10 +1,10 @@
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Table, TableBody, TableCaption, TableCell, TableFooter, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link } from '@inertiajs/react';
-import { UserPen } from 'lucide-react';
+import { TrashIcon, UserPen } from 'lucide-react';
 
 const invoices = [
     {
@@ -88,7 +88,7 @@ export default function Index() {
                     </Select>
                 </div>
                 <div className="flex h-full flex-1 flex-col overflow-y-auto">
-                    <Table>
+                    <Table className="w-full table-fixed">
                         <TableCaption>A list of your recent invoices.</TableCaption>
                         <TableHeader>
                             <TableRow>
@@ -99,6 +99,7 @@ export default function Index() {
                                 <TableHead>Actions</TableHead>
                             </TableRow>
                         </TableHeader>
+
                         <TableBody>
                             {invoices.map((invoice) => (
                                 <TableRow key={invoice.invoice}>
@@ -106,25 +107,29 @@ export default function Index() {
                                     <TableCell>{invoice.paymentStatus}</TableCell>
                                     <TableCell>{invoice.paymentMethod}</TableCell>
                                     <TableCell>{invoice.totalAmount}</TableCell>
-                                    <TableCell>
-                                        <div className="flex space-x-2">
-                                            <Link href={route('dashboard.customer.edit', { customer_id: 12 })}>
-                                                <Button variant={'secondary'}>
-                                                    <UserPen />
+                                    <TableCell className="pr-0">
+                                        <div className="flex items-center justify-start space-x-2">
+                                            <Link href={route('dashboard.customer.edit', { customer_id: invoice.invoice })}>
+                                                <Button variant={'secondary'} className="flex items-center justify-center p-2">
+                                                    <UserPen className="h-5 w-5" />
                                                 </Button>
                                             </Link>
-                                            {/* <Button variant="destructive">Delete</Button> */}
+
+                                            <Button variant="destructive" className="flex items-center justify-center p-2">
+                                                <TrashIcon className="h-5 w-5" />
+                                            </Button>
                                         </div>
                                     </TableCell>
                                 </TableRow>
                             ))}
                         </TableBody>
-                        <TableFooter>
+
+                        {/* <TableFooter>
                             <TableRow>
                                 <TableCell colSpan={4}>Total</TableCell>
                                 <TableCell>$2,500.00</TableCell>
                             </TableRow>
-                        </TableFooter>
+                        </TableFooter> */}
                     </Table>
                 </div>
             </div>
