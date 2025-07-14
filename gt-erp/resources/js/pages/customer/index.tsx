@@ -1,64 +1,55 @@
 import { Button } from '@/components/ui/button';
-import { PlaceholderPattern } from '@/components/ui/placeholder-pattern';
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Table, TableBody, TableCaption, TableCell, TableFooter, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link } from '@inertiajs/react';
-import {
-    Table,
-    TableBody,
-    TableCaption,
-    TableCell,
-    TableFooter,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from "@/components/ui/table"
-import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { UserPen } from 'lucide-react';
 
 const invoices = [
     {
-        invoice: "INV001",
-        paymentStatus: "Paid",
-        totalAmount: "$250.00",
-        paymentMethod: "Credit Card",
+        invoice: 'INV001',
+        paymentStatus: 'Paid',
+        totalAmount: '$250.00',
+        paymentMethod: 'Credit Card',
     },
     {
-        invoice: "INV002",
-        paymentStatus: "Pending",
-        totalAmount: "$150.00",
-        paymentMethod: "PayPal",
+        invoice: 'INV002',
+        paymentStatus: 'Pending',
+        totalAmount: '$150.00',
+        paymentMethod: 'PayPal',
     },
     {
-        invoice: "INV003",
-        paymentStatus: "Unpaid",
-        totalAmount: "$350.00",
-        paymentMethod: "Bank Transfer",
+        invoice: 'INV003',
+        paymentStatus: 'Unpaid',
+        totalAmount: '$350.00',
+        paymentMethod: 'Bank Transfer',
     },
     {
-        invoice: "INV004",
-        paymentStatus: "Paid",
-        totalAmount: "$450.00",
-        paymentMethod: "Credit Card",
+        invoice: 'INV004',
+        paymentStatus: 'Paid',
+        totalAmount: '$450.00',
+        paymentMethod: 'Credit Card',
     },
     {
-        invoice: "INV005",
-        paymentStatus: "Paid",
-        totalAmount: "$550.00",
-        paymentMethod: "PayPal",
+        invoice: 'INV005',
+        paymentStatus: 'Paid',
+        totalAmount: '$550.00',
+        paymentMethod: 'PayPal',
     },
     {
-        invoice: "INV006",
-        paymentStatus: "Pending",
-        totalAmount: "$200.00",
-        paymentMethod: "Bank Transfer",
+        invoice: 'INV006',
+        paymentStatus: 'Pending',
+        totalAmount: '$200.00',
+        paymentMethod: 'Bank Transfer',
     },
     {
-        invoice: "INV007",
-        paymentStatus: "Unpaid",
-        totalAmount: "$300.00",
-        paymentMethod: "Credit Card",
+        invoice: 'INV007',
+        paymentStatus: 'Unpaid',
+        totalAmount: '$300.00',
+        paymentMethod: 'Credit Card',
     },
-]
+];
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -71,8 +62,15 @@ export default function Index() {
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Customer" />
-            <div className="flex h-full flex-1 flex-col gap-4 rounded-xl p-4 overflow-x-auto">
-                <div className="flex justify-start items-center">
+            <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
+                <div className="flex items-center justify-between">
+                    <h1 className="h1 font-bold">All customers</h1>
+                    <Link href={route('dashboard.customer.create')}>
+                        <Button>Add New Customer</Button>
+                    </Link>
+                </div>
+
+                <div className="flex items-center justify-start">
                     <Select>
                         <SelectTrigger className="w-[180px]">
                             <SelectValue placeholder="Select a fruit" />
@@ -94,10 +92,11 @@ export default function Index() {
                         <TableCaption>A list of your recent invoices.</TableCaption>
                         <TableHeader>
                             <TableRow>
-                                <TableHead className="w-[100px]">Invoice</TableHead>
+                                <TableHead>Invoice</TableHead>
                                 <TableHead>Status</TableHead>
                                 <TableHead>Method</TableHead>
-                                <TableHead className="text-right">Amount</TableHead>
+                                <TableHead>Amount</TableHead>
+                                <TableHead>Actions</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -106,14 +105,24 @@ export default function Index() {
                                     <TableCell className="font-medium">{invoice.invoice}</TableCell>
                                     <TableCell>{invoice.paymentStatus}</TableCell>
                                     <TableCell>{invoice.paymentMethod}</TableCell>
-                                    <TableCell className="text-right">{invoice.totalAmount}</TableCell>
+                                    <TableCell>{invoice.totalAmount}</TableCell>
+                                    <TableCell>
+                                        <div className="flex space-x-2">
+                                            <Link href={route('dashboard.customer.edit', { customer_id: 12 })}>
+                                                <Button variant={'secondary'}>
+                                                    <UserPen />
+                                                </Button>
+                                            </Link>
+                                            {/* <Button variant="destructive">Delete</Button> */}
+                                        </div>
+                                    </TableCell>
                                 </TableRow>
                             ))}
                         </TableBody>
                         <TableFooter>
                             <TableRow>
-                                <TableCell colSpan={3}>Total</TableCell>
-                                <TableCell className="text-right">$2,500.00</TableCell>
+                                <TableCell colSpan={4}>Total</TableCell>
+                                <TableCell>$2,500.00</TableCell>
                             </TableRow>
                         </TableFooter>
                     </Table>

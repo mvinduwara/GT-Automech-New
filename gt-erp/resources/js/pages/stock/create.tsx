@@ -9,7 +9,7 @@ const breadcrumbs: BreadcrumbItem[] = [
         href: '/dashboard/stock',
     },
     {
-        title: 'Create',
+        title: 'Add New Stock',
         href: '/dashboard/create',
     }
 ];
