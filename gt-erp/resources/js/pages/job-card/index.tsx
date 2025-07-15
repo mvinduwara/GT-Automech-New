@@ -74,7 +74,7 @@ export default function Index() {
                         <TableCaption>A list of your recent Job Cards.</TableCaption>
                         <TableHeader>
                             <TableRow>
-                                <TableHead>Stock</TableHead>
+                                <TableHead>Job Card ID</TableHead>
                                 <TableHead>Status</TableHead>
                                 <TableHead>Method</TableHead>
                                 <TableHead>Amount</TableHead>

@@ -8,43 +8,43 @@ import { TrashIcon, UserPen } from 'lucide-react';
 
 const invoices = [
     {
-        invoice: 'INV001',
+        invoice: 'CUS001',
         paymentStatus: 'Paid',
         totalAmount: '$250.00',
         paymentMethod: 'Credit Card',
     },
     {
-        invoice: 'INV002',
+        invoice: 'CUS002',
         paymentStatus: 'Pending',
         totalAmount: '$150.00',
         paymentMethod: 'PayPal',
     },
     {
-        invoice: 'INV003',
+        invoice: 'CUS003',
         paymentStatus: 'Unpaid',
         totalAmount: '$350.00',
         paymentMethod: 'Bank Transfer',
     },
     {
-        invoice: 'INV004',
+        invoice: 'CUS004',
         paymentStatus: 'Paid',
         totalAmount: '$450.00',
         paymentMethod: 'Credit Card',
     },
     {
-        invoice: 'INV005',
+        invoice: 'CUS005',
         paymentStatus: 'Paid',
         totalAmount: '$550.00',
         paymentMethod: 'PayPal',
     },
     {
-        invoice: 'INV006',
+        invoice: 'CUS006',
         paymentStatus: 'Pending',
         totalAmount: '$200.00',
         paymentMethod: 'Bank Transfer',
     },
     {
-        invoice: 'INV007',
+        invoice: 'CUS007',
         paymentStatus: 'Unpaid',
         totalAmount: '$300.00',
         paymentMethod: 'Credit Card',
@@ -92,11 +92,11 @@ export default function Index() {
                         <TableCaption>A list of your recent invoices.</TableCaption>
                         <TableHeader>
                             <TableRow>
-                                <TableHead>Invoice</TableHead>
+                                <TableHead>Customer ID</TableHead>
                                 <TableHead>Status</TableHead>
                                 <TableHead>Method</TableHead>
                                 <TableHead>Amount</TableHead>
-                                <TableHead className='text-center'>Actions</TableHead>
+                                <TableHead className="text-center">Actions</TableHead>
                             </TableRow>
                         </TableHeader>
 
@@ -115,7 +115,7 @@ export default function Index() {
                                                 </Button>
                                             </Link>
 
-                                            <Button className="flex items-center justify-center p-2 bg-red-100 text-red-800 hover:bg-red-200 hover:text-red-950">
+                                            <Button className="flex items-center justify-center bg-red-100 p-2 text-red-800 hover:bg-red-200 hover:text-red-950">
                                                 <TrashIcon className="h-5 w-5" />
                                             </Button>
                                         </div>

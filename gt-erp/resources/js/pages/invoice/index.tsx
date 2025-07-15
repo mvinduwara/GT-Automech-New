@@ -74,7 +74,7 @@ export default function Index() {
                         <TableCaption>A list of your recent stocks.</TableCaption>
                         <TableHeader>
                             <TableRow>
-                                <TableHead>Stock</TableHead>
+                                <TableHead>Invoice ID</TableHead>
                                 <TableHead>Status</TableHead>
                                 <TableHead>Method</TableHead>
                                 <TableHead>Amount</TableHead>
