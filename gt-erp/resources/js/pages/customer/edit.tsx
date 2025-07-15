@@ -23,7 +23,7 @@ export default function Edit() {
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="New Customer" />
             <div className="flex h-full flex-1 flex-col gap-4 rounded-xl p-4 overflow-x-auto">
-                <h1>Edit customer</h1>
+                <h1>Edit Customer</h1>
             </div>
         </AppLayout>
     );
