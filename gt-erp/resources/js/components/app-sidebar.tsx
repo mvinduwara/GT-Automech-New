@@ -3,7 +3,7 @@ import { NavUser } from '@/components/nav-user';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { type NavItem } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
-import { HandCoins, IdCard, LayoutGrid, NotepadText, StickyNote, TicketCheck, Users, Warehouse } from 'lucide-react';
+import { HandCoins, IdCard, LayoutGrid, NotepadText, StickyNote, TicketCheck, Users, Warehouse,UserRound  } from 'lucide-react';
 import { useMemo } from 'react';
 import AppLogo from './app-logo';
 
@@ -39,6 +39,13 @@ const mainNavItems: (NavItem & { roles?: string[] })[] = [
         title: 'Admin Purchase Order',
         href: '/dashboard/purchase-order',
         icon: TicketCheck,
+        roles: [USER_ROLES.CASHIER, USER_ROLES.ADMIN, USER_ROLES.SERVICEMANAGER],
+        // roles: [USER_ROLES.ADMIN],
+    },
+    {
+        title: 'User',
+        href: '/dashboard/user',
+        icon: UserRound,
         roles: [USER_ROLES.CASHIER, USER_ROLES.ADMIN, USER_ROLES.SERVICEMANAGER],
         // roles: [USER_ROLES.ADMIN],
     },
