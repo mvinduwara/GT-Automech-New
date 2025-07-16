@@ -3,7 +3,7 @@ import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, Tabl
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link } from '@inertiajs/react';
-import { TrashIcon, UserPen } from 'lucide-react';
+import { UserPen } from 'lucide-react';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -56,9 +56,9 @@ export default function Index({ users }: { users: any[] }) {
                                                 </Button>
                                             </Link>
 
-                                            <Button className="bg-red-100 p-2 text-red-800 hover:bg-red-200">
+                                            {/* <Button className="bg-red-100 p-2 text-red-800 hover:bg-red-200">
                                                 <TrashIcon className="h-5 w-5" />
-                                            </Button>
+                                            </Button> */}
                                         </div>
                                     </TableCell>
                                 </TableRow>
