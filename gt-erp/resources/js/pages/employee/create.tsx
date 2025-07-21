@@ -7,11 +7,11 @@ import { Head } from '@inertiajs/react';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
-        title: 'Users',
-        href: '/dashboard/user',
+        title: 'Employee',
+        href: '/dashboard/employee',
     },
     {
-        title: 'Register New User',
+        title: 'Register New Employee',
         href: '/dashboard/create',
     },
 ];
@@ -28,8 +28,13 @@ export default function Create() {
                 <form className="mx-auto max-w-5xl space-y-8">
                     <div className="-mx-6 flex flex-wrap">
                         <div className="mb-8 w-full px-6 md:w-1/2">
-                            <Label className="h1 font-bold">Name</Label>
-                            <Input id="name" placeholder="Enter first name" className="min-w-[280px]" />
+                            <Label className="h1 font-bold">First Name</Label>
+                            <Input id="fname" placeholder="Enter first name" className="min-w-[280px]" />
+                        </div>
+
+                        <div className="mb-8 w-full px-6 md:w-1/2">
+                            <Label className="h1 font-bold">Last Name</Label>
+                            <Input id="lname" placeholder="Enter last name" className="min-w-[280px]" />
                         </div>
 
                         <div className="mb-8 w-full px-6 md:w-1/2">
@@ -43,15 +48,13 @@ export default function Create() {
                         </div>
 
                         <div className="mb-8 w-full px-6 md:w-1/2">
-                            <Label className="h1 font-bold">Role</Label>
-                            <Input id="role" placeholder="Enter Job Title" className="min-w-[280px]" />
+                            <Label className="h1 font-bold">Job Title</Label>
+                            <Input id="department" placeholder="Enter Job Title" className="min-w-[280px]" />
                         </div>
 
                         <div className="mb-8 w-full px-6 md:w-1/2">
-                            <Label className="h1 font-bold" htmlFor="password">
-                                Password
-                            </Label>
-                            <Input id="password" type="password" placeholder="Enter password" className="min-w-[280px]" />
+                            <Label className="h1 font-bold">Department</Label>
+                            <Input id="department" placeholder="Enter department" className="min-w-[280px]" />
                         </div>
                     </div>
 
