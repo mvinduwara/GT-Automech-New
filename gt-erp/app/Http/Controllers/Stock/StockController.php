@@ -11,14 +11,14 @@ class StockController extends Controller
 
     public function index(Request $request)
     {
-        return Inertia::render('stock/index');
+        return Inertia::render('inventory/stock/index');
     }
     public function create(Request $request)
     {
-        return Inertia::render('stock/create');
+        return Inertia::render('inventory/stock/create');
     }
     public function edit(Request $request)
     {
-        return Inertia::render('stock/edit');
+        return Inertia::render('inventory/stock/edit');
     }
 }

@@ -8,21 +8,17 @@ const breadcrumbs: BreadcrumbItem[] = [
         href: '/dashboard/stock',
     },
     {
-        title: 'Create',
-        href: '/dashboard/create',
-    },
-    {
-        title: 'Edit',
-        href: '/dashboard/edit',
+        title: 'Creat Stock',
+        href: '/dashboard/stock/create',
     },
 ];
 
-export default function Edit() {
+export default function Create() {
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="Stock Create" />
+            <Head title="Create Stock" />
             <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
-                <h1>Edit Stock</h1>
+                <h1>Create Stock</h1>
             </div>
         </AppLayout>
     );

@@ -12,18 +12,32 @@ class CategorySeeder extends Seeder
      */
     public function run(): void
     {
-        // Define specific categories suitable for a vehicle repair center
         $categories = [
-            ['name' => 'Engine Parts', 'description' => 'Components related to vehicle engines.'],
-            ['name' => 'Brake System', 'description' => 'Parts for the vehicle braking system.'],
-            ['name' => 'Suspension', 'description' => 'Components for vehicle suspension and steering.'],
-            ['name' => 'Electrical', 'description' => 'Electrical components and wiring.'],
-            ['name' => 'Body Parts', 'description' => 'Exterior and interior body components.'],
-            ['name' => 'Tires & Wheels', 'description' => 'Tires, rims, and related accessories.'],
-            ['name' => 'Fluids & Lubricants', 'description' => 'Oils, coolants, brake fluid, etc.'],
-            ['name' => 'Exhaust System', 'description' => 'Mufflers, pipes, catalytic converters.'],
-            ['name' => 'Interior Accessories', 'description' => 'Dashboard, seats, and cabin components.'],
-            ['name' => 'Tools & Equipment', 'description' => 'Workshop tools and diagnostic equipment.'],
+            ['name' => 'Filter, AC', 'description' => 'Air conditioning filters for various vehicle models.'],
+            ['name' => 'Filter, Air', 'description' => 'Engine air filters for optimal performance.'],
+            ['name' => 'Filter, Oil', 'description' => 'Oil filters for engine lubrication systems.'],
+            ['name' => 'Filter, Fuel', 'description' => 'Fuel filters to ensure clean fuel delivery.'],
+            ['name' => 'Oil, Engine', 'description' => 'Engine lubricants of various grades.'],
+            ['name' => 'Brake Pads', 'description' => 'Brake pads for front and rear braking systems.'],
+            ['name' => 'Spark Plug', 'description' => 'Spark plugs for ignition systems.'],
+            ['name' => 'Link', 'description' => 'Stabilizer links and other suspension links.'],
+            ['name' => 'Shock Absorber', 'description' => 'Shock absorbers for vehicle suspension.'],
+            ['name' => 'Shock Mount', 'description' => 'Mounting components for shock absorbers.'],
+            ['name' => 'Boot', 'description' => 'Protective boots for various automotive components.'],
+            ['name' => 'Damper', 'description' => 'Dampers for suspension and vibration control.'],
+            ['name' => 'Rack End', 'description' => 'Rack ends for steering systems.'],
+            ['name' => 'Ball Joint', 'description' => 'Ball joints for suspension and steering.'],
+            ['name' => 'Tie Rod End', 'description' => 'Tie rod ends for steering linkage.'],
+            ['name' => 'Wiper Blade', 'description' => 'Windshield wiper blades.'],
+            ['name' => 'Hub Unit', 'description' => 'Wheel hub units for various axles.'],
+            ['name' => 'Miscellaneous', 'description' => 'General automotive accessories and small parts.'],
+            ['name' => 'Belts & Hoses', 'description' => 'Drive belts and various hoses.'],
+            ['name' => 'Lighting', 'description' => 'Headlights, tail lights, and interior lights.'],
+            ['name' => 'Batteries', 'description' => 'Automotive batteries.'],
+            ['name' => 'Cooling System', 'description' => 'Radiators, water pumps, and cooling components.'],
+            ['name' => 'Steering System', 'description' => 'Power steering components and steering racks.'],
+            ['name' => 'Transmission', 'description' => 'Transmission fluids and components.'],
+            ['name' => 'Gaskets & Seals', 'description' => 'Various gaskets and seals for engine and other parts.'],
         ];
 
         foreach ($categories as $category) {
@@ -34,4 +48,3 @@ class CategorySeeder extends Seeder
         }
     }
 }
-
