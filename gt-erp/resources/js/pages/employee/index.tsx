@@ -1,4 +1,5 @@
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
@@ -22,6 +23,29 @@ export default function Index({ employee }: { employee: any[] }) {
                     <Link href={route('dashboard.employee.create')}>
                         <Button>Register New Employee</Button>
                     </Link>
+                </div>
+
+                <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                    <div className="flex w-full items-center gap-2 md:max-w-md">
+                        <Input type="text" placeholder="Search employees..." className="w-full" />
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2">
+                        <select className="rounded-xl border px-4 py-2 text-sm text-gray-700 shadow-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                            <option value="">All Departments</option>
+                            <option value="hr">HR</option>
+                            <option value="finance">Finance</option>
+                            <option value="engineering">Engineering</option>
+                        </select>
+
+                        <select className="rounded-xl border px-4 py-2 text-sm text-gray-700 shadow-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                            <option value="">All Statuses</option>
+                            <option value="active">Active</option>
+                            <option value="inactive">Inactive</option>
+                        </select>
+
+                        <Button variant={'secondary'}>Apply Filters</Button>
+                    </div>
                 </div>
 
                 <div className="flex h-full flex-1 flex-col overflow-y-auto">
