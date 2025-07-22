@@ -7,8 +7,13 @@ import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrig
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Head, useForm } from '@inertiajs/react';
-import { ChevronDownIcon } from 'lucide-react';
+import { CalendarIcon } from 'lucide-react'; // Changed from ChevronDownIcon
 import * as React from 'react';
+import { format } from 'date-fns'; // Import format from date-fns
+import { cn } from '@/lib/utils'; // Import cn utility
+import { toast } from 'sonner';
+import { useEffect } from 'react';
+
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -17,158 +22,194 @@ const breadcrumbs: BreadcrumbItem[] = [
     },
     {
         title: 'Register New Employee',
-        href: '/dashboard/create',
+        href: '/dashboard/employee/create',
     },
 ];
 
-export default function Create() {
+export default function Create({ departments, success, error }: any) {
     const [open, setOpen] = React.useState(false);
-    const [date, setDate] = React.useState<Date | undefined>(undefined);
 
     const { data, setData, post, processing, errors, reset } = useForm({
         first_name: '',
         last_name: '',
         email: '',
         mobile: '',
-        hire_date: '',
+        hire_date: '', // This will store the date string in YYYY-MM-DD format
         job_title: '',
         department_id: '',
         status: '',
     });
 
+    useEffect(() => {
+        if (success) {
+            toast.success(success);
+        }
+        if (error) {
+            toast.error(error);
+        }
+    }, [success, error]);
+
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        if (date) setData('hire_date', date.toISOString().split('T')[0]);
-        post('/dashboard/employee/store');
+        post(route('dashboard.employee.store'), {
+            onSuccess: () => {
+                toast.success('Employee Registered Successfully!');
+                reset();
+            },
+            onError: (errors) => {
+                for (const key in errors) {
+                    toast.error(errors[key]);
+                }
+            },
+        });
     };
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="Register New User" />
+            <Head title="Register New Employee" />
             <div className="flex h-full flex-1 flex-col gap-6 overflow-x-auto rounded-xl p-6">
                 <div className="flex items-center justify-between">
-                    <h1 className="h1 font-bold">Register New Employee</h1>
+                    <h1 className="text-2xl font-bold">Register New Employee</h1>
                 </div>
 
                 <form onSubmit={handleSubmit} className="mx-auto max-w-5xl space-y-8">
-                    <div className="-mx-6 flex flex-wrap">
-                        <div className="mb-8 w-full px-6 md:w-1/2">
-                            <Label className="h1 font-bold">First Name</Label>
+                    <div className="-mx-3 flex flex-wrap">
+                        <div className="mb-6 w-full px-3 md:w-1/2">
+                            <Label htmlFor="first_name" className="block text-sm font-medium text-gray-700">First Name</Label>
                             <Input
-                                id="fname"
+                                id="first_name"
                                 value={data.first_name}
                                 placeholder="Enter first name"
-                                className="min-w-[280px]"
+                                className="mt-1 block w-full"
                                 onChange={(e) => setData('first_name', e.target.value)}
                             />
+                            {errors.first_name && <p className="text-sm text-red-600">{errors.first_name}</p>}
                         </div>
 
-                        <div className="mb-8 w-full px-6 md:w-1/2">
-                            <Label className="h1 font-bold">Last Name</Label>
+                        <div className="mb-6 w-full px-3 md:w-1/2">
+                            <Label htmlFor="last_name" className="block text-sm font-medium text-gray-700">Last Name</Label>
                             <Input
-                                id="lname"
+                                id="last_name"
                                 value={data.last_name}
                                 placeholder="Enter last name"
-                                className="min-w-[280px]"
+                                className="mt-1 block w-full"
                                 onChange={(e) => setData('last_name', e.target.value)}
                             />
+                            {errors.last_name && <p className="text-sm text-red-600">{errors.last_name}</p>}
                         </div>
 
-                        <div className="mb-8 w-full px-6 md:w-1/2">
-                            <Label className="h1 font-bold">Email</Label>
+                        <div className="mb-6 w-full px-3 md:w-1/2">
+                            <Label htmlFor="email" className="block text-sm font-medium text-gray-700">Email</Label>
                             <Input
                                 id="email"
                                 value={data.email}
                                 placeholder="Enter email"
-                                className="min-w-[280px]"
+                                className="mt-1 block w-full"
                                 onChange={(e) => setData('email', e.target.value)}
                             />
+                            {errors.email && <p className="text-sm text-red-600">{errors.email}</p>}
                         </div>
 
-                        <div className="mb-8 w-full px-6 md:w-1/2">
-                            <Label className="h1 font-bold">Mobile</Label>
+                        <div className="mb-6 w-full px-3 md:w-1/2">
+                            <Label htmlFor="mobile" className="block text-sm font-medium text-gray-700">Mobile</Label>
                             <Input
                                 id="mobile"
                                 value={data.mobile}
                                 placeholder="Enter mobile"
-                                className="min-w-[280px]"
+                                className="mt-1 block w-full"
                                 onChange={(e) => setData('mobile', e.target.value)}
                             />
+                            {errors.mobile && <p className="text-sm text-red-600">{errors.mobile}</p>}
                         </div>
 
-                        <div className="mb-8 w-full px-6 md:w-1/2">
-                            <Label className="h1 font-bold">Job Title</Label>
+                        <div className="mb-6 w-full px-3 md:w-1/2">
+                            <Label htmlFor="job_title" className="block text-sm font-medium text-gray-700">Job Title</Label>
                             <Input
                                 id="job_title"
                                 value={data.job_title}
                                 placeholder="Enter Job Title"
-                                className="min-w-[280px]"
+                                className="mt-1 block w-full"
                                 onChange={(e) => setData('job_title', e.target.value)}
                             />
+                            {errors.job_title && <p className="text-sm text-red-600">{errors.job_title}</p>}
                         </div>
 
-                        <div className="mb-8 flex w-full flex-col gap-3 px-6 md:w-1/2">
-                            <Label htmlFor="date" className="h1 font-bold">
+                        <div className="mb-6 flex w-full flex-col gap-3 px-3 md:w-1/2">
+                            <Label htmlFor="hire_date" className="block text-sm font-medium text-gray-700">
                                 Select Hire Date
                             </Label>
                             <Popover open={open} onOpenChange={setOpen}>
                                 <PopoverTrigger asChild>
-                                    <Button variant="outline" id="date" className="w-48 justify-between font-normal">
-                                        {date ? date.toLocaleDateString() : 'Select date'}
-                                        <ChevronDownIcon />
+                                    <Button
+                                        variant="outline"
+                                        className={cn(
+                                            'w-full justify-start text-left font-normal',
+                                            !data.hire_date && 'text-muted-foreground'
+                                        )}
+                                    >
+                                        <CalendarIcon className="mr-2 h-4 w-4" />
+                                        {data.hire_date ? format(new Date(data.hire_date), 'PPP') : <span>Pick a date</span>}
                                     </Button>
                                 </PopoverTrigger>
-                                <PopoverContent className="w-auto overflow-hidden p-0" align="start">
+                                <PopoverContent className="w-auto p-0">
                                     <Calendar
                                         mode="single"
-                                        selected={date}
-                                        captionLayout="dropdown"
+                                        selected={data.hire_date ? new Date(data.hire_date) : undefined}
                                         onSelect={(date) => {
-                                            setDate(date);
-                                            setData('hire_date', date ? date.toISOString().split('T')[0] : '');
-                                            setOpen(false);
+                                            setData('hire_date', date ? format(date, 'yyyy-MM-dd') : '');
+                                            setOpen(false); // Close popover on date selection
                                         }}
+                                        initialFocus
                                     />
                                 </PopoverContent>
                             </Popover>
+                            {errors.hire_date && <p className="text-sm text-red-600">{errors.hire_date}</p>}
                         </div>
 
-                        <div className="mb-8 flex w-full items-center justify-start px-6 md:w-1/2">
+                        <div className="mb-6 w-full px-3 md:w-1/2">
+                            <Label htmlFor="status" className="block text-sm font-medium text-gray-700">Status</Label>
                             <Select value={data.status} onValueChange={(value) => setData('status', value)}>
-                                <SelectTrigger className="w-[180px]">
+                                <SelectTrigger className="mt-1 w-full">
                                     <SelectValue placeholder="Select Status" />
                                 </SelectTrigger>
                                 <SelectContent>
                                     <SelectGroup>
-                                        <SelectLabel>Select</SelectLabel>
-                                        <SelectItem value="active">active</SelectItem>
-                                        <SelectItem value="deactive">deactive</SelectItem>
-                                        <SelectItem value="pending">pending</SelectItem>
-                                        <SelectItem value="terminated">terminated</SelectItem>
+                                        <SelectLabel>Select Status</SelectLabel>
+                                        <SelectItem value="active">Active</SelectItem>
+                                        <SelectItem value="deactive">Deactive</SelectItem>
+                                        <SelectItem value="pending">Pending</SelectItem>
+                                        <SelectItem value="terminated">Terminated</SelectItem>
                                     </SelectGroup>
                                 </SelectContent>
                             </Select>
+                            {errors.status && <p className="text-sm text-red-600">{errors.status}</p>}
                         </div>
 
-                        <div className="mb-8 flex w-full items-center justify-start px-6 md:w-1/2">
+                        <div className="mb-6 w-full px-3 md:w-1/2">
+                            <Label htmlFor="department_id" className="block text-sm font-medium text-gray-700">Department</Label>
                             <Select value={data.department_id} onValueChange={(value) => setData('department_id', value)}>
-                                <SelectTrigger className="w-[180px]">
+                                <SelectTrigger className="mt-1 w-full">
                                     <SelectValue placeholder="Select Department" />
                                 </SelectTrigger>
                                 <SelectContent>
                                     <SelectGroup>
-                                        <SelectLabel>Select</SelectLabel>
-                                        <SelectItem value="1">Mechanical</SelectItem>
-                                        <SelectItem value="2">Electronic</SelectItem>
-                                        <SelectItem value="3">AC</SelectItem>
+                                        <SelectLabel>Select Department</SelectLabel>
+                                        {departments.map((department: any) => (
+                                            <SelectItem key={department.id} value={department.id.toString()}>
+                                                {department.name}
+                                            </SelectItem>
+                                        ))}
                                     </SelectGroup>
                                 </SelectContent>
                             </Select>
+                            {errors.department_id && <p className="text-sm text-red-600">{errors.department_id}</p>}
                         </div>
                     </div>
 
-                    <div className="mx-auto flex w-full max-w-md justify-center">
-                        <Button className="w-48">Register Employee</Button>
+                    <div className="flex w-full justify-center">
+                        <Button type="submit" className="w-48" disabled={processing}>
+                            {processing ? 'Registering...' : 'Register Employee'}
+                        </Button>
                     </div>
                 </form>
             </div>

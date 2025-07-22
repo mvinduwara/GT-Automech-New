@@ -23,7 +23,7 @@ class Employee extends Model
     protected function casts(): array
     {
         return [
-            'mfd' => 'date',
+            'hire_date' => 'date:Y-m-d', // Corrected cast for date format
             'status' => 'string',
         ];
     }

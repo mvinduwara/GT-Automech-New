@@ -12,6 +12,7 @@ export interface Employee {
     hire_date: Date;
     job_title: string;
     department_id: Department;
+    department?: Department;
     status: 'active' | 'deactive' | 'pending' | 'terminated';
 }
 

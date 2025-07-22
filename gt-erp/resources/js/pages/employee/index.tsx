@@ -1,10 +1,36 @@
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
-import { Head, Link } from '@inertiajs/react';
-import { UserPen } from 'lucide-react';
+import { Head, router } from '@inertiajs/react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from '@/components/ui/table';
+import { Label } from '@/components/ui/label';
+import { useState, useEffect } from 'react';
+import { toast } from 'sonner';
+import { Link } from '@inertiajs/react';
+import {
+    Pagination,
+    PaginationContent,
+    PaginationItem,
+    PaginationLink,
+    PaginationNext,
+    PaginationPrevious,
+} from '@/components/ui/pagination';
+import { Department, Employee } from '@/types/types';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -13,79 +39,234 @@ const breadcrumbs: BreadcrumbItem[] = [
     },
 ];
 
-export default function Index({ employee }: { employee: any[] }) {
+type IndexProps = {
+    employees: {
+        data: Employee[];
+        links: {
+            url: string | null;
+            label: string;
+            active: boolean;
+        }[];
+    };
+    departments: Department[];
+    filters?: { // Made filters optional
+        search?: string;
+        department?: Department;
+        status?: string;
+    };
+    success?: string;
+    error?: string;
+};
+
+export default function Index({
+    employees,
+    departments,
+    filters = {}, // Provide a default empty object for filters
+    success,
+    error,
+}: IndexProps) {
+    const [search, setSearch] = useState(filters.search || '');
+    const [selectedDepartment, setSelectedDepartment] = useState(
+        filters.department || '',
+    );
+    const [selectedStatus, setSelectedStatus] = useState(filters.status || '');
+
+    // Show toasts for success and error messages
+    useEffect(() => {
+        if (success) {
+            toast.success(success);
+        }
+        if (error) {
+            toast.error(error);
+        }
+    }, [success, error]);
+
+    const applyFilters = () => {
+        router.get(
+            '/dashboard/employee',
+            {
+                search,
+                department: selectedDepartment,
+                status: selectedStatus,
+            },
+            {
+                preserveState: true,
+                preserveScroll: true,
+                onSuccess: () => {
+                    toast.success('Filters applied successfully.');
+                },
+                onError: () => {
+                    toast.error('Failed to apply filters.');
+                },
+            },
+        );
+    };
+
+    const clearFilters = () => {
+        setSearch('');
+        setSelectedDepartment('');
+        setSelectedStatus('');
+        router.get(
+            '/dashboard/employee',
+            {},
+            {
+                preserveState: true,
+                preserveScroll: true,
+                onSuccess: () => {
+                    toast.info('Filters cleared.');
+                },
+                onError: () => {
+                    toast.error('Failed to clear filters.');
+                },
+            },
+        );
+    };
+
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="Employee" />
+            <Head title="Employees" />
             <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
                 <div className="flex items-center justify-between">
-                    <h1 className="h1 font-bold">All Registered Employees</h1>
-                    <Link href={route('dashboard.employee.create')}>
-                        <Button>Register New Employee</Button>
-                    </Link>
+                    <h1 className="text-2xl font-semibold">Employees</h1>
+                    <Button asChild>
+                        <Link href="/dashboard/employee/create">
+                            Add New Employee
+                        </Link>
+                    </Button>
                 </div>
 
-                <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                    <div className="flex w-full items-center gap-2 md:max-w-md">
-                        <Input type="text" placeholder="Search employees..." className="w-full" />
+                <div className="rounded-lg border bg-card text-card-foreground shadow-sm p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div>
+                        <Label htmlFor="search">Search (Name, Email, Mobile)</Label>
+                        <Input
+                            id="search"
+                            placeholder="Search by name, email, or mobile"
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                        />
                     </div>
-
-                    <div className="flex flex-wrap items-center gap-2">
-                        <select className="rounded-xl border px-4 py-2 text-sm text-gray-700 shadow-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                            <option value="">All Departments</option>
-                            <option value="hr">HR</option>
-                            <option value="finance">Finance</option>
-                            <option value="engineering">Engineering</option>
-                        </select>
-
-                        <select className="rounded-xl border px-4 py-2 text-sm text-gray-700 shadow-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                            <option value="">All Statuses</option>
-                            <option value="active">Active</option>
-                            <option value="inactive">Inactive</option>
-                        </select>
-
-                        <Button variant={'secondary'}>Apply Filters</Button>
+                    <div>
+                        <Label htmlFor="department">Department</Label>
+                        <Select
+                            value={selectedDepartment}
+                            onValueChange={setSelectedDepartment}
+                        >
+                            <SelectTrigger id="department">
+                                <SelectValue placeholder="Select a department" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">All Departments</SelectItem>
+                                {departments.map((department) => (
+                                    <SelectItem
+                                        key={department.id}
+                                        value={String(department.id)}
+                                    >
+                                        {department.name}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div>
+                        <Label htmlFor="status">Status</Label>
+                        <Select
+                            value={selectedStatus}
+                            onValueChange={setSelectedStatus}
+                        >
+                            <SelectTrigger id="status">
+                                <SelectValue placeholder="Select a status" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">All Statuses</SelectItem>
+                                <SelectItem value="active">Active</SelectItem>
+                                <SelectItem value="deactive">Deactive</SelectItem>
+                                <SelectItem value="pending">Pending</SelectItem>
+                                <SelectItem value="terminated">Terminated</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div className="col-span-full flex justify-end gap-2">
+                        <Button onClick={applyFilters}>Apply Filters</Button>
+                        <Button variant="outline" onClick={clearFilters}>
+                            Clear Filters
+                        </Button>
                     </div>
                 </div>
 
-                <div className="flex h-full flex-1 flex-col overflow-y-auto">
-                    <Table className="w-full table-fixed">
-                        <TableCaption>A list of your recent employees</TableCaption>
+                <div className="rounded-lg border bg-card text-card-foreground shadow-sm">
+                    <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead className="w-[200px] text-left">Employee Name</TableHead>
-                                <TableHead className="w-[250px] text-left">Email</TableHead>
-                                <TableHead className="w-[150px] text-left">Mobile</TableHead>
-                                <TableHead className="w-[100px] text-left">Department</TableHead>
-                                <TableHead className="w-[100px] text-left">Status</TableHead>
-                                <TableHead className="w-[100px] text-left">Actions</TableHead>
+                                <TableHead>First Name</TableHead>
+                                <TableHead>Last Name</TableHead>
+                                <TableHead>Email</TableHead>
+                                <TableHead>Mobile</TableHead>
+                                <TableHead>Job Title</TableHead>
+                                <TableHead>Department</TableHead>
+                                <TableHead>Status</TableHead>
+                                <TableHead className="text-right">Actions</TableHead>
                             </TableRow>
                         </TableHeader>
-
                         <TableBody>
-                            {employee.map((employee) => (
-                                <TableRow key={employee.id}>
-                                    <TableCell className="w-[200px] text-left font-medium">
-                                        {employee.first_name + ' ' + employee.last_name}
-                                    </TableCell>
-                                    <TableCell className="w-[250px] text-left">{employee.email}</TableCell>
-                                    <TableCell className="w-[150px] text-left">{employee.mobile}</TableCell>
-                                    <TableCell className="w-[100px] text-left">{employee.department?.name ?? 'N/A'}</TableCell>
-                                    <TableCell className="w-[100px] text-left">{employee.status}</TableCell>
-                                    <TableCell className="w-[100px] text-left">
-                                        <div className="justify-left flex space-x-2">
-                                            <Link href={route('dashboard.employee.edit', { id: employee.id })}>
-                                                <Button variant="ghost" className="p-2">
-                                                    <UserPen className="h-5 w-5" />
-                                                </Button>
-                                            </Link>
-                                        </div>
+                            {employees.data.length > 0 ? (
+                                employees.data.map((employee) => (
+                                    <TableRow key={employee.id}>
+                                        <TableCell>{employee.first_name}</TableCell>
+                                        <TableCell>{employee.last_name}</TableCell>
+                                        <TableCell>{employee.email}</TableCell>
+                                        <TableCell>{employee.mobile}</TableCell>
+                                        <TableCell>{employee.job_title}</TableCell>
+                                        <TableCell>{employee.department?.name}</TableCell>
+                                        <TableCell>{employee.status}</TableCell>
+                                        <TableCell className="text-right">
+                                            <Button asChild variant="ghost" size="sm">
+                                                <Link href={`/dashboard/employee/${employee.id}/edit`}>
+                                                    Edit
+                                                </Link>
+                                            </Button>
+                                        </TableCell>
+                                    </TableRow>
+                                ))
+                            ) : (
+                                <TableRow>
+                                    <TableCell colSpan={8} className="text-center">
+                                        No employees found.
                                     </TableCell>
                                 </TableRow>
-                            ))}
+                            )}
                         </TableBody>
                     </Table>
                 </div>
+
+               {employees.links.length > 3 && ( 
+                    <Pagination>
+                        <PaginationContent>
+                            {employees.links.map((link, index) => (
+                                <PaginationItem key={index}>
+                                    <PaginationLink
+                                        href={link.url || '#'}
+                                        isActive={link.active}
+                                        onClick={(e) => {
+                                            if (link.url) {
+                                                e.preventDefault();
+                                                router.get(link.url, {}, { preserveState: true, preserveScroll: true });
+                                            }
+                                        }}
+                                        className={!link.url ? 'pointer-events-none opacity-50' : ''}
+                                    >
+                                        {link.label.includes('Previous') ? (
+                                            <PaginationPrevious href={link.url || '#'} />
+                                        ) : link.label.includes('Next') ? (
+                                            <PaginationNext href={link.url || '#'} />
+                                        ) : (
+                                            link.label
+                                        )}
+                                    </PaginationLink>
+                                </PaginationItem>
+                            ))}
+                        </PaginationContent>
+                    </Pagination>
+                )}
             </div>
         </AppLayout>
     );
