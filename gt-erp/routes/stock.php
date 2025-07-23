@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\Stock\BrandController;
+use App\Http\Controllers\Stock\CategoryController;
 use App\Http\Controllers\Stock\InventoryController;
 use App\Http\Controllers\Stock\ProductController;
 use App\Http\Controllers\Stock\StockController;
@@ -12,6 +14,20 @@ Route::middleware(['auth', 'is_admin'])->group(function () {
 
             Route::get('/inventory', [InventoryController::class, 'index'])->name('index');
 
+            Route::prefix('category')
+                ->name('category.')
+                ->group(function () {
+                    Route::get('/', [CategoryController::class, 'index'])->name('index');
+                    Route::post('/store', [CategoryController::class, 'store'])->name('store');
+                    Route::post('/{category}/update', [CategoryController::class, 'update'])->name('update');
+                });
+            Route::prefix('brand')
+                ->name('brand.')
+                ->group(function () {
+                    Route::get('/', [BrandController::class, 'index'])->name('index');
+                    Route::post('/store', [BrandController::class, 'store'])->name('store');
+                    Route::post('/{brand}/update', [BrandController::class, 'update'])->name('update');
+                });
             Route::prefix('product')
                 ->name('product.')
                 ->group(function () {
@@ -29,7 +45,8 @@ Route::middleware(['auth', 'is_admin'])->group(function () {
                     Route::get('/create', [StockController::class, 'create'])->name('create');
                     Route::post('/store', [StockController::class, 'store'])->name('store');
                     Route::get('/{stock}/edit', [StockController::class, 'edit'])->name('edit');
-                    Route::post('/{stock}/update', [StockController::class, 'update'])->name('update');
+                    Route::put('/{stock}/update', [StockController::class, 'update'])->name('update');
+                    Route::get('/search-products', [StockController::class, 'searchProducts'])->name('search-products');
                 });
         });
 });

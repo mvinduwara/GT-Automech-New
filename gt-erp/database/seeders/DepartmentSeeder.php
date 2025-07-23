@@ -16,6 +16,7 @@ class DepartmentSeeder extends Seeder
             ['name' => 'Mechanical', 'status' => 'active'],
             ['name' => 'Electronic', 'status' => 'active'],
             ['name' => 'AC', 'status' => 'active'],
+            ['name' => 'Administration', 'status' => 'active'],
         ];
 
         foreach ($departments as $department) {

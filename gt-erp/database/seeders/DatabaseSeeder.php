@@ -21,6 +21,7 @@ class DatabaseSeeder extends Seeder
             UnitOfMeasureSeeder::class,
             EmployeeSeeder::class,
             ProductSeeder::class,
+            StockSeeder::class,
         ]);
     }
 }
