@@ -15,11 +15,11 @@ class IsServiceManager
      */
     public function handle(Request $request, Closure $next): Response
     {
-        // if (auth()->check() && auth()->user()->role === 'service-manager' && auth()->user()->status === 'active') {
-        //     return $next($request);
-        // }
+        if (auth()->check() && auth()->user()->role === 'service-manager' && auth()->user()->status === 'active') {
+            return $next($request);
+        }
         
-        // abort(403, 'Unauthorized - Service Manager only.');
-        return $next($request);
+        abort(403, 'Unauthorized - Service Manager only.');
+        // return $next($request);
     }
 }

@@ -15,11 +15,11 @@ class IsAdmin
      */
     public function handle(Request $request, Closure $next): Response
     {
-        // if (auth()->check() && auth()->user()->role === 'admin' && auth()->user()->status === 'active') {
-        //     return $next($request);
-        // }
+        if (auth()->check() && auth()->user()->role === 'admin' && auth()->user()->status === 'active') {
+            return $next($request);
+        }
 
-        // abort(403, 'Unauthorized - Admins only.');
-        return $next($request);
+        abort(403, 'Unauthorized - Admins only.');
+        // return $next($request);
     }
 }

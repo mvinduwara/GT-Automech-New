@@ -7,7 +7,7 @@ use App\Http\Controllers\Stock\ProductController;
 use App\Http\Controllers\Stock\StockController;
 use Illuminate\Support\Facades\Route;
 
-Route::middleware(['auth', 'is_admin'])->group(function () {
+Route::middleware(['auth', 'is_admin_or_cashier'])->group(function () {
     Route::prefix('dashboard')
         ->name('dashboard.')
         ->group(function () {

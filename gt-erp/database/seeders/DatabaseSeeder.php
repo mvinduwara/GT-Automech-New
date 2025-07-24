@@ -19,9 +19,6 @@ class DatabaseSeeder extends Seeder
             CategorySeeder::class,
             BrandSeeder::class,
             UnitOfMeasureSeeder::class,
-            EmployeeSeeder::class,
-            ProductSeeder::class,
-            StockSeeder::class,
         ]);
     }
 }

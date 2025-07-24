@@ -5,7 +5,6 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Product extends Model
@@ -25,7 +24,7 @@ class Product extends Model
         'brand_id',
         'unit_of_measure_id',
         'reorder_level',
-        'status', // Changed from 'is_active' to 'status' as per your migration
+        'status',
     ];
 
     /**
@@ -35,7 +34,7 @@ class Product extends Model
      */
     protected $casts = [
         'reorder_level' => 'integer',
-        'status' => 'string', // 'active' or 'deactive'
+        'status' => 'string',
     ];
 
     /**
@@ -62,4 +61,27 @@ class Product extends Model
         return $this->belongsTo(UnitOfMeasure::class);
     }
 
+    /**
+     * Get the stock records for the product.
+     */
+    public function stocks(): HasMany
+    {
+        return $this->hasMany(Stock::class);
+    }
+
+    /**
+     * Get the total quantity in stock for this product.
+     */
+    public function getTotalStockAttribute(): int
+    {
+        return $this->stocks()->where('status', 'active')->sum('quantity');
+    }
+
+    /**
+     * Check if product is low in stock.
+     */
+    public function getIsLowStockAttribute(): bool
+    {
+        return $this->total_stock <= $this->reorder_level;
+    }
 }

@@ -14,50 +14,50 @@ class UserSeeder extends Seeder
     {
         User::create([
             'name' => 'Shehan Kaushalya',
-            'email' => 'shehan@gmail.com',
+            'email' => 'shehankmusic@gmail.com',
             'password' => Hash::make('password'),
             'email_verified_at' => now(),
-            'mobile' => '0774115263',
+            'mobile' => '0701727156',
             'role' => 'admin',
             'status' => 'active',
         ]);
 
         User::create([
             'name' => 'Sanula Kariyapperuma',
-            'email' => 'sanula@gmail.com',
+            'email' => 'contact.sanula@gmail.com',
             'password' => Hash::make('password'),
             'email_verified_at' => now(),
-            'mobile' => '0774115264',
+            'mobile' => '0762540292',
             'role' => 'cashier',
             'status' => 'active',
         ]);
 
         User::create([
             'name' => 'Janith Nimhara',
-            'email' => 'janith@gmail.com',
+            'email' => 'janith.codefiline@gmail.com',
             'password' => Hash::make('password'),
             'email_verified_at' => now(),
-            'mobile' => '0774115265',
+            'mobile' => '0774778678',
             'role' => 'admin',
             'status' => 'active',
         ]);
 
         User::create([
             'name' => 'Pasidu Jayasekara',
-            'email' => 'pasidu@gmail.com',
+            'email' => 'pasindu.codefiline@gmail.com',
             'password' => Hash::make('password'),
             'email_verified_at' => now(),
-            'mobile' => '0774115266',
+            'mobile' => '0767037938',
             'role' => 'service-manager',
             'status' => 'active',
         ]);
 
         User::create([
             'name' => 'Manilka Vinduwara',
-            'email' => 'manilka@gmail.com',
+            'email' => 'manilka.codefiline@gmail.com',
             'password' => Hash::make('password'),
             'email_verified_at' => now(),
-            'mobile' => '0774115267',
+            'mobile' => '0712739342',
             'role' => 'service-manager',
             'status' => 'active',
         ]);

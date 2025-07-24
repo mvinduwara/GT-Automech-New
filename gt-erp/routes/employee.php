@@ -12,6 +12,6 @@ Route::middleware(['auth', 'is_admin'])->group(function () {
             Route::get('/create', [EmployeeController::class, 'create'])->name('create');
             Route::post('/store', [EmployeeController::class, 'store'])->name('store');
             Route::get('/{employee_id}/edit', [EmployeeController::class, 'edit'])->name('edit');
-            Route::put('/{employee_id}', [EmployeeController::class, 'update'])->name('update'); // Added update route
+            Route::put('/{employee_id}', [EmployeeController::class, 'update'])->name('update'); 
         });
 });

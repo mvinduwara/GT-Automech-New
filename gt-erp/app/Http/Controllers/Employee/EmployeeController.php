@@ -81,7 +81,7 @@ class EmployeeController extends Controller
             $validated = $request->validate([
                 'first_name' => 'required|string|max:255',
                 'last_name' => 'required|string|max:255',
-                'email' => 'required|email|unique:employees,email',
+                'email' => 'nullable|email|unique:employees,email',
                 'mobile' => 'required|string|max:20',
                 'hire_date' => 'required|date',
                 'job_title' => 'required|string|max:255',

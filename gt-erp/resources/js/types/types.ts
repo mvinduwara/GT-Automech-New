@@ -1,3 +1,12 @@
+export interface User {
+    id: number;
+    name: string;
+    email: string;
+    mobile: string | null;
+    role: 'cashier' | 'admin' | 'service-manager';
+    status: 'active' | 'deactive' | 'pending';
+}
+
 export interface Department {
     id: number;
     name: string;
@@ -59,7 +68,7 @@ export interface Stock {
     quantity: number;
     buying_price: number;
     selling_price: number;
-    status: 'active'|'deactive'|'out of stock'|'rejected';
+    status: 'active' | 'deactive' | 'out of stock' | 'rejected';
     product: Product;
     alternative_product: Product | null;
 }
