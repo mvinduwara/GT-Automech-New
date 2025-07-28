@@ -65,6 +65,7 @@ export default function Index({
     success,
     error,
 }: IndexProps) {
+    console.log("employees", employees)
     const [search, setSearch] = useState(filters.search || '');
     const [selectedDepartment, setSelectedDepartment] = useState(
         filters.department || '',
@@ -238,7 +239,7 @@ export default function Index({
                     </Table>
                 </div>
 
-               {employees.links.length > 3 && ( 
+                {employees.links.length > 3 && (
                     <Pagination>
                         <PaginationContent>
                             {employees.links.map((link, index) => (

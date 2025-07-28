@@ -3,7 +3,7 @@ import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrig
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, usePage } from '@inertiajs/react';
 import { TrashIcon, UserPen } from 'lucide-react';
 
 const invoices = [
@@ -59,6 +59,7 @@ const breadcrumbs: BreadcrumbItem[] = [
 ];
 
 export default function Index() {
+
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Customer" />

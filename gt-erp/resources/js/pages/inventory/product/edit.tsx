@@ -43,6 +43,10 @@ export default function Edit({
 }: EditProductProps) {
     const breadcrumbs: BreadcrumbItem[] = [
         {
+            title: 'Inventory',
+            href: '/dashboard/inventory',
+        },
+        {
             title: 'Product',
             href: '/dashboard/product',
         },

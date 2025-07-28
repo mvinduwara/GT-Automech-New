@@ -21,12 +21,12 @@ const mainNavItems: (NavItem & { roles?: string[] })[] = [
         icon: Home,
         roles: [USER_ROLES.CASHIER, USER_ROLES.ADMIN, USER_ROLES.SERVICEMANAGER],
     },
-    // {
-    //     title: 'Customer',
-    //     href: '/dashboard/customer',
-    //     icon: Users,
-    //     roles: [USER_ROLES.ADMIN,USER_ROLES.CASHIER],
-    // },
+    {
+        title: 'Customer',
+        href: '/dashboard/customer',
+        icon: Users,
+        roles: [USER_ROLES.CASHIER],
+    },
     {
         title: 'Inventory',
         href: '/dashboard/inventory',

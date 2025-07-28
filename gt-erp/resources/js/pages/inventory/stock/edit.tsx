@@ -35,6 +35,10 @@ interface EditStockPageProps {
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
+        title: 'Inventory',
+        href: '/dashboard/inventory',
+    },
+    {
         title: 'Stock',
         href: '/dashboard/stock',
     },

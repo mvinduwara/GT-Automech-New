@@ -17,7 +17,7 @@ class EmployeeController extends Controller
         try {
             $query = Employee::with('department:id,name')
                 ->select('id', 'first_name', 'last_name', 'email', 'mobile', 'job_title', 'department_id', 'status')
-                ->orderBy('created_at', 'asc');
+                ->orderBy('created_at', 'desc');
 
             // Search functionality
             if ($search = $request->query('search')) {

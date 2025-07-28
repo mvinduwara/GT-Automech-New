@@ -18,6 +18,10 @@ import { Brand, Category, UnitOfMeasure } from '@/types/types';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
+        title: 'Inventory',
+        href: '/dashboard/inventory',
+    },
+    {
         title: 'Product',
         href: '/dashboard/product',
     },
