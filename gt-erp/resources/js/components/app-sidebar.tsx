@@ -57,12 +57,12 @@ const mainNavItems: (NavItem & { roles?: string[] })[] = [
         icon: IdCard,
         roles: [USER_ROLES.SERVICEMANAGER],
     },
-    // {
-    //     title: 'Petty Cash',
-    //     href: '/dashboard/petty-cash',
-    //     icon: HandCoins,
-    //     roles: [USER_ROLES.SERVICEMANAGER],
-    // },
+    {
+        title: 'Petty Cash',
+        href: '/dashboard/petty-cash',
+        icon: HandCoins,
+        roles: [USER_ROLES.CASHIER],
+    },
     // {
     //     title: 'GRN',
     //     href: '/dashboard/grn',
