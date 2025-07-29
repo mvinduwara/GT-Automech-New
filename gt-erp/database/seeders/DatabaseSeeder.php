@@ -23,6 +23,7 @@ class DatabaseSeeder extends Seeder
             UnitOfMeasureSeeder::class,
             ProductSeeder::class,
             StockSeeder::class,
+            PettyCashVoucherSeeder::class,
         ]);
     }
 }
