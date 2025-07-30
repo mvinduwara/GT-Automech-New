@@ -1,3 +1,4 @@
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -5,7 +6,7 @@ import { TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { pettyCash } from '@/types/types';
-import { Head, Link, useForm } from '@inertiajs/react';
+import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { Tooltip } from '@radix-ui/react-tooltip';
 import { TrashIcon, UserPen } from 'lucide-react';
 import { toast } from 'sonner';
@@ -20,6 +21,9 @@ const breadcrumbs: BreadcrumbItem[] = [
 export default function Index({ petty_cash }: { petty_cash: pettyCash[] }) {
     console.log("petty_cash", petty_cash)
     const { delete: destroy, processing } = useForm(); // Get the delete method from useForm
+
+    const { auth } = usePage().props;
+    console.log("auth", auth)
 
     const handleDelete = (voucherNumber: string) => {
         if (confirm('Are you sure you want to delete this Petty Cash Voucher? This action cannot be undone.')) {
@@ -41,11 +45,13 @@ export default function Index({ petty_cash }: { petty_cash: pettyCash[] }) {
             <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
                 <div className="flex items-center justify-between">
                     <h1 className="h1 font-bold">All Petty Cash Vouchers</h1>
-                    <Link href={route('dashboard.petty-cash.create')}>
-                        <Button>Add New PettyCash Voucher</Button>
-                    </Link>
+                    {auth?.user?.role === "cashier" && (
+                        <Link href={route('dashboard.petty-cash.create')}>
+                            <Button>Add New PettyCash Voucher</Button>
+                        </Link>
+                    )}
                 </div>
-                
+
                 <div className="flex h-full flex-1 flex-col overflow-y-auto">
                     <Table className="w-full table-fixed">
                         <TableCaption>A list of your recent stocks.</TableCaption>
@@ -96,15 +102,59 @@ export default function Index({ petty_cash }: { petty_cash: pettyCash[] }) {
 
                                     <TableCell className="pr-0">
                                         <div className="flex items-center justify-center space-x-2">
-                                            <Link href={route('dashboard.petty-cash.edit', { voucher_number: petty_cash.voucher_number })}>
-                                                <Button variant="ghost" className="flex items-center justify-center p-2 text-neutral-800">
-                                                    <UserPen className="h-5 w-5" />
+                                            {auth?.user?.role === "cashier" && (
+                                                <Link href={route('dashboard.petty-cash.edit', { voucher_number: petty_cash.voucher_number })}>
+                                                    <Button variant="ghost" className="flex items-center justify-center p-2 text-neutral-800">
+                                                        <UserPen className="h-5 w-5" />
+                                                    </Button>
+                                                </Link>
+                                            )}
+                                            {auth?.user?.role === "cashier" && (
+                                                <Button className="flex items-center justify-center bg-red-100 p-2 text-red-800 hover:bg-red-200 hover:text-red-950">
+                                                    <TrashIcon className="h-5 w-5" />
                                                 </Button>
-                                            </Link>
+                                            )}
 
-                                            <Button className="flex items-center justify-center bg-red-100 p-2 text-red-800 hover:bg-red-200 hover:text-red-950">
-                                                <TrashIcon className="h-5 w-5" />
-                                            </Button>
+                                            {auth?.user?.role === "admin" && (
+                                                <AlertDialog>
+                                                    <AlertDialogTrigger asChild>
+                                                        <Button variant="outline">Apperove as admin</Button>
+                                                    </AlertDialogTrigger>
+                                                    <AlertDialogContent>
+                                                        <AlertDialogHeader>
+                                                            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                                            <AlertDialogDescription>
+                                                                This action cannot be undone. This will permanently delete your
+                                                                account and remove your data from our servers.
+                                                            </AlertDialogDescription>
+                                                        </AlertDialogHeader>
+                                                        <AlertDialogFooter>
+                                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                            <AlertDialogAction>Continue</AlertDialogAction>
+                                                        </AlertDialogFooter>
+                                                    </AlertDialogContent>
+                                                </AlertDialog>
+                                            )}
+                                            {auth?.user?.role === "service-manager" && (
+                                                <AlertDialog>
+                                                    <AlertDialogTrigger asChild>
+                                                        <Button variant="outline">Apperove as service-manager</Button>
+                                                    </AlertDialogTrigger>
+                                                    <AlertDialogContent>
+                                                        <AlertDialogHeader>
+                                                            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                                            <AlertDialogDescription>
+                                                                This action cannot be undone. This will permanently delete your
+                                                                account and remove your data from our servers.
+                                                            </AlertDialogDescription>
+                                                        </AlertDialogHeader>
+                                                        <AlertDialogFooter>
+                                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                            <AlertDialogAction>Continue</AlertDialogAction>
+                                                        </AlertDialogFooter>
+                                                    </AlertDialogContent>
+                                                </AlertDialog>
+                                            )}
                                         </div>
                                     </TableCell>
                                 </TableRow>
