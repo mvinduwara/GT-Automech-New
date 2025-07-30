@@ -30,8 +30,8 @@ export interface pettyCash {
     voucher_number: number;
     date: Date;
     name: String;
-    requested_by_user_id: String;
-    approved_by_user_id: String;
+    requested_by_user_id: number;
+    approved_by_user_id: number;
     description: String;
     requestedBy?: User; 
     approvedBy?: User;

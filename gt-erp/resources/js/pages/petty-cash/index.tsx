@@ -64,8 +64,8 @@ export default function Index({ petty_cash }: { petty_cash: pettyCash[] }) {
                                     <TableCell>{new Date(petty_cash.date).toLocaleDateString()}</TableCell>
                                     <TableCell>{petty_cash.total_amount}</TableCell>
                                     <TableCell>{petty_cash.status}</TableCell>
-                                    <TableCell>{petty_cash.requestedBy?.name || 'N/A'}</TableCell>
-                                    <TableCell>{petty_cash.approvedBy?.name || 'N/A'}</TableCell>
+                                    <TableCell>{petty_cash.requested_by?.name || 'N/A'}</TableCell>
+                                    <TableCell>{petty_cash.requested_by?.name || 'N/A'}</TableCell>
 
                                     <TableCell className="pr-0">
                                         <div className="flex items-center justify-center space-x-2">
