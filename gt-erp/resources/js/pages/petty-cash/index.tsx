@@ -2,53 +2,10 @@ import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
-import { Head, Link } from '@inertiajs/react';
+import { pettyCash } from '@/types/types';
+import { Head, Link, useForm } from '@inertiajs/react';
 import { TrashIcon, UserPen } from 'lucide-react';
-
-const pettyCash = [
-    {
-        pettycash_id: 'PT001',
-        paymentStatus: 'Paid',
-        totalAmount: '$250.00',
-        paymentMethod: 'Credit Card',
-    },
-    {
-        pettycash_id: 'PT002',
-        paymentStatus: 'Pending',
-        totalAmount: '$150.00',
-        paymentMethod: 'PayPal',
-    },
-    {
-        pettycash_id: 'PT003',
-        paymentStatus: 'Unpaid',
-        totalAmount: '$350.00',
-        paymentMethod: 'Bank Transfer',
-    },
-    {
-        pettycash_id: 'PT004',
-        paymentStatus: 'Paid',
-        totalAmount: '$450.00',
-        paymentMethod: 'Credit Card',
-    },
-    {
-        pettycash_id: 'PT005',
-        paymentStatus: 'Paid',
-        totalAmount: '$550.00',
-        paymentMethod: 'PayPal',
-    },
-    {
-        pettycash_id: 'PT006',
-        paymentStatus: 'Pending',
-        totalAmount: '$200.00',
-        paymentMethod: 'Bank Transfer',
-    },
-    {
-        pettycash_id: 'PT007',
-        paymentStatus: 'Unpaid',
-        totalAmount: '$300.00',
-        paymentMethod: 'Credit Card',
-    },
-];
+import { toast } from 'sonner';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -57,15 +14,31 @@ const breadcrumbs: BreadcrumbItem[] = [
     },
 ];
 
-export default function Index() {
+export default function Index({ petty_cash }: { petty_cash: pettyCash[] }) {
+    const { delete: destroy, processing } = useForm(); // Get the delete method from useForm
+
+    const handleDelete = (voucherNumber: string) => {
+        if (confirm('Are you sure you want to delete this Petty Cash Voucher? This action cannot be undone.')) {
+            destroy(route('dashboard.petty_cash.destroy', voucherNumber), {
+                onSuccess: () => {
+                    toast.success('Petty Cash Voucher deleted successfully!');
+                },
+                onError: (formErrors) => {
+                    console.error('Deletion failed:', formErrors);
+                    toast.error('Failed to delete petty cash record.');
+                },
+            });
+        }
+    };
+
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Petty Cash" />
             <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
                 <div className="flex items-center justify-between">
-                    <h1 className="h1 font-bold">All Petty Cash</h1>
+                    <h1 className="h1 font-bold">All Petty Cash Vouchers</h1>
                     <Link href={route('dashboard.petty-cash.create')}>
-                        <Button>Add New PettyCash Record</Button>
+                        <Button>Add New PettyCash Voucher</Button>
                     </Link>
                 </div>
 
@@ -74,25 +47,30 @@ export default function Index() {
                         <TableCaption>A list of your recent stocks.</TableCaption>
                         <TableHeader>
                             <TableRow>
-                                <TableHead>Petty Cash ID</TableHead>
-                                <TableHead>Status</TableHead>
-                                <TableHead>Method</TableHead>
+                                <TableHead>Voucher Number</TableHead>
+                                <TableHead>Date</TableHead>
                                 <TableHead>Amount</TableHead>
+                                <TableHead>Status</TableHead>
+                                <TableHead>Requested By</TableHead>
+                                <TableHead>Accepted By</TableHead>
                                 <TableHead className="text-center">Actions</TableHead>
                             </TableRow>
                         </TableHeader>
 
                         <TableBody>
-                            {pettyCash.map((pettyCash) => (
-                                <TableRow key={pettyCash.pettycash_id}>
-                                    <TableCell className="font-medium">{pettyCash.pettycash_id}</TableCell>
-                                    <TableCell>{pettyCash.paymentStatus}</TableCell>
-                                    <TableCell>{pettyCash.paymentMethod}</TableCell>
-                                    <TableCell>{pettyCash.totalAmount}</TableCell>
+                            {petty_cash.map((petty_cash) => (
+                                <TableRow>
+                                    <TableCell className="font-medium">{petty_cash.voucher_number}</TableCell>
+                                    <TableCell>{new Date(petty_cash.date).toLocaleDateString()}</TableCell>
+                                    <TableCell>{petty_cash.total_amount}</TableCell>
+                                    <TableCell>{petty_cash.status}</TableCell>
+                                    <TableCell>{petty_cash.requestedBy?.name || 'N/A'}</TableCell>
+                                    <TableCell>{petty_cash.approvedBy?.name || 'N/A'}</TableCell>
+
                                     <TableCell className="pr-0">
                                         <div className="flex items-center justify-center space-x-2">
-                                            <Link href={route('dashboard.petty-cash.edit', { pettycash_id: pettyCash.pettycash_id })}>
-                                                <Button variant={'ghost'} className="flex items-center justify-center p-2 text-neutral-800">
+                                            <Link href={route('dashboard.petty-cash.edit', { voucher_number: petty_cash.voucher_number })}>
+                                                <Button variant="ghost" className="flex items-center justify-center p-2 text-neutral-800">
                                                     <UserPen className="h-5 w-5" />
                                                 </Button>
                                             </Link>

@@ -25,6 +25,21 @@ export interface Employee {
     status: 'active' | 'deactive' | 'pending' | 'terminated';
 }
 
+export interface pettyCash {
+    id: number;
+    voucher_number: number;
+    date: Date;
+    name: String;
+    requested_by_user_id: String;
+    approved_by_user_id: String;
+    description: String;
+    requestedBy?: User; 
+    approvedBy?: User;
+    total_amount: number;
+    status: String;
+    checked: number;
+}
+
 export type Product = {
     id: number;
     name: string;

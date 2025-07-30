@@ -42,7 +42,7 @@ class PettyCashVoucher extends Model
     /**
      * Get the user who requested this voucher.
      */
-    public function requestedBy(): BelongsTo
+    public function requestedBy()
     {
         return $this->belongsTo(User::class, 'requested_by_user_id');
     }
@@ -50,7 +50,7 @@ class PettyCashVoucher extends Model
     /**
      * Get the user who approved this voucher.
      */
-    public function approvedBy(): BelongsTo
+    public function approvedBy()
     {
         return $this->belongsTo(User::class, 'approved_by_user_id');
     }
