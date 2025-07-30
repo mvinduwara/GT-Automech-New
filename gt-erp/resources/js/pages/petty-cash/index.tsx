@@ -16,7 +16,7 @@ import { type BreadcrumbItem } from '@/types';
 import { pettyCash } from '@/types/types';
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { Tooltip } from '@radix-ui/react-tooltip';
-import { BadgeCheck, TrashIcon, UserPen } from 'lucide-react';
+import { ShieldQuestion, TrashIcon, UserPen } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
@@ -138,7 +138,7 @@ export default function Index({ petty_cash }: { petty_cash: pettyCash[] }) {
                                                     <div onClick={() => setSelectedVoucher(petty_cash)}>
                                                         <AlertDialogTrigger asChild>
                                                             <Button variant="outline">
-                                                                <BadgeCheck />
+                                                                <ShieldQuestion />
                                                             </Button>
                                                         </AlertDialogTrigger>
                                                     </div>
@@ -181,7 +181,7 @@ export default function Index({ petty_cash }: { petty_cash: pettyCash[] }) {
                                                     <div onClick={() => setSelectedVoucher(petty_cash)}>
                                                         <AlertDialogTrigger asChild>
                                                             <Button variant="outline">
-                                                                <BadgeCheck />
+                                                                <ShieldQuestion />
                                                             </Button>
                                                         </AlertDialogTrigger>
                                                     </div>
