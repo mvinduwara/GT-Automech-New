@@ -6,7 +6,7 @@ use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
-class IsAdmin
+class IsCashierOrServiceManager
 {
     /**
      * Handle an incoming request.
@@ -15,11 +15,10 @@ class IsAdmin
      */
     public function handle(Request $request, Closure $next): Response
     {
-        // if (auth()->check() && auth()->user()->role === 'admin' && auth()->user()->status === 'active') {
+        // if (auth()->check() && (auth()->user()->role === 'service-manager' || auth()->user()->role === 'cashier') && auth()->user()->status === 'active') {
         //     return $next($request);
         // }
 
-        // abort(403, 'Unauthorized - Admins only.');
-        return $next($request);
+        abort(403, 'Unauthorized - Service Manager or Cashiers only.');
     }
 }

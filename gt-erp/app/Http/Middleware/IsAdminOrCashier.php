@@ -15,9 +15,9 @@ class IsAdminOrCashier
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if (auth()->check() && (auth()->user()->role === 'admin' || auth()->user()->role === 'cashier') && auth()->user()->status === 'active') {
-            return $next($request);
-        }
+        // if (auth()->check() && (auth()->user()->role === 'admin' || auth()->user()->role === 'cashier') && auth()->user()->status === 'active') {
+        //     return $next($request);
+        // }
 
         abort(403, 'Unauthorized - Admins or Cashiers only.');
 

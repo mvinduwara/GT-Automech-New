@@ -33,8 +33,8 @@ export interface pettyCash {
     requested_by_user_id: number;
     approved_by_user_id: number;
     description: String;
-    requestedBy?: User; 
-    approvedBy?: User;
+    requested_by?: User; 
+    approved_by?: User;
     total_amount: number;
     status: String;
     checked: number;

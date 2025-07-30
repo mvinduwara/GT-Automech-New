@@ -15,11 +15,11 @@ class IsCashier
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if (auth()->check() && auth()->user()->role === 'cashier' && auth()->user()->status === 'active') {
-            return $next($request);
-        }
+        // if (auth()->check() && auth()->user()->role === 'cashier' && auth()->user()->status === 'active') {
+        //     return $next($request);
+        // }
 
-        abort(403, 'Unauthorized - Cashier only.');
-        // return $next($request);
+        // abort(403, 'Unauthorized - Cashier only.');
+        return $next($request);
     }
 }
