@@ -3,7 +3,6 @@ import { Calendar } from '@/components/ui/calendar';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem, type User } from '@/types';
 import { Head, useForm, usePage } from '@inertiajs/react';
@@ -24,16 +23,15 @@ const breadcrumbs: BreadcrumbItem[] = [
 
 export default function Create() {
     const { users } = usePage().props as { users: User[] };
+    const { auth } = usePage().props;
 
     const { data, setData, post, processing, errors } = useForm({
         voucher_number: '',
-        date: new Date().toISOString().split('T')[0], // format YYYY-MM-DD
-        requested_by_user_id: '',
+        date: new Date().toISOString().split('T')[0],
+        requested_by_user_id: auth.user.id,
         approved_by_user_id: '',
         name: '',
         total_amount: '',
-        status: '',
-        checked: '',
         description: '',
     });
 
@@ -61,6 +59,36 @@ export default function Create() {
                             {errors.voucher_number && <p className="text-sm text-red-600">{errors.voucher_number}</p>}
                         </div>
 
+                        {/* Name */}
+                        <div className="mb-6 flex w-full flex-col gap-3 px-3 md:w-1/2">
+                            <Label className="h1 font-bold">Name</Label>
+                            <Input placeholder="Enter name" value={data.name} onChange={(e) => setData('name', e.target.value)} />
+                            {errors.name && <p className="text-sm text-red-600">{errors.name}</p>}
+                        </div>
+
+                        {/* Total Amount */}
+                        <div className="mb-6 flex w-full flex-col gap-3 px-3 md:w-1/2">
+                            <Label className="h1 font-bold">Total Amount</Label>
+                            <Input
+                                type="number"
+                                placeholder="Enter amount"
+                                value={data.total_amount}
+                                onChange={(e) => setData('total_amount', e.target.value)}
+                            />
+                            {errors.total_amount && <p className="text-sm text-red-600">{errors.total_amount}</p>}
+                        </div>
+
+                        {/* Description */}
+                        <div className="mb-6 flex w-full flex-col gap-3 px-3 md:w-1/2">
+                            <Label className="h1 font-bold">Description</Label>
+                            <Input
+                                placeholder="Enter description"
+                                value={data.description}
+                                onChange={(e) => setData('description', e.target.value)}
+                            />
+                            {errors.description && <p className="text-sm text-red-600">{errors.description}</p>}
+                        </div>
+
                         {/* Date */}
                         <div className="mb-6 flex w-full flex-col gap-3 px-3 md:w-1/2">
                             <Label className="h1 font-bold">Date</Label>
@@ -81,107 +109,9 @@ export default function Create() {
                                 </PopoverContent>
                             </Popover>
                         </div>
-
-                        {/* Requested User */}
-                        <div className="mb-6 flex w-full flex-col gap-3 px-3 md:w-1/2">
-                            <Label className="h1 font-bold">Requested User</Label>
-                            <Select value={data.requested_by_user_id} onValueChange={(val) => setData('requested_by_user_id', val)}>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Select a user" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {users.map((user) => (
-                                        <SelectItem key={user.id} value={user.id.toString()}>
-                                            {user.name}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                            {errors.requested_by_user_id && <p className="text-sm text-red-600">{errors.requested_by_user_id}</p>}
-                        </div>
-
-                        {/* Approved User */}
-                        <div className="mb-6 flex w-full flex-col gap-3 px-3 md:w-1/2">
-                            <Label className="h1 font-bold">Approved User</Label>
-                            <Select value={data.approved_by_user_id} onValueChange={(val) => setData('approved_by_user_id', val)}>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Select a user" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {users.map((user) => (
-                                        <SelectItem key={user.id} value={user.id.toString()}>
-                                            {user.name}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                            {errors.approved_by_user_id && <p className="text-sm text-red-600">{errors.approved_by_user_id}</p>}
-                        </div>
-
-                        {/* Name */}
-                        <div className="mb-6 flex w-full flex-col gap-3 px-3 md:w-1/2">
-                            <Label className="h1 font-bold">Name</Label>
-                            <Input placeholder="Enter name" value={data.name} onChange={(e) => setData('name', e.target.value)} />
-                            {errors.name && <p className="text-sm text-red-600">{errors.name}</p>}
-                        </div>
-
-                        {/* Total Amount */}
-                        <div className="mb-6 flex w-full flex-col gap-3 px-3 md:w-1/2">
-                            <Label className="h1 font-bold">Total Amount</Label>
-                            <Input
-                                type="number"
-                                placeholder="Enter amount"
-                                value={data.total_amount}
-                                onChange={(e) => setData('total_amount', e.target.value)}
-                            />
-                            {errors.total_amount && <p className="text-sm text-red-600">{errors.total_amount}</p>}
-                        </div>
-
-                        {/* Status */}
-                        <div className="mb-6 flex w-full flex-col gap-3 px-3 md:w-1/2">
-                            <Label className="h1 font-bold">Status</Label>
-                            <Select onValueChange={(val) => setData('status', val)} defaultValue={data.status}>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Select a status" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="pending">Pending</SelectItem>
-                                    <SelectItem value="paid">Paid</SelectItem>
-                                    <SelectItem value="approved">Approved</SelectItem>
-                                    <SelectItem value="rejected">Rejected</SelectItem>
-                                </SelectContent>
-                            </Select>
-                            {errors.status && <p className="text-sm text-red-600">{errors.status}</p>}
-                        </div>
-
-                        {/* Checked */}
-                        <div className="mb-6 flex w-full flex-col gap-3 px-3 md:w-1/2">
-                            <Label className="h1 font-bold">Checked</Label>
-                            <Select onValueChange={(val) => setData('checked', val)} defaultValue={data.checked}>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Select checked status" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="1">Yes</SelectItem>
-                                    <SelectItem value="0">No</SelectItem>
-                                </SelectContent>
-                            </Select>
-                            {errors.checked && <p className="text-sm text-red-600">{errors.checked}</p>}
-                        </div>
-
-                        {/* Description */}
-                        <div className="mb-6 flex w-full flex-col gap-3 px-3 md:w-1/2">
-                            <Label className="h1 font-bold">Description</Label>
-                            <Input
-                                placeholder="Enter description"
-                                value={data.description}
-                                onChange={(e) => setData('description', e.target.value)}
-                            />
-                            {errors.description && <p className="text-sm text-red-600">{errors.description}</p>}
-                        </div>
                     </div>
 
-                    <div className="mx-auto flex w-full max-w-md justify-center">
+                    <div className="mb-6 flex w-full flex-col gap-3 px-3 md:w-1/2">
                         <Button type="submit" className="w-48" disabled={processing}>
                             {processing ? 'Adding...' : 'Add Voucher'}
                         </Button>

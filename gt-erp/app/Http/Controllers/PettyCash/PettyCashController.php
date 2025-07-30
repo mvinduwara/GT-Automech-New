@@ -44,15 +44,17 @@ class PettyCashController extends Controller
         $validated = $request->validate([
             'voucher_number' => 'required|string|unique:petty_cash_vouchers,voucher_number',
             'date' => 'required|date',
-            'requested_by_user_id' => 'required|exists:users,id',
-            'approved_by_user_id' => 'required|exists:users,id',
+            'approved_by_user_id' => 'nullable|exists:users,id',
             'name' => 'required|string',
             'description' => 'nullable|string',
             'total_amount' => 'required|numeric',
-            'status' => 'required|string',
-            'checked' => 'required|boolean',
         ]);
 
+        // Set values from backend logic
+        $validated['requested_by_user_id'] = auth()->id(); // Automatically set
+        $validated['status'] = 'pending'; // Always 'pending'
+        $validated['checked'] = false; // Always false
+        
         PettyCashVoucher::create($validated);
 
         return redirect()->route('dashboard.petty-cash.index')->with('success', 'Voucher created successfully!');
