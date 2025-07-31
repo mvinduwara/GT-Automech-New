@@ -165,6 +165,23 @@ export default function Index({ petty_cash }: { petty_cash: pettyCash[] }) {
                                                                     <p>
                                                                         <strong>Approved By:</strong> {selectedVoucher?.approved_by?.name || 'N/A'}
                                                                     </p>
+
+                                                                    {/* Items section */}
+                                                                    {selectedVoucher?.items?.length ? (
+                                                                        <div className="pt-4">
+                                                                            <strong>Voucher Items:</strong>
+                                                                            <ul className="mt-2 list-inside list-disc space-y-1">
+                                                                                {selectedVoucher.items.map((item) => (
+                                                                                    <li key={item.id}>
+                                                                                        {item.item_description} - {item.quantity} × {item.unit_price}{' '}
+                                                                                        = {item.amount}
+                                                                                    </li>
+                                                                                ))}
+                                                                            </ul>
+                                                                        </div>
+                                                                    ) : (
+                                                                        <p className="text-sm text-muted italic">No items found for this voucher.</p>
+                                                                    )}
                                                                 </div>
                                                             </AlertDialogDescription>
                                                         </AlertDialogHeader>
@@ -208,6 +225,23 @@ export default function Index({ petty_cash }: { petty_cash: pettyCash[] }) {
                                                                     <p>
                                                                         <strong>Approved By:</strong> {selectedVoucher?.approved_by?.name || 'N/A'}
                                                                     </p>
+
+                                                                    {/* Items section */}
+                                                                    {selectedVoucher?.items?.length ? (
+                                                                        <div className="pt-4">
+                                                                            <strong>Voucher Items:</strong>
+                                                                            <ul className="mt-2 list-inside list-disc space-y-1">
+                                                                                {selectedVoucher.items.map((item) => (
+                                                                                    <li key={item.id}>
+                                                                                        {item.item_description} - {item.quantity} × {item.unit_price}{' '}
+                                                                                        = {item.amount}
+                                                                                    </li>
+                                                                                ))}
+                                                                            </ul>
+                                                                        </div>
+                                                                    ) : (
+                                                                        <p className="text-sm text-muted italic">No items found for this voucher.</p>
+                                                                    )}
                                                                 </div>
                                                             </AlertDialogDescription>
                                                         </AlertDialogHeader>

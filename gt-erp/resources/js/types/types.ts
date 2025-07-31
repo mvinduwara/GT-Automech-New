@@ -29,16 +29,28 @@ export interface pettyCash {
     id: number;
     voucher_number: number;
     date: Date;
-    name: String;
+    name: string;
     requested_by_user_id: number;
     approved_by_user_id: number;
-    description: String;
+    description: string;
     requested_by?: User; 
     approved_by?: User;
     total_amount: number;
-    status: String;
+    status: string;
     checked: number;
+    items?: PettyCashItem[];
 }
+
+export interface PettyCashItem {
+    id: number;
+    petty_cash_voucher_id: number;
+    item_description: string;
+    quantity: number;
+    unit_price: number;
+    amount: number;
+    checked: boolean;
+}
+
 
 export type Product = {
     id: number;

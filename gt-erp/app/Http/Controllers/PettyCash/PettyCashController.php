@@ -12,24 +12,13 @@ class PettyCashController extends Controller
 {
     public function index(Request $request)
     {
-        $petty_cash = PettyCashVoucher::with(['requestedBy', 'approvedBy'])
-            ->select(
-                'id',
-                'voucher_number',
-                'date',
-                'name',
-                'requested_by_user_id',
-                'approved_by_user_id',
-                'description',
-                'total_amount',
-                'status',
-                'checked'
-            )
+        $petty_cash = PettyCashVoucher::with(['requestedBy', 'approvedBy', 'items'])
             ->orderBy('created_at', 'desc')
             ->get();
 
         return Inertia::render('petty-cash/index', ['petty_cash' => $petty_cash]);
     }
+
 
     public function create(Request $request)
     {
@@ -54,7 +43,7 @@ class PettyCashController extends Controller
         $validated['requested_by_user_id'] = auth()->id(); // Automatically set
         $validated['status'] = 'pending'; // Always 'pending'
         $validated['checked'] = false; // Always false
-        
+
         PettyCashVoucher::create($validated);
 
         return redirect()->route('dashboard.petty-cash.index')->with('success', 'Voucher created successfully!');
