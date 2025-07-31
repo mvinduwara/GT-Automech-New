@@ -186,8 +186,10 @@ export default function Index({ petty_cash }: { petty_cash: pettyCash[] }) {
                                                             </AlertDialogDescription>
                                                         </AlertDialogHeader>
                                                         <AlertDialogFooter>
-                                                            <Button variant="default">Approve</Button>
-                                                            <Button variant="destructive">Reject</Button>
+                                                            <Button variant="ghost">Approve</Button>
+                                                            <Button className="flex items-center justify-center bg-red-100 p-2 text-red-800 hover:bg-red-200 hover:text-red-950">
+                                                                Reject
+                                                            </Button>
                                                         </AlertDialogFooter>
                                                     </AlertDialogContent>
                                                 </AlertDialog>
@@ -246,8 +248,10 @@ export default function Index({ petty_cash }: { petty_cash: pettyCash[] }) {
                                                             </AlertDialogDescription>
                                                         </AlertDialogHeader>
                                                         <AlertDialogFooter>
-                                                            <Button variant="default">Pending</Button>
-                                                            <Button variant="destructive">Paid</Button>
+                                                            <Button variant="ghost">Pending</Button>
+                                                            <Button className="flex items-center justify-center bg-red-100 p-2 text-red-800 hover:bg-red-200 hover:text-red-950">
+                                                                Paid
+                                                            </Button>
                                                         </AlertDialogFooter>
                                                     </AlertDialogContent>
                                                 </AlertDialog>
