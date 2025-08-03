@@ -64,9 +64,9 @@ export default function Index() {
             <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
                 <div className="flex items-center justify-between">
                     <h1 className="h1 font-bold">All Job Cards</h1>
-                    <Link href={route('dashboard.job-card.open')}>
+                    <a target='_blank' href={'/dashboard/job-card/open'}>
                         <Button>Open New Job Card</Button>
-                    </Link>
+                    </a>
                 </div>
 
                 <div className="flex h-full flex-1 flex-col overflow-y-auto">
@@ -97,9 +97,9 @@ export default function Index() {
                                                 </Button>
                                             </Link>
 
-                                            <Button className="flex items-center justify-center bg-red-100 p-2 text-red-800 hover:bg-red-200 hover:text-red-950">
+                                            {/* <Button className="flex items-center justify-center bg-red-100 p-2 text-red-800 hover:bg-red-200 hover:text-red-950">
                                                 <TrashIcon className="h-5 w-5" />
-                                            </Button>
+                                            </Button> */}
                                         </div>
                                     </TableCell>
                                 </TableRow>

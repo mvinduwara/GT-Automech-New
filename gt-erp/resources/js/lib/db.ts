@@ -1,5 +1,3 @@
-// lib/db.ts - Sample database structure and data
-
 export interface Customer {
     id: number;
     name: string;

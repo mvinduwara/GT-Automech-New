@@ -208,13 +208,13 @@ export default function Index() {
                                                 <Button variant="outline" size="sm" asChild>
                                                     <Link href={route('dashboard.vehicle.edit', vehicle.id)}>Edit</Link>
                                                 </Button>
-                                                <Button
+                                                {/* <Button
                                                     variant="destructive"
                                                     size="sm"
                                                     onClick={() => handleDelete(vehicle.id)}
                                                 >
                                                     Delete
-                                                </Button>
+                                                </Button> */}
                                             </div>
                                         </TableCell>
                                     </TableRow>

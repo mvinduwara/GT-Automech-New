@@ -55,6 +55,12 @@ const mainNavItems: (NavItem & { roles?: string[] })[] = [
         title: 'Jobcard',
         href: '/dashboard/job-card',
         icon: IdCard,
+        roles: [USER_ROLES.ADMIN],
+    },
+    {
+        title: 'Jobcard',
+        href: '/dashboard/job-card',
+        icon: IdCard,
         roles: [USER_ROLES.CASHIER],
     },
     {

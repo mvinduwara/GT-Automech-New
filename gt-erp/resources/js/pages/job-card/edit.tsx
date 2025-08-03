@@ -9,10 +9,6 @@ const breadcrumbs: BreadcrumbItem[] = [
         href: '/dashboard/job-card',
     },
     {
-        title: 'New Job card',
-        href: '/dashboard/job-card/create',
-    },
-    {
         title: 'Edit Job Card',
         href: '/dashboard/job-card/edit',
     },

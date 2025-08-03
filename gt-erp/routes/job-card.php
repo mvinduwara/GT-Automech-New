@@ -4,7 +4,7 @@ use App\Http\Controllers\JobCard\JobCardController;
 use App\Http\Controllers\OpenJobCardController;
 use Illuminate\Support\Facades\Route;
 
-Route::middleware(['auth', 'is_service_manager'])->group(function () {
+Route::middleware(['auth'])->group(function () {
     Route::prefix('dashboard/job-card')
         ->name('dashboard.job-card.')
         ->group(function () {

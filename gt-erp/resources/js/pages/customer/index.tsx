@@ -157,12 +157,12 @@ export default function Index() {
                                                     <UserPen className="h-5 w-5" />
                                                 </Button>
                                             </Link>
-                                            <Button
+                                            {/* <Button
                                                 className="flex items-center justify-center bg-red-100 p-2 text-red-800 hover:bg-red-200 hover:text-red-950"
                                                 onClick={() => handleDelete(customer.id)}
                                             >
                                                 <Trash2 className="h-5 w-5" />
-                                            </Button>
+                                            </Button> */}
                                         </div>
                                     </TableCell>
                                 </TableRow>
