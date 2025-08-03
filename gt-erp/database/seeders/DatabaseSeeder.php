@@ -24,6 +24,10 @@ class DatabaseSeeder extends Seeder
             ProductSeeder::class,
             StockSeeder::class,
             PettyCashVoucherSeeder::class,
+            CustomerSeeder::class,
+            VehicleBrandSeeder::class,
+            VehicleModelSeeder::class,
+            VehicleSeeder::class,
         ]);
     }
 }

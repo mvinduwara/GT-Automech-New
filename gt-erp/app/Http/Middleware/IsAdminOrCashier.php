@@ -19,7 +19,7 @@ class IsAdminOrCashier
         //     return $next($request);
         // }
 
-        abort(403, 'Unauthorized - Admins or Cashiers only.');
-
+        // abort(403, 'Unauthorized - Admins or Cashiers only.');
+        return $next($request);
     }
 }

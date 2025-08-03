@@ -19,6 +19,7 @@ class IsCashierOrServiceManager
         //     return $next($request);
         // }
 
-        abort(403, 'Unauthorized - Service Manager or Cashiers only.');
+        // abort(403, 'Unauthorized - Service Manager or Cashiers only.');
+        return $next($request);
     }
 }

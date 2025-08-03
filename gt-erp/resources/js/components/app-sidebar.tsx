@@ -55,6 +55,12 @@ const mainNavItems: (NavItem & { roles?: string[] })[] = [
         title: 'Jobcard',
         href: '/dashboard/job-card',
         icon: IdCard,
+        roles: [USER_ROLES.CASHIER],
+    },
+    {
+        title: 'Jobcard',
+        href: '/dashboard/job-card',
+        icon: IdCard,
         roles: [USER_ROLES.SERVICEMANAGER],
     },
     {
@@ -87,6 +93,12 @@ const mainNavItems: (NavItem & { roles?: string[] })[] = [
         href: '/dashboard/employee',
         icon: UserRoundCheck,
         roles: [USER_ROLES.ADMIN],
+    },
+    {
+        title: 'Vehicle',
+        href: '/dashboard/vehicle',
+        icon: UserRoundCheck,
+        roles: [USER_ROLES.CASHIER],
     },
 ];
 

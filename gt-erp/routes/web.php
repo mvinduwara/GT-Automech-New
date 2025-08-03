@@ -24,4 +24,4 @@ require __DIR__ . '/petty-cash.php';
 require __DIR__ . '/job-card.php';
 require __DIR__ . '/user.php';
 require __DIR__ . '/employee.php';
-// require __DIR__ . '/customer.php';
+require __DIR__ . '/vehicle.php';

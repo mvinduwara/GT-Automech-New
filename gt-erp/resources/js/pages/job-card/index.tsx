@@ -64,8 +64,8 @@ export default function Index() {
             <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
                 <div className="flex items-center justify-between">
                     <h1 className="h1 font-bold">All Job Cards</h1>
-                    <Link href={route('dashboard.job-card.create')}>
-                        <Button>Add New Job Card</Button>
+                    <Link href={route('dashboard.job-card.open')}>
+                        <Button>Open New Job Card</Button>
                     </Link>
                 </div>
 
