@@ -99,3 +99,21 @@ export interface Stock {
     product: Product;
     alternative_product: Product | null;
 }
+
+// Add this to your existing pettyCash interface
+export interface pettyCash {
+    voucher_number: string;
+    date: string;
+    total_amount: number;
+    status: string;
+    requested_by?: { name: string };
+    approved_by?: { name: string };
+    items?: {
+        id: number;
+        item_description: string;
+        quantity: number;
+        unit_price: number;
+        amount: number;
+        checked: boolean;
+    }[];
+}

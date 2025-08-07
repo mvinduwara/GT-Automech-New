@@ -22,6 +22,7 @@ import { Tooltip } from '@radix-ui/react-tooltip';
 import { ShieldQuestion, TrashIcon, UserPen, X } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { router } from '@inertiajs/react';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -32,7 +33,7 @@ const breadcrumbs: BreadcrumbItem[] = [
 
 export default function Index({ petty_cash }: { petty_cash: pettyCash[] }) {
     console.log('petty_cash', petty_cash);
-    const { delete: destroy, processing } = useForm(); // Get the delete method from useForm
+    const { delete: destroy, processing } = useForm();
     const [selectedVoucher, setSelectedVoucher] = useState<pettyCash | null>(null);
 
     const { auth } = usePage().props;
@@ -40,7 +41,7 @@ export default function Index({ petty_cash }: { petty_cash: pettyCash[] }) {
 
     const handleDelete = (voucherNumber: string) => {
         if (confirm('Are you sure you want to delete this Petty Cash Voucher? This action cannot be undone.')) {
-            destroy(route('dashboard.petty_cash.destroy', voucherNumber), {
+            destroy(route('dashboard.petty-cash.destroy', voucherNumber), {
                 onSuccess: () => {
                     toast.success('Petty Cash Voucher deleted successfully!');
                 },
@@ -51,6 +52,28 @@ export default function Index({ petty_cash }: { petty_cash: pettyCash[] }) {
             });
         }
     };
+
+    const handleToggleChecked = async (itemId: number, newChecked: boolean) => {
+    try {
+        router.patch(route('dashboard.petty-cash.item.update-checked', { item: itemId }), 
+            { checked: newChecked },
+            {
+                onSuccess: () => {
+                    toast.success(`Item ${newChecked ? 'checked' : 'unchecked'} successfully`);
+                },
+                onError: (errors) => {
+                    console.error('Update failed:', errors);
+                    toast.error('Failed to update checked status');
+                },
+                preserveState: true,
+                preserveScroll: true,
+            }
+        );
+    } catch (error) {
+        console.error('Toggle error:', error);
+        toast.error('Failed to update checked status');
+    }
+};
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -67,7 +90,7 @@ export default function Index({ petty_cash }: { petty_cash: pettyCash[] }) {
 
                 <div className="flex h-full flex-1 flex-col overflow-y-auto">
                     <Table className="w-full table-fixed">
-                        <TableCaption>A list of your recent stocks.</TableCaption>
+                        <TableCaption>A list of your recent petty cash vouchers.</TableCaption>
                         <TableHeader>
                             <TableRow>
                                 <TableHead>Voucher Number</TableHead>
@@ -92,10 +115,10 @@ export default function Index({ petty_cash }: { petty_cash: pettyCash[] }) {
                                                 petty_cash.status === 'approved'
                                                     ? 'secondary'
                                                     : petty_cash.status === 'paid'
-                                                        ? 'default'
-                                                        : petty_cash.status === 'rejected'
-                                                            ? 'destructive'
-                                                            : 'outline'
+                                                      ? 'default'
+                                                      : petty_cash.status === 'rejected'
+                                                        ? 'destructive'
+                                                        : 'outline'
                                             }
                                         >
                                             {petty_cash.status}
@@ -119,8 +142,6 @@ export default function Index({ petty_cash }: { petty_cash: pettyCash[] }) {
                                         </TooltipContent>
                                     </Tooltip>
 
-                                    {/* <TableCell>{petty_cash.approved_by?.name || 'N/A'}</TableCell> */}
-
                                     <TableCell className="pr-0">
                                         <div className="flex items-center justify-center space-x-2">
                                             {auth?.user?.role === 'cashier' && (
@@ -131,7 +152,10 @@ export default function Index({ petty_cash }: { petty_cash: pettyCash[] }) {
                                                 </Link>
                                             )}
                                             {auth?.user?.role === 'cashier' && (
-                                                <Button className="flex items-center justify-center bg-red-100 p-2 text-red-800 hover:bg-red-200 hover:text-red-950">
+                                                <Button
+                                                    onClick={() => handleDelete(petty_cash.voucher_number)}
+                                                    className="flex items-center justify-center bg-red-100 p-2 text-red-800 hover:bg-red-200 hover:text-red-950"
+                                                >
                                                     <TrashIcon className="h-5 w-5" />
                                                 </Button>
                                             )}
@@ -146,7 +170,9 @@ export default function Index({ petty_cash }: { petty_cash: pettyCash[] }) {
                                                         </AlertDialogTrigger>
                                                     </div>
                                                     <AlertDialogContent>
-                                                        <AlertDialogCancel className='ml-auto'><X /></AlertDialogCancel>
+                                                        <AlertDialogCancel className="ml-auto">
+                                                            <X />
+                                                        </AlertDialogCancel>
                                                         <AlertDialogHeader>
                                                             <AlertDialogTitle>Approve or Reject Petty Cash Voucher ?</AlertDialogTitle>
                                                             <AlertDialogDescription>
@@ -170,19 +196,30 @@ export default function Index({ petty_cash }: { petty_cash: pettyCash[] }) {
                                                                         <strong>Approved By:</strong> {selectedVoucher?.approved_by?.name || 'N/A'}
                                                                     </p>
 
-                                                                    {/* Items section */}
                                                                     {selectedVoucher?.items?.length ? (
                                                                         <div className="pt-4">
                                                                             <strong>Voucher Items:</strong>
-                                                                            <ul className="mt-2 list-inside list-disc space-y-1">
+                                                                            <ul className="mt-2 space-y-3">
                                                                                 {selectedVoucher.items.map((item) => (
-                                                                                    <li key={item.id} className='flex flex-col justify-start items-start gap-2 pb-2 border-b-2 border-b-neutral-300'>
+                                                                                    <li
+                                                                                        key={item.id}
+                                                                                        className="flex flex-col items-start justify-start gap-2 border-b-2 border-b-neutral-300 pb-2"
+                                                                                    >
                                                                                         <p>
-                                                                                            {item.item_description} - {item.quantity} × {item.unit_price}{' '}
-                                                                                            = {item.amount}</p>
+                                                                                            {item.item_description} - {item.quantity} ×{' '}
+                                                                                            {item.unit_price} = {item.amount}
+                                                                                        </p>
                                                                                         <div className="flex items-center space-x-2">
-                                                                                            <Switch id="airplane-mode" onCheckedChange={()=>!item.checked}/>
-                                                                                            <Label htmlFor="airplane-mode">Checked</Label>
+                                                                                            <Switch
+                                                                                                id={`checked-switch-${item.id}`}
+                                                                                                checked={item.checked}
+                                                                                                onCheckedChange={(checked) =>
+                                                                                                    handleToggleChecked(item.id, checked)
+                                                                                                }
+                                                                                            />
+                                                                                            <Label htmlFor={`checked-switch-${item.id}`}>
+                                                                                                Checked
+                                                                                            </Label>
                                                                                         </div>
                                                                                     </li>
                                                                                 ))}
@@ -214,7 +251,9 @@ export default function Index({ petty_cash }: { petty_cash: pettyCash[] }) {
                                                         </AlertDialogTrigger>
                                                     </div>
                                                     <AlertDialogContent>
-                                                        <AlertDialogCancel className='ml-auto'><X /></AlertDialogCancel>
+                                                        <AlertDialogCancel className="ml-auto">
+                                                            <X />
+                                                        </AlertDialogCancel>
                                                         <AlertDialogHeader>
                                                             <AlertDialogTitle>Status Change to Pending or Paid ?</AlertDialogTitle>
                                                             <AlertDialogDescription>
@@ -238,7 +277,6 @@ export default function Index({ petty_cash }: { petty_cash: pettyCash[] }) {
                                                                         <strong>Approved By:</strong> {selectedVoucher?.approved_by?.name || 'N/A'}
                                                                     </p>
 
-                                                                    {/* Items section */}
                                                                     {selectedVoucher?.items?.length ? (
                                                                         <div className="pt-4">
                                                                             <strong>Voucher Items:</strong>
@@ -271,13 +309,6 @@ export default function Index({ petty_cash }: { petty_cash: pettyCash[] }) {
                                 </TableRow>
                             ))}
                         </TableBody>
-
-                        {/* <TableFooter>
-                            <TableRow>
-                                <TableCell colSpan={4}>Total</TableCell>
-                                <TableCell>$2,500.00</TableCell>
-                            </TableRow>
-                        </TableFooter> */}
                     </Table>
                 </div>
             </div>
