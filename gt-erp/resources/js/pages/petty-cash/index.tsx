@@ -1,5 +1,6 @@
 import {
     AlertDialog,
+    AlertDialogCancel,
     AlertDialogContent,
     AlertDialogDescription,
     AlertDialogFooter,
@@ -9,6 +10,8 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import AppLayout from '@/layouts/app-layout';
@@ -16,7 +19,7 @@ import { type BreadcrumbItem } from '@/types';
 import { pettyCash } from '@/types/types';
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { Tooltip } from '@radix-ui/react-tooltip';
-import { ShieldQuestion, TrashIcon, UserPen } from 'lucide-react';
+import { ShieldQuestion, TrashIcon, UserPen, X } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
@@ -89,10 +92,10 @@ export default function Index({ petty_cash }: { petty_cash: pettyCash[] }) {
                                                 petty_cash.status === 'approved'
                                                     ? 'secondary'
                                                     : petty_cash.status === 'paid'
-                                                      ? 'default'
-                                                      : petty_cash.status === 'rejected'
-                                                        ? 'destructive'
-                                                        : 'outline'
+                                                        ? 'default'
+                                                        : petty_cash.status === 'rejected'
+                                                            ? 'destructive'
+                                                            : 'outline'
                                             }
                                         >
                                             {petty_cash.status}
@@ -143,6 +146,7 @@ export default function Index({ petty_cash }: { petty_cash: pettyCash[] }) {
                                                         </AlertDialogTrigger>
                                                     </div>
                                                     <AlertDialogContent>
+                                                        <AlertDialogCancel className='ml-auto'><X /></AlertDialogCancel>
                                                         <AlertDialogHeader>
                                                             <AlertDialogTitle>Approve or Reject Petty Cash Voucher ?</AlertDialogTitle>
                                                             <AlertDialogDescription>
@@ -172,9 +176,14 @@ export default function Index({ petty_cash }: { petty_cash: pettyCash[] }) {
                                                                             <strong>Voucher Items:</strong>
                                                                             <ul className="mt-2 list-inside list-disc space-y-1">
                                                                                 {selectedVoucher.items.map((item) => (
-                                                                                    <li key={item.id}>
-                                                                                        {item.item_description} - {item.quantity} × {item.unit_price}{' '}
-                                                                                        = {item.amount}
+                                                                                    <li key={item.id} className='flex flex-col justify-start items-start gap-2 pb-2 border-b-2 border-b-neutral-300'>
+                                                                                        <p>
+                                                                                            {item.item_description} - {item.quantity} × {item.unit_price}{' '}
+                                                                                            = {item.amount}</p>
+                                                                                        <div className="flex items-center space-x-2">
+                                                                                            <Switch id="airplane-mode" onCheckedChange={()=>!item.checked}/>
+                                                                                            <Label htmlFor="airplane-mode">Checked</Label>
+                                                                                        </div>
                                                                                     </li>
                                                                                 ))}
                                                                             </ul>
@@ -205,6 +214,7 @@ export default function Index({ petty_cash }: { petty_cash: pettyCash[] }) {
                                                         </AlertDialogTrigger>
                                                     </div>
                                                     <AlertDialogContent>
+                                                        <AlertDialogCancel className='ml-auto'><X /></AlertDialogCancel>
                                                         <AlertDialogHeader>
                                                             <AlertDialogTitle>Status Change to Pending or Paid ?</AlertDialogTitle>
                                                             <AlertDialogDescription>
