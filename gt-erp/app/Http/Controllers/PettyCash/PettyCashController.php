@@ -19,7 +19,6 @@ class PettyCashController extends Controller
         return Inertia::render('petty-cash/index', ['petty_cash' => $petty_cash]);
     }
 
-
     public function create(Request $request)
     {
         $users = User::select('id', 'name')->where('status', 'active')->get();
@@ -28,6 +27,7 @@ class PettyCashController extends Controller
             'users' => $users
         ]);
     }
+
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -55,5 +55,97 @@ class PettyCashController extends Controller
         return Inertia::render('petty-cash/edit', [
             'petty_cash' => $pettyCash,
         ]);
+    }
+
+    public function destroy($voucher_number)
+    {
+        $pettyCash = PettyCashVoucher::where('voucher_number', $voucher_number)->firstOrFail();
+        $pettyCash->delete();
+
+        return redirect()->route('dashboard.petty-cash.index')->with('success', 'Voucher deleted successfully!');
+    }
+
+    // Admin methods for approve/reject
+    public function approve($voucher_number)
+    {
+        // Check if user is admin
+        if (auth()->user()->role !== 'admin') {
+            return back()->withErrors(['error' => 'Unauthorized. Admin access required.']);
+        }
+
+        $pettyCash = PettyCashVoucher::where('voucher_number', $voucher_number)->firstOrFail();
+
+        // Check if already approved or rejected
+        if ($pettyCash->status !== 'pending') {
+            return back()->withErrors(['error' => 'Only pending vouchers can be approved.']);
+        }
+
+        $pettyCash->update([
+            'status' => 'approved',
+            'approved_by_user_id' => auth()->id(),
+        ]);
+
+        return back()->with('success', 'Voucher approved successfully!');
+    }
+
+    public function reject($voucher_number)
+    {
+        // Check if user is admin
+        if (auth()->user()->role !== 'admin') {
+            return back()->withErrors(['error' => 'Unauthorized. Admin access required.']);
+        }
+
+        $pettyCash = PettyCashVoucher::where('voucher_number', $voucher_number)->firstOrFail();
+
+        // Check if already approved or rejected
+        if ($pettyCash->status !== 'pending') {
+            return back()->withErrors(['error' => 'Only pending vouchers can be rejected.']);
+        }
+
+        $pettyCash->update([
+            'status' => 'rejected',
+            'approved_by_user_id' => auth()->id(),
+        ]);
+
+        return back()->with('success', 'Voucher rejected successfully!');
+    }
+
+    // Service Manager methods for pending/paid
+    public function setPending($voucher_number)
+    {
+        // Check if user is service manager
+        if (auth()->user()->role !== 'service-manager') {
+            return back()->withErrors(['error' => 'Unauthorized. Service Manager access required.']);
+        }
+
+        $pettyCash = PettyCashVoucher::where('voucher_number', $voucher_number)->firstOrFail();
+
+        // Only allow approved vouchers to be set to pending
+        if ($pettyCash->status !== 'approved') {
+            return back()->withErrors(['error' => 'Only approved vouchers can be set to pending.']);
+        }
+
+        $pettyCash->update(['status' => 'pending']);
+
+        return back()->with('success', 'Voucher status changed to pending!');
+    }
+
+    public function setPaid($voucher_number)
+    {
+        // Check if user is service manager
+        if (auth()->user()->role !== 'service-manager') {
+            return back()->withErrors(['error' => 'Unauthorized. Service Manager access required.']);
+        }
+
+        $pettyCash = PettyCashVoucher::where('voucher_number', $voucher_number)->firstOrFail();
+
+        // Only allow approved vouchers to be set to paid
+        if ($pettyCash->status !== 'approved') {
+            return back()->withErrors(['error' => 'Only approved vouchers can be set to paid.']);
+        }
+
+        $pettyCash->update(['status' => 'paid']);
+
+        return back()->with('success', 'Voucher marked as paid!');
     }
 }

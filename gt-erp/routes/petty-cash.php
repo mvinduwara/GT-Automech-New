@@ -13,6 +13,14 @@ Route::middleware(['auth'])->group(function () {
             // Add the item update route here (accessible to all authenticated users)
             Route::patch('/items/{item}/update-checked', [PettyCashItemController::class, 'updateCheckedStatus'])
                 ->name('item.update-checked');
+            
+            // Admin routes for approve/reject (role check in controller)
+            Route::patch('/{voucher_number}/approve', [PettyCashController::class, 'approve'])->name('approve');
+            Route::patch('/{voucher_number}/reject', [PettyCashController::class, 'reject'])->name('reject');
+            
+            // Service manager routes for status changes (role check in controller)
+            Route::patch('/{voucher_number}/set-pending', [PettyCashController::class, 'setPending'])->name('set-pending');
+            Route::patch('/{voucher_number}/set-paid', [PettyCashController::class, 'setPaid'])->name('set-paid');
         });
 });
 

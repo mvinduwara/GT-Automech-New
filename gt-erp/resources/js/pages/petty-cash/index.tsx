@@ -17,12 +17,11 @@ import { TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { pettyCash } from '@/types/types';
-import { Head, Link, useForm, usePage } from '@inertiajs/react';
+import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
 import { Tooltip } from '@radix-ui/react-tooltip';
 import { ShieldQuestion, TrashIcon, UserPen, X } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { router } from '@inertiajs/react';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -35,6 +34,7 @@ export default function Index({ petty_cash }: { petty_cash: pettyCash[] }) {
     console.log('petty_cash', petty_cash);
     const { delete: destroy, processing } = useForm();
     const [selectedVoucher, setSelectedVoucher] = useState<pettyCash | null>(null);
+    const [isDialogOpen, setIsDialogOpen] = useState(false);
 
     const { auth } = usePage().props;
     console.log('auth', auth);
@@ -54,26 +54,105 @@ export default function Index({ petty_cash }: { petty_cash: pettyCash[] }) {
     };
 
     const handleToggleChecked = async (itemId: number, newChecked: boolean) => {
-    try {
-        router.patch(route('dashboard.petty-cash.item.update-checked', { item: itemId }), 
-            { checked: newChecked },
+        try {
+            router.patch(
+                route('dashboard.petty-cash.item.update-checked', { item: itemId }),
+                { checked: newChecked },
+                {
+                    onSuccess: () => {
+                        toast.success(`Item ${newChecked ? 'checked' : 'unchecked'} successfully`);
+                    },
+                    onError: (errors) => {
+                        console.error('Update failed:', errors);
+                        toast.error('Failed to update checked status');
+                    },
+                    preserveState: true,
+                    preserveScroll: true,
+                },
+            );
+        } catch (error) {
+            console.error('Toggle error:', error);
+            toast.error('Failed to update checked status');
+        }
+    };
+
+    // Admin approve/reject handlers
+    const handleApprove = (voucherNumber: string) => {
+        router.patch(
+            route('dashboard.petty-cash.approve', voucherNumber),
+            {},
             {
                 onSuccess: () => {
-                    toast.success(`Item ${newChecked ? 'checked' : 'unchecked'} successfully`);
+                    toast.success('Voucher approved successfully!');
+                    setIsDialogOpen(false);
                 },
                 onError: (errors) => {
-                    console.error('Update failed:', errors);
-                    toast.error('Failed to update checked status');
+                    console.error('Approval failed:', errors);
+                    toast.error(errors?.error || 'Failed to approve voucher');
                 },
                 preserveState: true,
                 preserveScroll: true,
             }
         );
-    } catch (error) {
-        console.error('Toggle error:', error);
-        toast.error('Failed to update checked status');
-    }
-};
+    };
+
+    const handleReject = (voucherNumber: string) => {
+        router.patch(
+            route('dashboard.petty-cash.reject', voucherNumber),
+            {},
+            {
+                onSuccess: () => {
+                    toast.success('Voucher rejected successfully!');
+                    setIsDialogOpen(false);
+                },
+                onError: (errors) => {
+                    console.error('Rejection failed:', errors);
+                    toast.error(errors?.error || 'Failed to reject voucher');
+                },
+                preserveState: true,
+                preserveScroll: true,
+            }
+        );
+    };
+
+    // Service Manager pending/paid handlers
+    const handleSetPending = (voucherNumber: string) => {
+        router.patch(
+            route('dashboard.petty-cash.set-pending', voucherNumber),
+            {},
+            {
+                onSuccess: () => {
+                    toast.success('Voucher status changed to pending!');
+                    setIsDialogOpen(false);
+                },
+                onError: (errors) => {
+                    console.error('Status change failed:', errors);
+                    toast.error(errors?.error || 'Failed to change status to pending');
+                },
+                preserveState: true,
+                preserveScroll: true,
+            }
+        );
+    };
+
+    const handleSetPaid = (voucherNumber: string) => {
+        router.patch(
+            route('dashboard.petty-cash.set-paid', voucherNumber),
+            {},
+            {
+                onSuccess: () => {
+                    toast.success('Voucher marked as paid!');
+                    setIsDialogOpen(false);
+                },
+                onError: (errors) => {
+                    console.error('Status change failed:', errors);
+                    toast.error(errors?.error || 'Failed to mark as paid');
+                },
+                preserveState: true,
+                preserveScroll: true,
+            }
+        );
+    };
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -161,7 +240,7 @@ export default function Index({ petty_cash }: { petty_cash: pettyCash[] }) {
                                             )}
 
                                             {auth?.user?.role === 'admin' && (
-                                                <AlertDialog>
+                                                <AlertDialog open={isDialogOpen && selectedVoucher?.voucher_number === petty_cash.voucher_number} onOpenChange={setIsDialogOpen}>
                                                     <div onClick={() => setSelectedVoucher(petty_cash)}>
                                                         <AlertDialogTrigger asChild>
                                                             <Button variant="outline">
@@ -232,8 +311,18 @@ export default function Index({ petty_cash }: { petty_cash: pettyCash[] }) {
                                                             </AlertDialogDescription>
                                                         </AlertDialogHeader>
                                                         <AlertDialogFooter>
-                                                            <Button variant="ghost">Approve</Button>
-                                                            <Button className="flex items-center justify-center bg-red-100 p-2 text-red-800 hover:bg-red-200 hover:text-red-950">
+                                                            <Button 
+                                                                variant="ghost"
+                                                                onClick={() => selectedVoucher && handleApprove(selectedVoucher.voucher_number)}
+                                                                disabled={processing}
+                                                            >
+                                                                Approve
+                                                            </Button>
+                                                            <Button 
+                                                                className="flex items-center justify-center bg-red-100 p-2 text-red-800 hover:bg-red-200 hover:text-red-950"
+                                                                onClick={() => selectedVoucher && handleReject(selectedVoucher.voucher_number)}
+                                                                disabled={processing}
+                                                            >
                                                                 Reject
                                                             </Button>
                                                         </AlertDialogFooter>
@@ -242,7 +331,7 @@ export default function Index({ petty_cash }: { petty_cash: pettyCash[] }) {
                                             )}
 
                                             {auth?.user?.role === 'service-manager' && (
-                                                <AlertDialog>
+                                                <AlertDialog open={isDialogOpen && selectedVoucher?.voucher_number === petty_cash.voucher_number} onOpenChange={setIsDialogOpen}>
                                                     <div onClick={() => setSelectedVoucher(petty_cash)}>
                                                         <AlertDialogTrigger asChild>
                                                             <Button variant="outline">
@@ -296,8 +385,18 @@ export default function Index({ petty_cash }: { petty_cash: pettyCash[] }) {
                                                             </AlertDialogDescription>
                                                         </AlertDialogHeader>
                                                         <AlertDialogFooter>
-                                                            <Button variant="ghost">Pending</Button>
-                                                            <Button className="flex items-center justify-center bg-red-100 p-2 text-red-800 hover:bg-red-200 hover:text-red-950">
+                                                            <Button 
+                                                                variant="ghost"
+                                                                onClick={() => selectedVoucher && handleSetPending(selectedVoucher.voucher_number)}
+                                                                disabled={processing}
+                                                            >
+                                                                Pending
+                                                            </Button>
+                                                            <Button 
+                                                                className="flex items-center justify-center bg-red-100 p-2 text-red-800 hover:bg-red-200 hover:text-red-950"
+                                                                onClick={() => selectedVoucher && handleSetPaid(selectedVoucher.voucher_number)}
+                                                                disabled={processing}
+                                                            >
                                                                 Paid
                                                             </Button>
                                                         </AlertDialogFooter>
