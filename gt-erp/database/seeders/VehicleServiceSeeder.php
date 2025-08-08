@@ -15,7 +15,6 @@ class VehicleServiceSeeder extends Seeder
         $services = [
             [
                 'name' => 'Body Wash',
-                'base_price' => 500,
                 'status' => 'active',
                 'options' => [
                     ['name' => 'Basic Wash', 'price' => 500, 'status' => 'active'],
@@ -25,7 +24,6 @@ class VehicleServiceSeeder extends Seeder
             ],
             [
                 'name' => 'Under Wash',
-                'base_price' => 300,
                 'status' => 'active',
                 'options' => [
                     ['name' => 'Standard Under Wash', 'price' => 300, 'status' => 'active'],
@@ -34,7 +32,6 @@ class VehicleServiceSeeder extends Seeder
             ],
             [
                 'name' => 'QD (Quick Detailing)',
-                'base_price' => 1000,
                 'status' => 'active',
                 'options' => [
                     ['name' => 'Interior QD', 'price' => 1000, 'status' => 'active'],
@@ -44,7 +41,6 @@ class VehicleServiceSeeder extends Seeder
             ],
             [
                 'name' => 'Change Oil and Filter',
-                'base_price' => 2000,
                 'status' => 'active',
                 'options' => [
                     ['name' => 'Standard Service', 'price' => 2000, 'status' => 'active'],
@@ -53,7 +49,6 @@ class VehicleServiceSeeder extends Seeder
             ],
             [
                 'name' => 'Under Wax',
-                'base_price' => 1500,
                 'status' => 'active',
                 'options' => [
                     ['name' => 'Standard Under Wax', 'price' => 1500, 'status' => 'active'],
@@ -62,7 +57,6 @@ class VehicleServiceSeeder extends Seeder
             ],
             [
                 'name' => 'Body Gas',
-                'base_price' => 800,
                 'status' => 'active',
                 'options' => [
                     ['name' => 'Standard Body Gas', 'price' => 800, 'status' => 'active'],
@@ -71,7 +65,6 @@ class VehicleServiceSeeder extends Seeder
             ],
             [
                 'name' => 'Cleaning Engine',
-                'base_price' => 2500,
                 'status' => 'active',
                 'options' => [
                     ['name' => 'Basic Engine Clean', 'price' => 2500, 'status' => 'active'],
@@ -80,7 +73,6 @@ class VehicleServiceSeeder extends Seeder
             ],
             [
                 'name' => 'Cleaning Brake',
-                'base_price' => 1800,
                 'status' => 'active',
                 'options' => [
                     ['name' => 'Brake System Clean', 'price' => 1800, 'status' => 'active'],
@@ -89,7 +81,6 @@ class VehicleServiceSeeder extends Seeder
             ],
             [
                 'name' => 'Mechanic Inspection',
-                'base_price' => 1000,
                 'status' => 'active',
                 'options' => [
                     ['name' => 'Basic Inspection', 'price' => 1000, 'status' => 'active'],
@@ -99,7 +90,6 @@ class VehicleServiceSeeder extends Seeder
             ],
             [
                 'name' => 'Scanning',
-                'base_price' => 1500,
                 'status' => 'active',
                 'options' => [
                     ['name' => 'Basic OBD Scan', 'price' => 1500, 'status' => 'active'],
@@ -112,7 +102,6 @@ class VehicleServiceSeeder extends Seeder
         foreach ($services as $serviceData) {
             $service = VehicleService::create([
                 'name' => $serviceData['name'],
-                'base_price' => $serviceData['base_price'],
                 'status' => $serviceData['status'],
             ]);
 

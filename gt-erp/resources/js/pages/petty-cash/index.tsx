@@ -35,6 +35,7 @@ export default function Index({ petty_cash }: { petty_cash: pettyCash[] }) {
     const { delete: destroy, processing } = useForm();
     const [selectedVoucher, setSelectedVoucher] = useState<pettyCash | null>(null);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [itemStatus, setItemStatus] = useState(petty_cash.items?.status);
 
     const { auth } = usePage().props;
     console.log('auth', auth);
@@ -291,7 +292,7 @@ export default function Index({ petty_cash }: { petty_cash: pettyCash[] }) {
                                                                                         <div className="flex items-center space-x-2">
                                                                                             <Switch
                                                                                                 id={`checked-switch-${item.id}`}
-                                                                                                checked={item.checked}
+                                                                                                checked={itemStatus}
                                                                                                 onCheckedChange={(checked) =>
                                                                                                     handleToggleChecked(item.id, checked)
                                                                                                 }

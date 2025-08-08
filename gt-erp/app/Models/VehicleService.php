@@ -13,7 +13,6 @@ class VehicleService extends Model
 
     protected $fillable = [
         'name',
-        'base_price',
         'status',
     ];
 
