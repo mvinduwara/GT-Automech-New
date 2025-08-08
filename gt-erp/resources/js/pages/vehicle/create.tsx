@@ -51,6 +51,8 @@ export default function Create() {
         make_year: '',
     });
 
+    console.log("brands, models",brands, models)
+
     const { flash } = usePage().props;
 
     useEffect(() => {
@@ -98,7 +100,7 @@ export default function Create() {
                             onValueChange={(value) => {
                                 setData('vehicle_brand_id', value);
                                 // Reset model when brand changes
-                                setData('vehicle_model_id', '');
+                                // setData('vehicle_model_id', '');
                             }}
                         >
                             <SelectTrigger className="w-full">

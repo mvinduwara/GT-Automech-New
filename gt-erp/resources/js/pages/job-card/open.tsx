@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { Head } from "@inertiajs/react";
-import { Plus, ChevronRight, ChevronLeft, Eye, FileText } from 'lucide-react';
+import { Plus, ChevronRight, ChevronLeft, Eye, FileText, DollarSign, Gauge } from 'lucide-react';
 import {
   customers,
   vehicles,
@@ -33,6 +33,7 @@ import { Button } from '@/components/ui/button';
 interface JobCardData {
   customer?: Customer;
   vehicle?: Vehicle;
+  mileage?: number;
   oilBrand?: OilBrand;
   oil?: Oil;
   oilFilter?: OilFilter;
@@ -42,6 +43,7 @@ interface JobCardData {
     option?: ServiceOption;
     ignored: boolean;
   }>;
+  advancePayment?: number;
 }
 
 interface SelectionButtonProps {
@@ -51,11 +53,11 @@ interface SelectionButtonProps {
   className?: string;
 }
 
-const SelectionButton: React.FC<SelectionButtonProps> = ({ 
-  isSelected, 
-  onClick, 
-  children, 
-  className = '' 
+const SelectionButton: React.FC<SelectionButtonProps> = ({
+  isSelected,
+  onClick,
+  children,
+  className = ''
 }) => {
   const getSelectedStyles = () => {
     return 'bg-primary/15 shadow-violet-200 text-slate-800';
@@ -69,9 +71,8 @@ const SelectionButton: React.FC<SelectionButtonProps> = ({
   return (
     <button
       onClick={onClick}
-      className={`!w-full transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1 !p-6 rounded-2xl border-2 text-left ${
-        isSelected ? getSelectedStyles() : getUnselectedStyles()
-      } ${className}`}
+      className={`!w-full transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1 !p-6 rounded-2xl border-2 text-left ${isSelected ? getSelectedStyles() : getUnselectedStyles()
+        } ${className}`}
     >
       {children}
     </button>
@@ -87,13 +88,17 @@ export default function Open() {
       ignored: false
     }))
   });
-  
+
   // Search states
   const [customerSearch, setCustomerSearch] = useState('');
   const [vehicleSearch, setVehicleSearch] = useState('');
   const [showCustomerOptions, setShowCustomerOptions] = useState(false);
   const [showVehicleOptions, setShowVehicleOptions] = useState(false);
   const [showServiceModal, setShowServiceModal] = useState(false);
+
+  // New states for mileage and advance payment
+  const [mileageInput, setMileageInput] = useState('');
+  const [advancePaymentInput, setAdvancePaymentInput] = useState('');
 
   // Search results
   const [customerResults, setCustomerResults] = useState<Customer[]>([]);
@@ -133,6 +138,20 @@ export default function Open() {
     setShowVehicleOptions(false);
   };
 
+  const handleMileageUpdate = () => {
+    const mileage = parseInt(mileageInput);
+    if (mileage && mileage > 0) {
+      setJobCardData(prev => ({ ...prev, mileage }));
+    }
+  };
+
+  const handleAdvancePaymentUpdate = () => {
+    const advancePayment = parseFloat(advancePaymentInput);
+    if (advancePayment >= 0) {
+      setJobCardData(prev => ({ ...prev, advancePayment }));
+    }
+  };
+
   const selectOilBrand = (brand: OilBrand) => {
     setJobCardData(prev => ({ ...prev, oilBrand: brand, oil: undefined }));
   };
@@ -170,11 +189,13 @@ export default function Open() {
     switch (currentStep) {
       case 1: return jobCardData.customer;
       case 2: return jobCardData.vehicle;
-      case 3: return jobCardData.oilBrand;
-      case 4: return jobCardData.oil;
-      case 5: return jobCardData.oilFilter;
-      case 6: return jobCardData.drainPlugSeal;
-      case 7: return true;
+      case 3: return jobCardData.mileage && jobCardData.mileage > 0;
+      case 4: return jobCardData.oilBrand;
+      case 5: return jobCardData.oil;
+      case 6: return jobCardData.oilFilter;
+      case 7: return jobCardData.drainPlugSeal;
+      case 8: return true;
+      case 9: return true; // Advance payment is optional
       default: return false;
     }
   };
@@ -184,14 +205,20 @@ export default function Open() {
     if (jobCardData.oil) total += jobCardData.oil.price;
     if (jobCardData.oilFilter) total += jobCardData.oilFilter.price;
     if (jobCardData.drainPlugSeal) total += jobCardData.drainPlugSeal.price;
-    
+
     jobCardData.services.forEach(item => {
       if (!item.ignored && item.option) {
         total += item.option.price;
       }
     });
-    
+
     return total;
+  };
+
+  const getRemainingAmount = () => {
+    const total = getTotalAmount();
+    const advance = jobCardData.advancePayment || 0;
+    return total - advance;
   };
 
   const renderStepContent = () => {
@@ -219,13 +246,13 @@ export default function Open() {
                 <button disabled
                   onClick={() => window.open('/customer/create', '_blank')}
                   className="px-8 py-4 bg-emerald-500 text-white rounded-xl hover:bg-emerald-600 transition-all duration-200 flex items-center gap-3 text-lg font-medium shadow-lg"
-                  // className="px-8 py-4 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white rounded-xl hover:from-emerald-600 hover:to-emerald-700 transition-all duration-200 flex items-center gap-3 text-lg font-medium shadow-lg"
+                // className="px-8 py-4 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white rounded-xl hover:from-emerald-600 hover:to-emerald-700 transition-all duration-200 flex items-center gap-3 text-lg font-medium shadow-lg"
                 >
                   <Plus className="w-5 h-5" />
                   Add Customer
                 </button>
               </div>
-              
+
               {showCustomerOptions && customerResults.length > 0 && (
                 <div className="absolute top-full left-0 right-20 bg-white border-2 border-slate-200 rounded-xl mt-3 shadow-2xl z-10 overflow-hidden">
                   <div className="w-full flex flex-col">
@@ -270,13 +297,13 @@ export default function Open() {
                 <button disabled
                   onClick={() => window.open('/vehicle/create', '_blank')}
                   className="px-8 py-4 bg-emerald-500 text-white rounded-xl hover:bg-emerald-600 transition-all duration-200 flex items-center gap-3 text-lg font-medium shadow-lg"
-                  // className="px-8 py-4 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white rounded-xl hover:from-emerald-600 hover:to-emerald-700 transition-all duration-200 flex items-center gap-3 text-lg font-medium shadow-lg"
+                // className="px-8 py-4 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white rounded-xl hover:from-emerald-600 hover:to-emerald-700 transition-all duration-200 flex items-center gap-3 text-lg font-medium shadow-lg"
                 >
                   <Plus className="w-5 h-5" />
                   Add Vehicle
                 </button>
               </div>
-              
+
               {showVehicleOptions && vehicleResults.length > 0 && (
                 <div className="absolute top-full left-0 right-20 bg-white border-2 border-slate-200 rounded-xl mt-3 shadow-2xl z-10 overflow-hidden">
                   <div className="flex flex-col">
@@ -303,6 +330,43 @@ export default function Open() {
           <div className="space-y-8">
             <div className="text-center">
               <h2 className="text-3xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent mb-2">
+                Enter Vehicle Mileage
+              </h2>
+              <p className="text-slate-600 text-lg">Current odometer reading</p>
+            </div>
+            <div className="max-w-md mx-auto">
+              <div className="relative">
+                <Gauge className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400 w-6 h-6" />
+                <input
+                  type="number"
+                  placeholder="Enter mileage (km)"
+                  value={mileageInput}
+                  onChange={(e) => setMileageInput(e.target.value)}
+                  onBlur={handleMileageUpdate}
+                  className="w-full pl-14 pr-6 py-4 text-lg border-2 border-slate-200 rounded-xl focus:border-blue-500 focus:outline-none transition-all duration-200 bg-white/50 backdrop-blur-sm shadow-sm"
+                  min="0"
+                  step="1"
+                />
+              </div>
+              <div className="text-center mt-6">
+                <p className="text-slate-500 text-sm">Enter the current mileage shown on the odometer</p>
+                {jobCardData.mileage && (
+                  <div className="mt-4 p-4 bg-emerald-50 border border-emerald-200 rounded-xl">
+                    <p className="text-emerald-700 font-semibold">
+                      Current Mileage: {jobCardData.mileage.toLocaleString()} km
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        );
+
+      case 4:
+        return (
+          <div className="space-y-8">
+            <div className="text-center">
+              <h2 className="text-3xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent mb-2">
                 Select Oil Brand
               </h2>
               <p className="text-slate-600 text-lg">Choose your preferred oil brand</p>
@@ -322,7 +386,7 @@ export default function Open() {
           </div>
         );
 
-      case 4:
+      case 5:
         const availableOils = jobCardData.oilBrand ? getOilsByBrand(jobCardData.oilBrand.id) : [];
         return (
           <div className="space-y-8">
@@ -350,7 +414,7 @@ export default function Open() {
           </div>
         );
 
-      case 5:
+      case 6:
         return (
           <div className="space-y-8">
             <div className="text-center">
@@ -380,7 +444,7 @@ export default function Open() {
           </div>
         );
 
-      case 6:
+      case 7:
         return (
           <div className="space-y-8">
             <div className="text-center">
@@ -410,7 +474,7 @@ export default function Open() {
           </div>
         );
 
-      case 7:
+      case 8:
         return (
           <div className="space-y-8">
             <div className="text-center">
@@ -423,11 +487,10 @@ export default function Open() {
               {jobCardData.services.map(({ service, option, ignored }) => (
                 <div
                   key={service.id}
-                  className={`p-8 rounded-2xl border-2 transition-all duration-300 shadow-lg ${
-                    ignored 
-                      ? 'border-red-200 bg-gradient-to-r from-red-50 to-rose-50' 
+                  className={`p-8 rounded-2xl border-2 transition-all duration-300 shadow-lg ${ignored
+                      ? 'border-red-200 bg-gradient-to-r from-red-50 to-rose-50'
                       : 'border-slate-200 bg-white'
-                  }`}
+                    }`}
                 >
                   <div className="flex items-center justify-between mb-6">
                     <h3 className={`text-xl font-semibold ${ignored ? 'text-red-700' : 'text-slate-800'}`}>
@@ -435,16 +498,15 @@ export default function Open() {
                     </h3>
                     <Button
                       onClick={() => updateService(service.id, undefined, !ignored)}
-                      className={`px-6 py-3 rounded-xl text-sm font-semibold transition-all duration-200 ${
-                        ignored
+                      className={`px-6 py-3 rounded-xl text-sm font-semibold transition-all duration-200 ${ignored
                           ? 'bg-emerald-500 text-white hover:bg-emerald-600 shadow-lg'
                           : 'bg-red-100 text-red-500 hover:bg-red-200 hover:text-red-800 shadow-lg'
-                      }`}
+                        }`}
                     >
                       {ignored ? 'Include Service' : 'Ignore Service'}
                     </Button>
                   </div>
-                  
+
                   {!ignored && (
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       {service.options.map(serviceOption => (
@@ -468,6 +530,67 @@ export default function Open() {
           </div>
         );
 
+      case 9:
+        return (
+          <div className="space-y-8">
+            <div className="text-center">
+              <h2 className="text-3xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent mb-2">
+                Advance Payment
+              </h2>
+              <p className="text-slate-600 text-lg">Optional: Add advance payment or skip to pay later</p>
+            </div>
+
+            <div className="max-w-2xl mx-auto">
+              <div className="bg-gradient-to-br from-slate-50 to-blue-50 p-8 rounded-2xl border border-slate-200 mb-8">
+                <div className="text-center mb-6">
+                  <div className="text-2xl font-bold text-slate-800 mb-2">Total Amount</div>
+                  <div className="text-4xl font-bold bg-gradient-to-r from-emerald-600 to-emerald-700 bg-clip-text text-transparent">
+                    {formatCurrency(getTotalAmount())}
+                  </div>
+                </div>
+
+                <div className="relative mb-6">
+                  <DollarSign className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400 w-6 h-6" />
+                  <input
+                    type="number"
+                    placeholder="Enter advance payment (optional)"
+                    value={advancePaymentInput}
+                    onChange={(e) => setAdvancePaymentInput(e.target.value)}
+                    onBlur={handleAdvancePaymentUpdate}
+                    className="w-full pl-14 pr-6 py-4 text-lg border-2 border-slate-200 rounded-xl focus:border-blue-500 focus:outline-none transition-all duration-200 bg-white/50 backdrop-blur-sm shadow-sm"
+                    min="0"
+                    max={getTotalAmount()}
+                    step="0.01"
+                  />
+                </div>
+
+                {jobCardData.advancePayment !== undefined && jobCardData.advancePayment > 0 && (
+                  <div className="grid grid-cols-2 gap-4 text-center">
+                    <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
+                      <div className="text-sm text-emerald-600 font-semibold">Advance Payment</div>
+                      <div className="text-xl font-bold text-emerald-700">
+                        {formatCurrency(jobCardData.advancePayment)}
+                      </div>
+                    </div>
+                    <div className="bg-orange-50 border border-orange-200 rounded-xl p-4">
+                      <div className="text-sm text-orange-600 font-semibold">Remaining Amount</div>
+                      <div className="text-xl font-bold text-orange-700">
+                        {formatCurrency(getRemainingAmount())}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <div className="text-center mt-6">
+                  <p className="text-slate-500 text-sm">
+                    You can skip this step and collect payment upon completion
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+
       default:
         return null;
     }
@@ -478,7 +601,7 @@ export default function Open() {
       <h3 className="text-2xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent mb-8">
         Job Card Summary
       </h3>
-      
+
       <div className="space-y-6">
         {jobCardData.customer && (
           <div className="border-b border-slate-200 pb-6">
@@ -493,6 +616,9 @@ export default function Open() {
             <h4 className="font-semibold text-slate-600 mb-3 text-sm uppercase tracking-wider">Vehicle</h4>
             <div className="text-lg font-semibold text-slate-800">{jobCardData.vehicle.vehicle_number}</div>
             <div className="text-slate-600">{jobCardData.vehicle.make} {jobCardData.vehicle.model}</div>
+            {jobCardData.mileage && (
+              <div className="text-sm text-slate-500 mt-1">Mileage: {jobCardData.mileage.toLocaleString()} km</div>
+            )}
           </div>
         )}
 
@@ -541,7 +667,17 @@ export default function Open() {
             </div>
           </div>
 
-          {currentStep === 7 && (
+          {jobCardData.advancePayment !== undefined && jobCardData.advancePayment > 0 && (
+            <div className="mt-4 p-4 bg-emerald-50 border border-emerald-200 rounded-xl">
+              <div className="text-sm text-emerald-600 font-semibold">Advance Paid</div>
+              <div className="text-lg font-bold text-emerald-700">{formatCurrency(jobCardData.advancePayment)}</div>
+              <div className="text-sm text-orange-600 mt-1">
+                Remaining: {formatCurrency(getRemainingAmount())}
+              </div>
+            </div>
+          )}
+
+          {currentStep === 9 && (
             <div className="mt-8">
               <Button
                 onClick={() => window.open('/dashboard/job-card/invoice', '_blank')}
@@ -575,7 +711,7 @@ export default function Open() {
                 ×
               </button>
             </div>
-            
+
             <div className="space-y-4">
               {jobCardData.services
                 .filter(({ ignored }) => !ignored)
@@ -594,7 +730,7 @@ export default function Open() {
                     </div>
                   </div>
                 ))}
-              
+
               <div className="border-t border-slate-300 pt-6 mt-8">
                 <div className="flex justify-between items-center text-2xl font-bold">
                   <span className="text-slate-800">Services Total:</span>
@@ -627,16 +763,18 @@ export default function Open() {
             </h1>
             <div className="flex items-center mt-4 text-lg">
               <span className="bg-primary text-white px-4 py-2 rounded-lg font-semibold shadow-lg">
-                Step {currentStep} of 7
+                Step {currentStep} of 9
               </span>
               <span className="ml-4 text-slate-600 font-medium">
                 {currentStep === 1 && 'Customer Selection'}
                 {currentStep === 2 && 'Vehicle Selection'}
-                {currentStep === 3 && 'Oil Brand Selection'}
-                {currentStep === 4 && 'Oil Selection'}
-                {currentStep === 5 && 'Oil Filter Selection'}
-                {currentStep === 6 && 'Drain Plug Seal Selection'}
-                {currentStep === 7 && 'Service Customization'}
+                {currentStep === 3 && 'Vehicle Mileage'}
+                {currentStep === 4 && 'Oil Brand Selection'}
+                {currentStep === 5 && 'Oil Selection'}
+                {currentStep === 6 && 'Oil Filter Selection'}
+                {currentStep === 7 && 'Drain Plug Seal Selection'}
+                {currentStep === 8 && 'Service Customization'}
+                {currentStep === 9 && 'Advance Payment'}
               </span>
             </div>
           </div>
@@ -645,22 +783,22 @@ export default function Open() {
             <div className="lg:col-span-2">
               <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl p-8 min-h-[600px] border border-slate-200">
                 {renderStepContent()}
-                
+
                 <div className="flex justify-between mt-12 pt-8 border-t border-slate-200">
                   <Button
-                  variant={'ghost'}
+                    variant={'ghost'}
                     onClick={() => setCurrentStep(Math.max(1, currentStep - 1))}
                     disabled={currentStep === 1}
                   >
                     <ChevronLeft className="w-5 h-5" />
                     Back
                   </Button>
-                  
+
                   <Button
-                    onClick={() => setCurrentStep(Math.min(7, currentStep + 1))}
-                    disabled={!canProceedToNext() || currentStep === 7}
+                    onClick={() => setCurrentStep(Math.min(9, currentStep + 1))}
+                    disabled={!canProceedToNext() || currentStep === 9}
                   >
-                    Next
+                    {currentStep === 8 ? 'Next: Payment' : currentStep === 9 ? 'Complete' : 'Next'}
                     <ChevronRight className="w-5 h-5" />
                   </Button>
                 </div>

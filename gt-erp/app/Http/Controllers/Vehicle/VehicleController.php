@@ -68,7 +68,7 @@ class VehicleController extends Controller
     public function create(): \Inertia\Response
     {
         $brands = VehicleBrand::orderBy('name')->get(['id', 'name']);
-        $models = VehicleModel::orderBy('name')->get(['id', 'name']);
+        $models = VehicleModel::orderBy('name')->get(['id', 'name','vehicle_brand_id']);
         return Inertia::render('vehicle/create', [
             'brands' => $brands,
             'models' => $models,
