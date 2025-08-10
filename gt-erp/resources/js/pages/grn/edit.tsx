@@ -5,21 +5,25 @@ import { Head } from '@inertiajs/react';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
-        title: 'Stock',
-        href: '/dashboard/stock',
+        title: 'GRN',
+        href: '/dashboard/grn',
     },
     {
-        title: 'Create',
-        href: '/dashboard/create',
-    }
+        title: 'New GRN',
+        href: '/dashboard/grn/create',
+    },
+    {
+        title: 'Edit GRN',
+        href: '/dashboard/grn/edit',
+    },
 ];
 
-export default function Create() {
+export default function Update() {
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="Stock Create" />
+            <Head title="Edit GRN" />
             <div className="flex h-full flex-1 flex-col gap-4 rounded-xl p-4 overflow-x-auto">
-
+                <h1>Edit GRN</h1>
             </div>
         </AppLayout>
     );

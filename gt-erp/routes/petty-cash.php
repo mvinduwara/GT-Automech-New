@@ -1,0 +1,36 @@
+<?php
+
+use App\Http\Controllers\PettyCash\PettyCashController;
+use App\Http\Controllers\PettyCashItemController;
+use Illuminate\Support\Facades\Route;
+
+Route::middleware(['auth'])->group(function () {
+    Route::prefix('dashboard/petty-cash')
+        ->name('dashboard.petty-cash.')
+        ->group(function () {
+            Route::get('/', [PettyCashController::class, 'index'])->name('index');
+            
+            // Add the item update route here (accessible to all authenticated users)
+            Route::patch('/items/{item}/update-checked', [PettyCashItemController::class, 'updateCheckedStatus'])
+                ->name('item.update-checked');
+            
+            // Admin routes for approve/reject (role check in controller)
+            Route::patch('/{voucher_number}/approve', [PettyCashController::class, 'approve'])->name('approve');
+            Route::patch('/{voucher_number}/reject', [PettyCashController::class, 'reject'])->name('reject');
+            
+            // Service manager routes for status changes (role check in controller)
+            Route::patch('/{voucher_number}/set-pending', [PettyCashController::class, 'setPending'])->name('set-pending');
+            Route::patch('/{voucher_number}/set-paid', [PettyCashController::class, 'setPaid'])->name('set-paid');
+        });
+});
+
+Route::middleware(['auth', 'is_cashier'])->group(function () {
+    Route::prefix('dashboard/petty-cash')
+        ->name('dashboard.petty-cash.')
+        ->group(function () {
+            Route::get('/create', [PettyCashController::class, 'create'])->name('create');
+            Route::get('/{voucher_number}/edit', [PettyCashController::class, 'edit'])->name('edit');
+            Route::post('/', [PettyCashController::class, 'store'])->name('store');
+            Route::delete('/{voucher_number}', [PettyCashController::class, 'destroy'])->name('destroy');
+        });
+});

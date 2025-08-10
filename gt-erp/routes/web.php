@@ -4,22 +4,13 @@ use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
 Route::get('/', function () {
-    return Inertia::render('welcome');
+    return redirect('login');
 })->name('home');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', function () {
         return Inertia::render('dashboard');
     })->name('dashboard');
-    Route::get('products', function () {
-        return Inertia::render('products');
-    })->name('products');
-    Route::get('users', function () {
-        return Inertia::render('users');
-    })->name('users');
-    Route::get('pasindu', function () {
-        return Inertia::render('pasindu');
-    })->name('pasindu');
 });
 
 require __DIR__ . '/settings.php';
@@ -27,3 +18,10 @@ require __DIR__ . '/auth.php';
 require __DIR__ . '/stock.php';
 require __DIR__ . '/purchase-order.php';
 require __DIR__ . '/customer.php';
+require __DIR__ . '/grn.php';
+require __DIR__ . '/invoice.php';
+require __DIR__ . '/petty-cash.php';
+require __DIR__ . '/job-card.php';
+require __DIR__ . '/user.php';
+require __DIR__ . '/employee.php';
+require __DIR__ . '/vehicle.php';
