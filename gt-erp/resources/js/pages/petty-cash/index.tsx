@@ -93,7 +93,7 @@ export default function Index({ petty_cash }: { petty_cash: pettyCash[] }) {
                 },
                 preserveState: true,
                 preserveScroll: true,
-            }
+            },
         );
     };
 
@@ -112,7 +112,7 @@ export default function Index({ petty_cash }: { petty_cash: pettyCash[] }) {
                 },
                 preserveState: true,
                 preserveScroll: true,
-            }
+            },
         );
     };
 
@@ -132,7 +132,7 @@ export default function Index({ petty_cash }: { petty_cash: pettyCash[] }) {
                 },
                 preserveState: true,
                 preserveScroll: true,
-            }
+            },
         );
     };
 
@@ -151,7 +151,7 @@ export default function Index({ petty_cash }: { petty_cash: pettyCash[] }) {
                 },
                 preserveState: true,
                 preserveScroll: true,
-            }
+            },
         );
     };
 
@@ -241,7 +241,10 @@ export default function Index({ petty_cash }: { petty_cash: pettyCash[] }) {
                                             )}
 
                                             {auth?.user?.role === 'admin' && (
-                                                <AlertDialog open={isDialogOpen && selectedVoucher?.voucher_number === petty_cash.voucher_number} onOpenChange={setIsDialogOpen}>
+                                                <AlertDialog
+                                                    open={isDialogOpen && selectedVoucher?.voucher_number === petty_cash.voucher_number}
+                                                    onOpenChange={setIsDialogOpen}
+                                                >
                                                     <div onClick={() => setSelectedVoucher(petty_cash)}>
                                                         <AlertDialogTrigger asChild>
                                                             <Button variant="outline">
@@ -311,28 +314,33 @@ export default function Index({ petty_cash }: { petty_cash: pettyCash[] }) {
                                                                 </div>
                                                             </AlertDialogDescription>
                                                         </AlertDialogHeader>
-                                                        <AlertDialogFooter>
-                                                            <Button 
-                                                                variant="ghost"
-                                                                onClick={() => selectedVoucher && handleApprove(selectedVoucher.voucher_number)}
-                                                                disabled={processing}
-                                                            >
-                                                                Approve
-                                                            </Button>
-                                                            <Button 
-                                                                className="flex items-center justify-center bg-red-100 p-2 text-red-800 hover:bg-red-200 hover:text-red-950"
-                                                                onClick={() => selectedVoucher && handleReject(selectedVoucher.voucher_number)}
-                                                                disabled={processing}
-                                                            >
-                                                                Reject
-                                                            </Button>
-                                                        </AlertDialogFooter>
+                                                        {selectedVoucher?.status === 'pending' && (
+                                                            <AlertDialogFooter>
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    onClick={() => selectedVoucher && handleApprove(selectedVoucher.voucher_number)}
+                                                                    disabled={processing}
+                                                                >
+                                                                    Approve
+                                                                </Button>
+                                                                <Button
+                                                                    className="flex items-center justify-center bg-red-100 p-2 text-red-800 hover:bg-red-200 hover:text-red-950"
+                                                                    onClick={() => selectedVoucher && handleReject(selectedVoucher.voucher_number)}
+                                                                    disabled={processing}
+                                                                >
+                                                                    Reject
+                                                                </Button>
+                                                            </AlertDialogFooter>
+                                                        )}
                                                     </AlertDialogContent>
                                                 </AlertDialog>
                                             )}
 
                                             {auth?.user?.role === 'service-manager' && (
-                                                <AlertDialog open={isDialogOpen && selectedVoucher?.voucher_number === petty_cash.voucher_number} onOpenChange={setIsDialogOpen}>
+                                                <AlertDialog
+                                                    open={isDialogOpen && selectedVoucher?.voucher_number === petty_cash.voucher_number}
+                                                    onOpenChange={setIsDialogOpen}
+                                                >
                                                     <div onClick={() => setSelectedVoucher(petty_cash)}>
                                                         <AlertDialogTrigger asChild>
                                                             <Button variant="outline">
@@ -385,22 +393,26 @@ export default function Index({ petty_cash }: { petty_cash: pettyCash[] }) {
                                                                 </div>
                                                             </AlertDialogDescription>
                                                         </AlertDialogHeader>
-                                                        <AlertDialogFooter>
-                                                            <Button 
-                                                                variant="ghost"
-                                                                onClick={() => selectedVoucher && handleSetPending(selectedVoucher.voucher_number)}
-                                                                disabled={processing}
-                                                            >
-                                                                Pending
-                                                            </Button>
-                                                            <Button 
-                                                                className="flex items-center justify-center bg-red-100 p-2 text-red-800 hover:bg-red-200 hover:text-red-950"
-                                                                onClick={() => selectedVoucher && handleSetPaid(selectedVoucher.voucher_number)}
-                                                                disabled={processing}
-                                                            >
-                                                                Paid
-                                                            </Button>
-                                                        </AlertDialogFooter>
+                                                        {selectedVoucher?.status === 'pending' && (
+                                                            <AlertDialogFooter>
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    onClick={() =>
+                                                                        selectedVoucher && handleSetPending(selectedVoucher.voucher_number)
+                                                                    }
+                                                                    disabled={processing}
+                                                                >
+                                                                    Pending
+                                                                </Button>
+                                                                <Button
+                                                                    className="flex items-center justify-center bg-red-100 p-2 text-red-800 hover:bg-red-200 hover:text-red-950"
+                                                                    onClick={() => selectedVoucher && handleSetPaid(selectedVoucher.voucher_number)}
+                                                                    disabled={processing}
+                                                                >
+                                                                    Paid
+                                                                </Button>
+                                                            </AlertDialogFooter>
+                                                        )}
                                                     </AlertDialogContent>
                                                 </AlertDialog>
                                             )}
