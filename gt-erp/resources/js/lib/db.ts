@@ -1,90 +1,4 @@
-export interface Customer {
-    id: number;
-    name: string;
-    mobile: string;
-    email?: string;
-    address?: string;
-    created_at: string;
-}
-
-export interface Vehicle {
-    id: number;
-    customer_id: number;
-    vehicle_number: string;
-    make: string;
-    model: string;
-    year: number;
-    engine_capacity?: string;
-    created_at: string;
-}
-
-export interface OilBrand {
-    id: number;
-    name: string;
-    logo?: string;
-    created_at: string;
-}
-
-export interface Oil {
-    id: number;
-    brand_id: number;
-    name: string;
-    type: string; // e.g., "0w20 4L", "5w30 4L"
-    price: number;
-    created_at: string;
-}
-
-export interface OilFilter {
-    id: number;
-    name: string;
-    price: number;
-    vehicle_compatibility?: string;
-    created_at: string;
-}
-
-export interface DrainPlugSeal {
-    id: number;
-    name: string;
-    price: number;
-    vehicle_compatibility?: string;
-    created_at: string;
-}
-
-export interface Service {
-    id: number;
-    name: string;
-    base_price: number;
-    options: ServiceOption[];
-}
-
-export interface ServiceOption {
-    id: number;
-    service_id: number;
-    name: string;
-    price: number;
-}
-
-export interface JobCard {
-    id: number;
-    customer_id: number;
-    vehicle_id: number;
-    oil_id: number;
-    oil_filter_id: number;
-    drain_plug_seal_id: number;
-    services: JobCardService[];
-    total_amount: number;
-    status: 'open' | 'in_progress' | 'completed';
-    created_at: string;
-}
-
-export interface JobCardService {
-    id: number;
-    job_card_id: number;
-    service_id: number;
-    option_id?: number;
-    price: number;
-    ignored: boolean;
-}
+import { Customer, DrainPlugSeal, Oil, OilBrand, OilFilter, Service, Vehicle } from "@/types/types";
 
 // Sample Data
 export const customers: Customer[] = [
@@ -455,17 +369,17 @@ export const services: Service[] = [
 ];
 
 // Helper functions
-export const searchCustomers = (mobile: string): Customer[] => {
-    return customers.filter(customer =>
-        customer.mobile.includes(mobile) || customer.name.toLowerCase().includes(mobile.toLowerCase())
-    );
-};
+// export const searchCustomers = (mobile: string): Customer[] => {
+//     return customers.filter(customer =>
+//         customer.mobile.includes(mobile) || customer.name.toLowerCase().includes(mobile.toLowerCase())
+//     );
+// };
 
-export const searchVehicles = (vehicleNumber: string): Vehicle[] => {
-    return vehicles.filter(vehicle =>
-        vehicle.vehicle_number.toLowerCase().includes(vehicleNumber.toLowerCase())
-    );
-};
+// export const searchVehicles = (vehicleNumber: string): Vehicle[] => {
+//     return vehicles.filter(vehicle =>
+//         vehicle.vehicle_number.toLowerCase().includes(vehicleNumber.toLowerCase())
+//     );
+// };
 
 export const getOilsByBrand = (brandId: number): Oil[] => {
     return oils.filter(oil => oil.brand_id === brandId);

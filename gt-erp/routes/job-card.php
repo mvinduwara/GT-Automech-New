@@ -1,7 +1,7 @@
 <?php
 
 use App\Http\Controllers\JobCard\JobCardController;
-use App\Http\Controllers\OpenJobCardController;
+use App\Http\Controllers\JobCard\OpenJobCardController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth'])->group(function () {

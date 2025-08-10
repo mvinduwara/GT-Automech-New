@@ -166,4 +166,44 @@ class VehicleController extends Controller
             return redirect()->back()->with('error', 'Failed to delete vehicle. Please try again.');
         }
     }
+
+    public function search(Request $request)
+    {
+        try {
+            $request->validate([
+                'vehicleNumber' => 'required|string|min:3|max:255',
+            ]);
+
+            $query = $request->query('vehicleNumber');
+            $searchTerm = '%' . trim($query) . '%';
+
+            $vehicles = Vehicle::with(['brand', 'model'])
+                ->where('vehicle_no', 'like', $searchTerm)
+                ->take(10)
+                ->get();
+
+            $message = $vehicles->isEmpty() ? 'No vehicles found.' : 'vehicles retrieved successfully.';
+
+            return response()->json([
+                'message' => $message,
+                'data' => $vehicles->map(function ($vehicle) {
+                    return [
+                        'id' => $vehicle->id,
+                        'vehicle_no' => $vehicle->vehicle_no,
+                        'vehicle_brand_id' => $vehicle->vehicle_brand_id,
+                        'vehicle_model_id' => $vehicle->vehicle_model_id,
+                        'make_year' => $vehicle->make_year,
+                        'brand' => $vehicle->brand,
+                        'model' => $vehicle->model,
+                    ];
+                })->toArray(),
+            ], 200);
+        } catch (\Exception $e) {
+            Log::error('Error in searchCustomer: ' . $e->getMessage());
+            return response()->json([
+                'message' => 'An error occurred while searching for vehicles.',
+                'data' => [],
+            ], 500);
+        }
+    }
 }

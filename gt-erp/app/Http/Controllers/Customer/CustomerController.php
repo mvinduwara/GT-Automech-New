@@ -107,4 +107,48 @@ class CustomerController extends Controller
             return redirect()->back()->with('error', 'Failed to delete customer.');
         }
     }
+
+    public function search(Request $request)
+    {
+        try {
+            $request->validate([
+                'mobile' => 'required|string|min:3|max:255',
+            ]);
+
+            $query = $request->query('mobile');
+            $searchTerm = '%' . trim($query) . '%';
+
+            $customers = Customer::select(
+                'id',
+                'title',
+                'name',
+                'mobile',
+                'address'
+            )
+                ->where('mobile', 'like', $searchTerm)
+                ->take(10)
+                ->get();
+
+            $message = $customers->isEmpty() ? 'No customers found.' : 'customers retrieved successfully.';
+
+            return response()->json([
+                'message' => $message,
+                'data' => $customers->map(function ($customer) {
+                    return [
+                        'id' => $customer->id,
+                        'title' => $customer->title,
+                        'name' => $customer->name,
+                        'mobile' => $customer->mobile,
+                        'address' => $customer->address,
+                    ];
+                })->toArray(),
+            ], 200);
+        } catch (\Exception $e) {
+            Log::error('Error in searchCustomer: ' . $e->getMessage());
+            return response()->json([
+                'message' => 'An error occurred while searching for customers.',
+                'data' => [],
+            ], 500);
+        }
+    }
 }

@@ -16,21 +16,7 @@ import { Pagination, PaginationContent, PaginationItem, PaginationLink } from '@
 import { useForm } from '@inertiajs/react';
 import { useEffect } from 'react';
 import { toast } from 'sonner';
-
-// Define the types for the props passed from the controller
-type Vehicle = {
-    id: number;
-    vehicle_no: string;
-    make_year: number;
-    brand: {
-        id: number;
-        name: string;
-    };
-    model: {
-        id: number;
-        name: string;
-    };
-};
+import { Vehicle } from '@/types/types';
 
 type PageProps = {
     vehicles: {

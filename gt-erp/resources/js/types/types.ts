@@ -117,3 +117,102 @@ export interface pettyCash {
         checked: boolean;
     }[];
 }
+
+export interface Customer {
+    id: number;
+    name: string;
+    mobile: string;
+    email?: string;
+    address?: string;
+    created_at: string;
+}
+
+export interface VehicleBrand  {
+    id: number;
+    name: string;
+};
+
+export interface VehicleModel  {
+    id: number;
+    name: string;
+    vehicle_brand_id: number;
+    brand: VehicleBrand;
+};
+
+export interface Vehicle {
+    id: number;
+    vehicle_no: string;
+    vehicle_brand_id: number;
+    vehicle_model_id: number;
+    make_year: number;
+    brand: VehicleBrand;
+    model: VehicleModel;
+}
+
+export interface OilBrand {
+    id: number;
+    name: string;
+    logo?: string;
+    created_at: string;
+}
+
+export interface Oil {
+    id: number;
+    brand_id: number;
+    name: string;
+    type: string; // e.g., "0w20 4L", "5w30 4L"
+    price: number;
+    created_at: string;
+}
+
+export interface OilFilter {
+    id: number;
+    name: string;
+    price: number;
+    vehicle_compatibility?: string;
+    created_at: string;
+}
+
+export interface DrainPlugSeal {
+    id: number;
+    name: string;
+    price: number;
+    vehicle_compatibility?: string;
+    created_at: string;
+}
+
+export interface Service {
+    id: number;
+    name: string;
+    base_price: number;
+    options: ServiceOption[];
+}
+
+export interface ServiceOption {
+    id: number;
+    service_id: number;
+    name: string;
+    price: number;
+}
+
+export interface JobCard {
+    id: number;
+    customer_id: number;
+    vehicle_id: number;
+    oil_id: number;
+    oil_filter_id: number;
+    drain_plug_seal_id: number;
+    services: JobCardService[];
+    total_amount: number;
+    status: 'open' | 'in_progress' | 'completed';
+    created_at: string;
+}
+
+export interface JobCardService {
+    id: number;
+    job_card_id: number;
+    service_id: number;
+    option_id?: number;
+    price: number;
+    ignored: boolean;
+}

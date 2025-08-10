@@ -2,25 +2,24 @@ import { Button } from '@/components/ui/button';
 import {
   Customer,
   DrainPlugSeal,
-  Oil,
-  OilBrand,
-  OilFilter,
-  Service,
-  ServiceOption,
-  Vehicle
-} from '@/types/types';
-import {
   drainPlugSeals,
   formatCurrency,
   getOilsByBrand,
+  Oil,
+  OilBrand,
   oilBrands,
+  OilFilter,
   oilFilters,
+  searchCustomers,
+  searchVehicles,
+  Service,
+  ServiceOption,
   services,
+  Vehicle
 } from '@/lib/db';
 import { Head } from "@inertiajs/react";
 import { ChevronLeft, ChevronRight, DollarSign, Eye, FileText, Gauge, Plus } from 'lucide-react';
 import React, { useCallback, useState } from 'react';
-import { searchCustomers, searchVehicles } from './actions';
 
 interface JobCardData {
   customer?: Customer;
@@ -96,53 +95,27 @@ export default function Open() {
   const [customerResults, setCustomerResults] = useState<Customer[]>([]);
   const [vehicleResults, setVehicleResults] = useState<Vehicle[]>([]);
 
-  // const handleCustomerSearch = useCallback((value: string) => {
-  //   setCustomerSearch(value);
-  //   if (value.length >= 2) {
-  //     const results = searchCustomers(value);
-  //     setCustomerResults(results);
-  //     setShowCustomerOptions(true);
-  //   } else {
-  //     setShowCustomerOptions(false);
-  //   }
-  // }, []);
-
-  const handleCustomerSearch = useCallback(async (value: string) => {
+  const handleCustomerSearch = useCallback((value: string) => {
     setCustomerSearch(value);
-
-    if (value.length >= 3) {
-      const results = await searchCustomers(value);
-      console.log("results", results)
-      setCustomerResults(results?.data);
+    if (value.length >= 2) {
+      const results = searchCustomers(value);
+      setCustomerResults(results);
       setShowCustomerOptions(true);
     } else {
       setShowCustomerOptions(false);
     }
   }, []);
 
-  const handleVehicleSearch = useCallback(async (value: string) => {
+  const handleVehicleSearch = useCallback((value: string) => {
     setVehicleSearch(value);
-
-    if (value.length >= 3) {
-      const results = await searchVehicles(value);
-      console.log("searchVehicles results", results)
-      setVehicleResults(results?.data);
+    if (value.length >= 2) {
+      const results = searchVehicles(value);
+      setVehicleResults(results);
       setShowVehicleOptions(true);
     } else {
       setShowVehicleOptions(false);
     }
   }, []);
-console.log("vehicleResults",vehicleResults)
-  // const handleVehicleSearch = useCallback((value: string) => {
-  //   setVehicleSearch(value);
-  //   if (value.length >= 2) {
-  //     const results = searchVehicles(value);
-  //     setVehicleResults(results);
-  //     setShowVehicleOptions(true);
-  //   } else {
-  //     setShowVehicleOptions(false);
-  //   }
-  // }, []);
 
   const selectCustomer = (customer: Customer) => {
     setJobCardData(prev => ({ ...prev, customer }));
@@ -152,7 +125,7 @@ console.log("vehicleResults",vehicleResults)
 
   const selectVehicle = (vehicle: Vehicle) => {
     setJobCardData(prev => ({ ...prev, vehicle }));
-    setVehicleSearch(`${vehicle.vehicle_no} - ${vehicle.make_year} ${vehicle.model?.name}`);
+    setVehicleSearch(`${vehicle.vehicle_number} - ${vehicle.make} ${vehicle.model}`);
     setShowVehicleOptions(false);
   };
 
@@ -331,8 +304,9 @@ console.log("vehicleResults",vehicleResults)
                         onClick={() => selectVehicle(vehicle)}
                         className="!w-full px-6 py-4 text-left hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 border-b last:border-b-0 border-slate-100 text-lg transition-all duration-200"
                       >
-                        <div className="font-semibold text-slate-800">{vehicle.vehicle_no}</div>
-                        <div className="text-slate-600">{vehicle.make_year} {vehicle.model?.name} ({vehicle.make_year})</div>
+                        <div className="font-semibold text-slate-800">{vehicle.vehicle_number}</div>
+                        <div className="text-slate-600">{vehicle.make} {vehicle.model} ({vehicle.year})</div>
+                        <div className="text-sm text-slate-500 mt-1">{vehicle.engine_capacity}</div>
                       </button>
                     ))}
                   </div>
@@ -505,8 +479,8 @@ console.log("vehicleResults",vehicleResults)
                 <div
                   key={service.id}
                   className={`p-8 rounded-2xl border-2 transition-all duration-300 shadow-lg ${ignored
-                    ? 'border-red-200 bg-gradient-to-r from-red-50 to-rose-50'
-                    : 'border-slate-200 bg-white'
+                      ? 'border-red-200 bg-gradient-to-r from-red-50 to-rose-50'
+                      : 'border-slate-200 bg-white'
                     }`}
                 >
                   <div className="flex items-center justify-between mb-6">
@@ -516,8 +490,8 @@ console.log("vehicleResults",vehicleResults)
                     <Button
                       onClick={() => updateService(service.id, undefined, !ignored)}
                       className={`px-6 py-3 rounded-xl text-sm font-semibold transition-all duration-200 ${ignored
-                        ? 'bg-emerald-500 text-white hover:bg-emerald-600 shadow-lg'
-                        : 'bg-red-100 text-red-500 hover:bg-red-200 hover:text-red-800 shadow-lg'
+                          ? 'bg-emerald-500 text-white hover:bg-emerald-600 shadow-lg'
+                          : 'bg-red-100 text-red-500 hover:bg-red-200 hover:text-red-800 shadow-lg'
                         }`}
                     >
                       {ignored ? 'Include Service' : 'Ignore Service'}
@@ -631,8 +605,8 @@ console.log("vehicleResults",vehicleResults)
         {jobCardData.vehicle && (
           <div className="border-b border-slate-200 pb-6">
             <h4 className="font-semibold text-slate-600 mb-3 text-sm uppercase tracking-wider">Vehicle</h4>
-            <div className="text-lg font-semibold text-slate-800">{jobCardData.vehicle.vehicle_no}</div>
-            <div className="text-slate-600">{jobCardData.vehicle.make_year} {jobCardData.vehicle.model.name}</div>
+            <div className="text-lg font-semibold text-slate-800">{jobCardData.vehicle.vehicle_number}</div>
+            <div className="text-slate-600">{jobCardData.vehicle.make} {jobCardData.vehicle.model}</div>
             {jobCardData.mileage && (
               <div className="text-sm text-slate-500 mt-1">Mileage: {jobCardData.mileage.toLocaleString()} km</div>
             )}
