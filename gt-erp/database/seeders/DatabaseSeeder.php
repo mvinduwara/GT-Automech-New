@@ -29,6 +29,7 @@ class DatabaseSeeder extends Seeder
             VehicleModelSeeder::class,
             VehicleSeeder::class,
             VehicleServiceSeeder::class,
+            PurchaseOrderSeeder::class,
         ]);
     }
 }
