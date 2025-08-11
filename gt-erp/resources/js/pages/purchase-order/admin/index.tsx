@@ -1,115 +1,251 @@
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import AppLayout from '@/layouts/app-layout';
-import { type BreadcrumbItem } from '@/types';
-import { Head, Link } from '@inertiajs/react';
-import { UserRoundSearch } from 'lucide-react';
+import { Calendar } from '@/components/ui/calendar';
+import {
+    Card,
+    CardContent,
+    CardDescription,
+    CardFooter,
+    CardHeader,
+    CardTitle,
+} from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import {
+    Pagination,
+    PaginationContent,
+    PaginationItem,
+    PaginationLink
+} from '@/components/ui/pagination';
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger
+} from '@/components/ui/popover';
+import {
+    Select,
+    SelectContent,
+    SelectGroup,
+    SelectItem,
+    SelectLabel,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from '@/components/ui/table';
 
-const purchaseOrders = [
-    {
-        purchaseorder_id: 'PO001',
-        paymentStatus: 'Paid',
-        totalAmount: '$250.00',
-        paymentMethod: 'Credit Card',
-    },
-    {
-        purchaseorder_id: 'PO002',
-        paymentStatus: 'Pending',
-        totalAmount: '$150.00',
-        paymentMethod: 'PayPal',
-    },
-    {
-        purchaseorder_id: 'PO003',
-        paymentStatus: 'Unpaid',
-        totalAmount: '$350.00',
-        paymentMethod: 'Bank Transfer',
-    },
-    {
-        purchaseorder_id: 'PO004',
-        paymentStatus: 'Paid',
-        totalAmount: '$450.00',
-        paymentMethod: 'Credit Card',
-    },
-    {
-        purchaseorder_id: 'PO005',
-        paymentStatus: 'Paid',
-        totalAmount: '$550.00',
-        paymentMethod: 'PayPal',
-    },
-    {
-        purchaseorder_id: 'PO006',
-        paymentStatus: 'Pending',
-        totalAmount: '$200.00',
-        paymentMethod: 'Bank Transfer',
-    },
-    {
-        purchaseorder_id: 'PO007',
-        paymentStatus: 'Unpaid',
-        totalAmount: '$300.00',
-        paymentMethod: 'Credit Card',
-    },
-];
+import AppLayout from '@/layouts/app-layout';
+import { cn } from '@/lib/utils';
+import { type BreadcrumbItem, PageProps, PaginatedResource } from '@/types';
+import { Head, Link, router } from '@inertiajs/react';
+import { format } from 'date-fns';
+import { CalendarIcon, Filter, RefreshCcw, UserRoundSearch } from 'lucide-react';
+import { FormEvent, useState } from 'react';
+
+type PurchaseOrder = {
+    id: number;
+    name: string;
+    date: string;
+    status: 'pending' | 'checked' | 'requested' | 'completed';
+    purchase_order_items_count: number;
+    created_at: string;
+    updated_at: string;
+};
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
-        title: 'Purchase Order',
+        title: 'Purchase Orders',
         href: '/dashboard/purchase-order',
     },
 ];
 
-export default function Index() {
+export default function Index({ purchaseOrders, filters }: PageProps<{
+    purchaseOrders: PaginatedResource<PurchaseOrder>;
+    filters: Record<string, string | number>;
+}>) {
+    const [search, setSearch] = useState(filters.search ?? '');
+    const [status, setStatus] = useState(filters.status ?? 'all');
+    const [dateFrom, setDateFrom] = useState<Date | undefined>(filters.date_from ? new Date(filters.date_from) : undefined);
+    const [dateTo, setDateTo] = useState<Date | undefined>(filters.date_to ? new Date(filters.date_to) : undefined);
+    const [perPage, setPerPage] = useState(filters.per_page ?? 10);
+
+    const applyFilters = (e: FormEvent) => {
+        e.preventDefault();
+        router.get(route('dashboard.purchase-order.index'), {
+            search,
+            status,
+            date_from: dateFrom ? format(dateFrom, 'yyyy-MM-dd') : undefined,
+            date_to: dateTo ? format(dateTo, 'yyyy-MM-dd') : undefined,
+            per_page: perPage
+        }, { preserveState: true, replace: true });
+    };
+
+    const clearFilters = () => {
+        setSearch('');
+        setStatus('all');
+        setDateFrom(undefined);
+        setDateTo(undefined);
+        setPerPage(10);
+        router.get(route('dashboard.purchase-order.index'));
+    };
+
+    const getStatusBadgeVariant = (status: string) => {
+        switch (status) {
+            case 'pending':
+                return 'yellow';
+            case 'checked':
+                return 'blue';
+            case 'requested':
+                return 'purple';
+            case 'completed':
+                return 'green';
+            default:
+                return 'default';
+        }
+    };
+
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="Purchase Order" />
-            <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
-                <div className="flex items-center justify-between">
-                    <h1 className="h1 font-bold">All Purchase Orders</h1>
-                    {/* <Link href={route('dashboard.purchase-order.index')}>
-                        <Button>Add New Purchase Order</Button>
-                    </Link> */}
-                </div>
+            <Head title="Purchase Orders" />
 
-                <div className="flex h-full flex-1 flex-col overflow-y-auto">
-                    <Table className="w-full table-fixed">
-                        <TableCaption>A list of your recent stocks.</TableCaption>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Purchase Order ID</TableHead>
-                                <TableHead>Status</TableHead>
-                                <TableHead>Method</TableHead>
-                                <TableHead>Amount</TableHead>
-                                <TableHead className="text-center">Actions</TableHead>
-                            </TableRow>
-                        </TableHeader>
+            <div className="flex h-full flex-1 flex-col gap-4 rounded-xl p-4 overflow-x-auto">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Purchase Orders</CardTitle>
+                        <CardDescription>
+                            A list of all purchase orders.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <form onSubmit={applyFilters} className="flex flex-col md:flex-row gap-4 mb-4 items-end">
+                            <Input
+                                placeholder="Search by name..."
+                                value={search}
+                                onChange={(e) => setSearch(e.target.value)}
+                                className="w-full md:w-auto"
+                            />
+                            <Select value={status} onValueChange={setStatus}>
+                                <SelectTrigger className="w-full md:w-[180px]">
+                                    <SelectValue placeholder="Filter by Status" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectGroup>
+                                        <SelectLabel>Status</SelectLabel>
+                                        <SelectItem value="all">All</SelectItem>
+                                        <SelectItem value="pending">Pending</SelectItem>
+                                        <SelectItem value="checked">Checked</SelectItem>
+                                        <SelectItem value="requested">Requested</SelectItem>
+                                        <SelectItem value="completed">Completed</SelectItem>
+                                    </SelectGroup>
+                                </SelectContent>
+                            </Select>
 
-                        <TableBody>
-                            {purchaseOrders.map((purchaseOrder) => (
-                                <TableRow key={purchaseOrder.purchaseorder_id}>
-                                    <TableCell className="font-medium">{purchaseOrder.purchaseorder_id}</TableCell>
-                                    <TableCell>{purchaseOrder.paymentStatus}</TableCell>
-                                    <TableCell>{purchaseOrder.paymentMethod}</TableCell>
-                                    <TableCell>{purchaseOrder.totalAmount}</TableCell>
-                                    <TableCell className="pr-0">
-                                        <div className="flex items-center justify-center space-x-2">
-                                            <Link href={route('dashboard.purchase-order.view', { purchaseOrder_id: purchaseOrder.purchaseorder_id })}>
-                                                <Button variant={'ghost'} className="flex items-center justify-center p-2 text-neutral-800">
-                                                    <UserRoundSearch className="h-5 w-5" />
-                                                </Button>
-                                            </Link>
-                                        </div>
-                                    </TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
+                            <Popover>
+                                <PopoverTrigger asChild>
+                                    <Button
+                                        variant={'outline'}
+                                        className={cn(
+                                            "w-full md:w-[280px] justify-start text-left font-normal",
+                                            !dateFrom && !dateTo && "text-muted-foreground"
+                                        )}
+                                    >
+                                        <CalendarIcon className="mr-2 h-4 w-4" />
+                                        {dateFrom && dateTo ? (
+                                            `${format(dateFrom, "PPP")} - ${format(dateTo, "PPP")}`
+                                        ) : (
+                                            <span>Filter by Date</span>
+                                        )}
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0" align="start">
+                                    <Calendar
+                                        initialFocus
+                                        mode="range"
+                                        defaultMonth={dateFrom}
+                                        selected={{ from: dateFrom, to: dateTo }}
+                                        onSelect={(range) => {
+                                            setDateFrom(range?.from);
+                                            setDateTo(range?.to);
+                                        }}
+                                        numberOfMonths={2}
+                                    />
+                                </PopoverContent>
+                            </Popover>
 
-                        {/* <TableFooter>
-                            <TableRow>
-                                <TableCell colSpan={4}>Total</TableCell>
-                                <TableCell>$2,500.00</TableCell>
-                            </TableRow>
-                        </TableFooter> */}
-                    </Table>
-                </div>
+                            <Button type="submit" className="w-full md:w-auto">
+                                <Filter className="h-4 w-4 mr-2" /> Apply Filters
+                            </Button>
+                            <Button type="button" onClick={clearFilters} variant="outline" className="w-full md:w-auto">
+                                <RefreshCcw className="h-4 w-4 mr-2" /> Clear
+                            </Button>
+                        </form>
+                        <div className="overflow-x-auto">
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Order Name</TableHead>
+                                        <TableHead>Date</TableHead>
+                                        <TableHead>Status</TableHead>
+                                        <TableHead>Items Count</TableHead>
+                                        <TableHead className="text-right">Actions</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {purchaseOrders.data.length > 0 ? (
+                                        purchaseOrders.data.map((purchaseOrder) => (
+                                            <TableRow key={purchaseOrder.id}>
+                                                <TableCell>{purchaseOrder.name}</TableCell>
+                                                <TableCell>{purchaseOrder.date}</TableCell>
+                                                <TableCell>
+                                                    <Badge
+                                                        variant={getStatusBadgeVariant(purchaseOrder.status)}
+                                                    >
+                                                        {purchaseOrder.status.charAt(0).toUpperCase() + purchaseOrder.status.slice(1)}
+                                                    </Badge>
+                                                </TableCell>
+                                                <TableCell>{purchaseOrder.purchase_order_items_count}</TableCell>
+                                                <TableCell className="text-right">
+                                                    <Link href={route('dashboard.purchase-order.view', { purchaseOrder_id: purchaseOrder.id })}>
+                                                        <Button variant={'ghost'} size={'sm'}>
+                                                            <UserRoundSearch className="h-5 w-5" />
+                                                        </Button>
+                                                    </Link>
+                                                </TableCell>
+                                            </TableRow>
+                                        ))
+                                    ) : (
+                                        <TableRow>
+                                            <TableCell colSpan={5} className="text-center">
+                                                No purchase orders found.
+                                            </TableCell>
+                                        </TableRow>
+                                    )}
+                                </TableBody>
+                            </Table>
+                        </div>
+                    </CardContent>
+                    <CardFooter>
+                        <Pagination className="mx-auto">
+                            <PaginationContent>
+                                {purchaseOrders.links.map((link, index) => (
+                                    <PaginationItem key={index}>
+                                        <PaginationLink
+                                            href={link.url ?? '#'}
+                                            isActive={link.active}
+                                            disabled={!link.url}
+                                            dangerouslySetInnerHTML={{ __html: link.label }}
+                                        />
+                                    </PaginationItem>
+                                ))}
+                            </PaginationContent>
+                        </Pagination>
+                    </CardFooter>
+                </Card>
             </div>
         </AppLayout>
     );
