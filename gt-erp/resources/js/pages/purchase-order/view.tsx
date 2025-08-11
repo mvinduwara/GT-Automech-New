@@ -79,7 +79,7 @@ export default function View({ purchaseOrder }: PageProps<{ purchaseOrder: Purch
 
     const handleFinish = () => {
         if (allItemsReviewed) {
-            put(route('dashboard.purchase-order.update', { purchaseOrder_id: purchaseOrder.id }), {
+            put(route('dashboard.purchase-order.item.update', { purchaseOrder_id: purchaseOrder.id }), {
                 onSuccess: () => {
                     toast.success('Purchase order status updated to checked.');
                     router.visit(route('dashboard.purchase-order.index'));

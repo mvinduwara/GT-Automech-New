@@ -37,13 +37,7 @@ const mainNavItems: (NavItem & { roles?: string[] })[] = [
         title: 'Purchase Order',
         href: '/dashboard/purchase-order',
         icon: TicketCheck,
-        roles: [USER_ROLES.ADMIN],
-    },
-    {
-        title: 'Purchase Order',
-        href: '/dashboard/purchase-order/cashier',
-        icon: TicketCheck,
-        roles: [USER_ROLES.CASHIER],
+        roles: [USER_ROLES.ADMIN,USER_ROLES.CASHIER,USER_ROLES.SERVICEMANAGER],
     },
     {
         title: 'User',

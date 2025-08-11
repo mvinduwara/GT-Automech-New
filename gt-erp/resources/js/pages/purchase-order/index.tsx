@@ -42,9 +42,9 @@ import {
 import AppLayout from '@/layouts/app-layout';
 import { cn } from '@/lib/utils';
 import { type BreadcrumbItem, PageProps, PaginatedResource } from '@/types';
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import { format } from 'date-fns';
-import { CalendarIcon, Filter, RefreshCcw, UserRoundSearch } from 'lucide-react';
+import { CalendarIcon, Filter, List, Pencil, RefreshCcw, UserRoundSearch } from 'lucide-react';
 import { FormEvent, useState } from 'react';
 
 type PurchaseOrder = {
@@ -73,6 +73,9 @@ export default function Index({ purchaseOrders, filters }: PageProps<{
     const [dateFrom, setDateFrom] = useState<Date | undefined>(filters.date_from ? new Date(filters.date_from) : undefined);
     const [dateTo, setDateTo] = useState<Date | undefined>(filters.date_to ? new Date(filters.date_to) : undefined);
     const [perPage, setPerPage] = useState(filters.per_page ?? 10);
+
+    const { auth } = usePage().props;
+    const userRole = auth?.user?.role;
 
     const applyFilters = (e: FormEvent) => {
         e.preventDefault();
@@ -116,10 +119,19 @@ export default function Index({ purchaseOrders, filters }: PageProps<{
             <div className="flex h-full flex-1 flex-col gap-4 rounded-xl p-4 overflow-x-auto">
                 <Card>
                     <CardHeader>
-                        <CardTitle>Purchase Orders</CardTitle>
-                        <CardDescription>
-                            A list of all purchase orders.
-                        </CardDescription>
+                        <div className='flex justify-between items-start'>
+                            <div className='flex flex-col justify-start items-start gap-2'>
+                                <CardTitle>Purchase Orders</CardTitle>
+                                <CardDescription>
+                                    A list of all purchase orders.
+                                </CardDescription>
+                            </div>
+                            {userRole === "cashier" && (
+                                <Button asChild>
+                                    <Link href='/dashboard/purchase-order/create'>Create</Link>
+                                </Button>
+                            )}
+                        </div>
                     </CardHeader>
                     <CardContent>
                         <form onSubmit={applyFilters} className="flex flex-col md:flex-row gap-4 mb-4 items-end">
@@ -209,12 +221,21 @@ export default function Index({ purchaseOrders, filters }: PageProps<{
                                                     </Badge>
                                                 </TableCell>
                                                 <TableCell>{purchaseOrder.purchase_order_items_count}</TableCell>
-                                                <TableCell className="text-right">
-                                                    <Link href={route('dashboard.purchase-order.view', { purchaseOrder_id: purchaseOrder.id })}>
-                                                        <Button variant={'ghost'} size={'sm'}>
-                                                            <UserRoundSearch className="h-5 w-5" />
-                                                        </Button>
-                                                    </Link>
+                                                <TableCell className="text-right flex items-center justify-end gap-2">
+                                                    {(userRole === "admin" || userRole === "service-manager") && (
+                                                        <Link href={route('dashboard.purchase-order.view', { purchaseOrder_id: purchaseOrder.id })}>
+                                                            <Button variant={'ghost'} size={'sm'}>
+                                                                <List className="h-5 w-5" />
+                                                            </Button>
+                                                        </Link>
+                                                    )}
+                                                    {userRole === "cashier" && (
+                                                        <Link href={`/dashboard/purchase-order/${purchaseOrder.id}/edit`}>
+                                                            <Button variant={'ghost'} size={'sm'}>
+                                                                <Pencil className="h-5 w-5" />
+                                                            </Button>
+                                                        </Link>
+                                                    )}
                                                 </TableCell>
                                             </TableRow>
                                         ))
