@@ -3,7 +3,7 @@ import { NavUser } from '@/components/nav-user';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { type NavItem } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
-import { HandCoins, Home, IdCard, LayoutGrid, TicketCheck, UserRound, UserRoundCheck, Users } from 'lucide-react';
+import { HandCoins, Home, IdCard, LayoutGrid, NotepadText, TicketCheck, UserRound, UserRoundCheck, Users } from 'lucide-react';
 import { useMemo } from 'react';
 import AppLogo from './app-logo';
 
@@ -75,13 +75,12 @@ const mainNavItems: (NavItem & { roles?: string[] })[] = [
         icon: HandCoins,
         roles: [USER_ROLES.ADMIN, USER_ROLES.SERVICEMANAGER],
     },
-    // {
-    //     title: 'GRN',
-    //     href: '/dashboard/grn',
-    //     icon: NotepadText,
-    //     roles: [USER_ROLES.CASHIER, USER_ROLES.ADMIN, USER_ROLES.SERVICEMANAGER],
-    //     roles: [USER_ROLES.SERVICEMANAGER],
-    // },
+    {
+        title: 'GRN',
+        href: '/dashboard/grn',
+        icon: NotepadText,
+        roles: [USER_ROLES.CASHIER, USER_ROLES.ADMIN, USER_ROLES.SERVICEMANAGER],
+    },
     // {
     //     title: 'Invoice',
     //     href: '/dashboard/invoice',
