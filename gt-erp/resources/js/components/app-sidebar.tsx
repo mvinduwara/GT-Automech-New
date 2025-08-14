@@ -3,7 +3,7 @@ import { NavUser } from '@/components/nav-user';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { type NavItem } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
-import { Brush, HandCoins, Home, IdCard, LayoutGrid, NotepadText, TicketCheck, Trash, UserRound, UserRoundCheck, Users } from 'lucide-react';
+import { Brush,UserPlus , HandCoins, Home, IdCard, LayoutGrid, NotepadText, TicketCheck, Trash, UserRound, UserRoundCheck, Users } from 'lucide-react';
 import { useMemo } from 'react';
 import AppLogo from './app-logo';
 
@@ -103,7 +103,7 @@ const mainNavItems: (NavItem & { roles?: string[] })[] = [
     {
         title: 'Supplier',
         href: '/dashboard/supplier',
-        icon: Trash,
+        icon: UserPlus,
         roles: [USER_ROLES.CASHIER, USER_ROLES.ADMIN],
     },
     {
