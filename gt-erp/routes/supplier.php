@@ -3,7 +3,7 @@
 use App\Http\Controllers\Supplier\SupplierController;
 use Illuminate\Support\Facades\Route;
 
-Route::middleware(['auth', 'is_admin'])->group(function () {
+Route::middleware(['auth', 'is_admin_or_cashier'])->group(function () {
     Route::prefix('dashboard/supplier')
         ->name('dashboard.supplier.')
         ->group(function () {

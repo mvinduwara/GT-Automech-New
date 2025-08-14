@@ -101,6 +101,12 @@ const mainNavItems: (NavItem & { roles?: string[] })[] = [
         roles: [USER_ROLES.CASHIER],
     },
     {
+        title: 'Supplier',
+        href: '/dashboard/supplier',
+        icon: Trash,
+        roles: [USER_ROLES.CASHIER, USER_ROLES.ADMIN],
+    },
+    {
         title: 'Clear Cache',
         href: '/dashboard/clear-cache',
         icon: Trash,
