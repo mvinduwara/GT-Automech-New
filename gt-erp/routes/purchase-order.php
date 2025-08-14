@@ -20,6 +20,7 @@ Route::middleware(['auth', 'is_admin'])->group(function () {
         ->group(function () {
             Route::get('/{purchaseOrder_id}/view', [AdminPurchaseOrderController::class, 'view'])->name('view');
             Route::put('/{purchaseOrder_id}/update', [AdminPurchaseOrderController::class, 'update'])->name('item.update');
+            Route::put('/{purchaseOrder_id}/update/requested', [AdminPurchaseOrderController::class, 'requested'])->name('item.update.requested');
         });
 });
 

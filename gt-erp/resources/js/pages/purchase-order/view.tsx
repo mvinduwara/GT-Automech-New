@@ -1,8 +1,17 @@
-import { PlaceholderPattern } from '@/components/ui/placeholder-pattern';
-import AppLayout from '@/layouts/app-layout';
-import { type BreadcrumbItem, PageProps } from '@/types';
-import { Head, router, useForm } from '@inertiajs/react';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Switch } from '@/components/ui/switch';
 import {
     Table,
     TableBody,
@@ -11,11 +20,11 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
-import { Button } from '@/components/ui/button';
+import AppLayout from '@/layouts/app-layout';
+import { type BreadcrumbItem, PageProps } from '@/types';
+import { Head, router, useForm, usePage } from '@inertiajs/react';
+import { Link } from "lucide-react";
 import { useEffect, useState } from 'react';
-import { Check, X } from 'lucide-react';
 import { toast } from 'sonner';
 
 type PurchaseOrderItem = {
@@ -43,6 +52,8 @@ type PurchaseOrder = {
 };
 
 export default function View({ purchaseOrder }: PageProps<{ purchaseOrder: PurchaseOrder }>) {
+    const { auth } = usePage().props;
+    const userRole = auth?.user?.role;
     const breadcrumbs: BreadcrumbItem[] = [
         {
             title: 'Purchase Orders',
@@ -92,13 +103,66 @@ export default function View({ purchaseOrder }: PageProps<{ purchaseOrder: Purch
         }
     };
 
+    const handleRequested = () => {
+        put(route('dashboard.purchase-order.item.update.requested', { purchaseOrder_id: purchaseOrder.id }), {
+            onSuccess: () => {
+                toast.success('Purchase order requested.');
+            },
+            onError: (errors) => {
+                toast.error('Failed to request purchase order.');
+                console.error(errors);
+            }
+        });
+    };
+
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={purchaseOrder.name} />
             <div className="flex h-full flex-1 flex-col gap-4 rounded-xl p-4 overflow-x-auto">
                 <Card>
                     <CardHeader>
-                        <CardTitle>Purchase Order: {purchaseOrder.name}</CardTitle>
+                        <div className='flex items-center justify-between'>
+                            <CardTitle className='w-full'>Purchase Order: {purchaseOrder.name}</CardTitle>
+                            {purchaseOrder.status != 'requested' && (
+                                <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                        <Button disabled={purchaseOrder.status != 'checked'} variant={'outline'} className='text-red-800'>Request</Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                            <AlertDialogTitle>Request purchase order</AlertDialogTitle>
+                                            <AlertDialogDescription>
+                                                Are you sure you want to request this purchase order?
+                                            </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                            <AlertDialogAction onClick={handleRequested}>Continue</AlertDialogAction>
+                                        </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                </AlertDialog>
+                            )}
+                            {purchaseOrder.status === 'requested' && (
+                                <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                        <Button variant={'secondary'} className='bg-yellow-200 hover:bg-yellow-400'>Create GRN</Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                            <AlertDialogTitle>Create GRN</AlertDialogTitle>
+                                            <AlertDialogDescription>
+                                                Are you sure you want to Create GRN for this purchase order?
+                                            </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                            <AlertDialogCancel >Cancel</AlertDialogCancel>
+                                            <AlertDialogAction onClick={() => { router.visit(`/dashboard/grn/create/${purchaseOrder.id}`) }}>
+                                                Create
+                                            </AlertDialogAction>
+                                        </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                </AlertDialog>)}
+                        </div>
                     </CardHeader>
                     <CardContent>
                         <p><strong>Date:</strong> {purchaseOrder.date}</p>
@@ -126,6 +190,7 @@ export default function View({ purchaseOrder }: PageProps<{ purchaseOrder: Purch
                                                 <TableCell>{originalItem?.quantity}</TableCell>
                                                 <TableCell className="text-center">
                                                     <Switch
+                                                        disabled={processing || purchaseOrder.status !== 'checked' || userRole !== 'admin'}
                                                         checked={!!item.is_approved}
                                                         onCheckedChange={(checked) => handleApprovalChange(item.id, checked)}
                                                     />

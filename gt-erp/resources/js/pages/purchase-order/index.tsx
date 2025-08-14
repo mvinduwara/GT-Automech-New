@@ -225,7 +225,7 @@ export default function Index({ purchaseOrders, filters }: PageProps<{
                                                     {(userRole === "admin" || userRole === "service-manager") && (
                                                         <Link href={route('dashboard.purchase-order.view', { purchaseOrder_id: purchaseOrder.id })}>
                                                             <Button variant={'ghost'} size={'sm'}>
-                                                                <List className="h-5 w-5" />
+                                                                View
                                                             </Button>
                                                         </Link>
                                                     )}

@@ -97,4 +97,27 @@ class AdminPurchaseOrderController extends Controller
             return redirect()->back()->with('error', 'An error occurred while updating the purchase order.');
         }
     }
+    
+    public function requested(Request $request, $purchaseOrder_id)
+    {
+        try {
+            DB::beginTransaction();
+            $purchaseOrder = PurchaseOrder::findOrFail($purchaseOrder_id);
+            $purchaseOrder->status = 'requested';
+            $purchaseOrder->save();
+            DB::commit();
+
+            Log::info("Successfully requested purchase order {$purchaseOrder_id} and its items.", ['purchase_order_id' => $purchaseOrder_id, 'new_status' => 'checked']);
+            return redirect()->back()->with('success', 'Purchase order has been successfully requested.');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error("Failed to request purchase order {$purchaseOrder_id}.", [
+                'error' => $e->getMessage(),
+                'request' => $request->all(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            return redirect()->back()->with('error', 'An error occurred while requesting the purchase order.');
+        }
+    }
 }
