@@ -231,14 +231,14 @@ export default function Index({ petty_cash }: { petty_cash: pettyCash[] }) {
                                                     </Button>
                                                 </Link>
                                             )}
-                                            {auth?.user?.role === 'cashier' && (
+                                            {/* {auth?.user?.role === 'cashier' && (
                                                 <Button
                                                     onClick={() => handleDelete(petty_cash.voucher_number)}
                                                     className="flex items-center justify-center bg-red-100 p-2 text-red-800 hover:bg-red-200 hover:text-red-950"
                                                 >
                                                     <TrashIcon className="h-5 w-5" />
                                                 </Button>
-                                            )}
+                                            )} */}
 
                                             {auth?.user?.role === 'admin' && (
                                                 <AlertDialog
