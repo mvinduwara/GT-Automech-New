@@ -19,6 +19,7 @@ export default function Edit({ grn }: Props) {
     const { data, setData, put, processing, errors } = useForm({
         grn_no: grn.grn_no,
         supplier_id: '',
+        supplier: grn.supplier,
         purchase_order_id: grn.purchase_order_id,
         date: grn.date,
         remarks: grn.remarks,
@@ -26,9 +27,12 @@ export default function Edit({ grn }: Props) {
         items: grn.grn_items,
     });
 
+    console.log("grn", grn)
+    console.log("supplier", grn.supplier)
+
     const [supplierQuery, setSupplierQuery] = useState('');
     const [supplierResults, setSupplierResults] = useState<any[]>([]);
-    const [selectedSupplier, setSelectedSupplier] = useState<any>(null);
+    const [selectedSupplier, setSelectedSupplier] = useState<any>(data.supplier);
 
     const { flash } = usePage().props as any;
     useEffect(() => {
@@ -133,47 +137,44 @@ export default function Edit({ grn }: Props) {
                         const product =
                             grn.purchase_order.purchase_order_items.find(
                                 (i: any) => i.id === item.purchase_order_item_id
-                            )?.stock?.product?.name ?? '';
+                            )?.stock?.product  ?? '';
                         return (
                             <div key={idx} className="border p-4 rounded space-y-2">
-                                <>
-                                {console.log("product",item)}
-                                </>
-                                <p className="font-semibold">{product}</p>
+                                <p className="font-semibold">{product?.name+" ("+product?.part_number+")"}</p>
                                 <div className="grid grid-cols-3 gap-2">
                                     <div>
-                                        <label htmlFor="">Quantity</label>
-                                    <Input
-                                        type="number"
-                                        placeholder="Quantity"
-                                        value={item.quantity}
-                                        onChange={(e) => {
-                                            const v = [...data.items];
-                                            v[idx].quantity = parseFloat(e.target.value) || 0;
-                                            setData('items', v);
-                                        }}
-                                    />
+                                        <label className='text-xs' htmlFor="">Quantity</label>
+                                        <Input
+                                            type="number"
+                                            placeholder="Quantity"
+                                            value={item.quantity}
+                                            onChange={(e) => {
+                                                const v = [...data.items];
+                                                v[idx].quantity = parseFloat(e.target.value) || 0;
+                                                setData('items', v);
+                                            }}
+                                        />
                                     </div>
                                     <div>
-                                        <label htmlFor="">Unit Price (LKR)</label>
-                                    <Input
-                                        type="number"
-                                        placeholder="Unit Price (LKR)"
-                                        value={item.unit_price}
-                                        onChange={(e) => {
-                                            const v = [...data.items];
-                                            v[idx].unit_price = parseFloat(e.target.value) || 0;
-                                            setData('items', v);
-                                        }}
-                                    /></div>
+                                        <label className='text-xs' htmlFor="">Unit Price (LKR)</label>
+                                        <Input
+                                            type="number"
+                                            placeholder="Unit Price (LKR)"
+                                            value={item.unit_price}
+                                            onChange={(e) => {
+                                                const v = [...data.items];
+                                                v[idx].unit_price = parseFloat(e.target.value) || 0;
+                                                setData('items', v);
+                                            }}
+                                        /></div>
                                     <div>
-                                        <label htmlFor="">Total</label>
-                                    <Input
-                                        readOnly
-                                        value={`LKR ${lineTotal.toFixed(2)}`}
-                                        className="bg-gray-100"
-                                    />
-                                </div>
+                                        <label className='text-xs' htmlFor="">Total</label>
+                                        <Input
+                                            readOnly
+                                            value={`LKR ${lineTotal.toFixed(2)}`}
+                                            className="bg-gray-100"
+                                        />
+                                    </div>
                                 </div>
                             </div>
                         );

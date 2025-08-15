@@ -37,7 +37,7 @@ export default function Create({ purchaseOrder }: Props) {
     const searchSupplier = async (q: string) => {
         if (q.length < 2) return setSupplierResults([]);
         const res = await fetch(`/dashboard/grn/suppliers/search?q=${encodeURIComponent(q)}`);
-        console.log("res",res)
+        console.log("res", res)
         const data = await res.json();
         setSupplierResults(data);
     };
@@ -133,34 +133,42 @@ export default function Create({ purchaseOrder }: Props) {
                         return (
                             <div key={idx} className="border p-4 rounded space-y-2">
                                 <p className="font-semibold">
-                                    {purchaseOrder.purchase_order_items[idx].stock.product.name}
+                                    {purchaseOrder.purchase_order_items[idx].stock.product.name + " (" + purchaseOrder.purchase_order_items[idx].stock.product.part_number + ")"}
                                 </p>
                                 <div className="grid grid-cols-3 gap-2">
-                                    <Input
-                                        type="number"
-                                        placeholder="Quantity"
-                                        value={item.quantity}
-                                        onChange={(e) => {
-                                            const v = [...data.items];
-                                            v[idx].quantity = parseFloat(e.target.value) || 0;
-                                            setData('items', v);
-                                        }}
-                                    />
-                                    <Input
-                                        type="number"
-                                        placeholder="Unit Price (LKR)"
-                                        value={item.unit_price}
-                                        onChange={(e) => {
-                                            const v = [...data.items];
-                                            v[idx].unit_price = parseFloat(e.target.value) || 0;
-                                            setData('items', v);
-                                        }}
-                                    />
-                                    <Input
-                                        readOnly
-                                        value={`LKR ${lineTotal.toFixed(2)}`}
-                                        className="bg-gray-100"
-                                    />
+                                    <div>
+                                        <label className='text-xs' htmlFor="">Quantity</label>
+                                        <Input
+                                            type="number"
+                                            placeholder="Quantity"
+                                            value={item.quantity}
+                                            onChange={(e) => {
+                                                const v = [...data.items];
+                                                v[idx].quantity = parseFloat(e.target.value) || 0;
+                                                setData('items', v);
+                                            }}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className='text-xs' htmlFor="">Unit Price (LKR)</label>
+                                        <Input
+                                            type="number"
+                                            placeholder="Unit Price (LKR)"
+                                            value={item.unit_price}
+                                            onChange={(e) => {
+                                                const v = [...data.items];
+                                                v[idx].unit_price = parseFloat(e.target.value) || 0;
+                                                setData('items', v);
+                                            }}
+                                        /></div>
+                                    <div>
+                                        <label className='text-xs' htmlFor="">Total</label>
+                                        <Input
+                                            readOnly
+                                            value={`LKR ${lineTotal.toFixed(2)}`}
+                                            className="bg-gray-100"
+                                        />
+                                    </div>
                                 </div>
                             </div>
                         );

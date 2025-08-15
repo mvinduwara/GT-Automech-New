@@ -40,11 +40,11 @@ export default function Index({ grns, filters }: Props) {
   }, [flash]);
 
   const applyFilter = () =>
-    router.get('/', { search, status, start, end }, { preserveState: true });
+    router.get('/dashboard/grn', { search, status, start, end }, { preserveState: true });
 
   const clearFilter = () => {
     setSearch(''); setStatus(''); setStart(''); setEnd('');
-    router.get('/');
+    router.get('/dashboard/grn');
   };
 
   const destroy = (id: number) => {
@@ -58,7 +58,7 @@ export default function Index({ grns, filters }: Props) {
       <div className="p-6 space-y-4">
         <div className="flex justify-between items-center">
           <h1 className="text-2xl font-bold">Good Received Notes</h1>
-          <Link href="/dashboard/grn/create">
+          <Link hidden href="/dashboard/grn/create">
             <Button>Add New GRN</Button>
           </Link>
         </div>

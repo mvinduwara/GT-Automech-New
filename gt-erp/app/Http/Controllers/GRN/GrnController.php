@@ -125,7 +125,10 @@ class GrnController extends Controller
             ]);
 
             DB::commit();
-            Log::info('GRN stored successfully', ['grn_id' => $grn->id]);
+
+            $purchaseOrder = PurchaseOrder::findOrFail($validated['purchase_order_id']);
+            $purchaseOrder->update(['status' => 'completed']);
+            Log::info('GRN stored successfully and purchase order completed ', ['grn_id' => $grn->id]);
             return redirect()->route('dashboard.grn.index')
                 ->with('success', 'GRN created successfully.');
         } catch (\Throwable $e) {
@@ -139,7 +142,7 @@ class GrnController extends Controller
     public function edit($grnId)
     {
         Log::info('GRN edit page opened', ['grn_id' => $grnId]);
-        $grn = Grn::with(['grnItems', 'purchaseOrder.purchaseOrderItems'])
+        $grn = Grn::with(['grnItems','supplier', 'purchaseOrder.purchaseOrderItems', 'purchaseOrder.purchaseOrderItems.stock.product'])
             ->findOrFail($grnId);
 
         return Inertia::render('grn/edit', ['grn' => $grn]);
