@@ -31,6 +31,7 @@ class DatabaseSeeder extends Seeder
             VehicleServiceSeeder::class,
             PurchaseOrderSeeder::class,
             SupplierSeeder::class,
+            GrnSeeder::class,
         ]);
     }
 }

@@ -13,9 +13,9 @@ Route::middleware(['auth', 'is_admin'])->group(function () {
             Route::post('/store', [GrnController::class, 'store'])->name('store');
             Route::get('/{grn_id}/edit', [GrnController::class, 'edit'])->name('edit');
             Route::put('/{stock_id}/update', [GrnController::class, 'update'])->name('update');
+            Route::delete('/{grn}', [GrnController::class, 'destroy'])->name('destroy');
 
-            Route::get('/{any?}', function () {
-                return redirect()->route('dashboard');
-            })->where('any', '.*');
+            Route::get('/suppliers/search', [GrnController::class, 'searchSuppliers'])
+                ->name('suppliers.search');
         });
 });
