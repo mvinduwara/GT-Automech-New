@@ -41,3 +41,4 @@ require __DIR__ . '/user.php';
 require __DIR__ . '/employee.php';
 require __DIR__ . '/vehicle.php';
 require __DIR__ . '/supplier.php';
+require __DIR__ . '/reports.php';
