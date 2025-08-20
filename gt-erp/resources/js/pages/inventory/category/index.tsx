@@ -72,13 +72,23 @@ export default function CategoryIndex() {
         }
     }, [inertiaErrors, isDialogOpen]);
 
-    // Remove debounced search effect since we're using Apply Filters button
-    // useEffect(() => {
-    //     const handler = setTimeout(() => {
-    //         router.get(route('dashboard.category.index'), { search: searchTerm, status: statusFilter }, { preserveState: true, replace: true });
-    //     }, 300);
-    //     return () => clearTimeout(handler);
-    // }, [searchTerm, statusFilter]);
+    // Effect to populate form when editing category changes
+    useEffect(() => {
+        if (editingCategory) {
+            setFormData({
+                name: editingCategory.name,
+                description: editingCategory.description,
+                status: editingCategory.status,
+            });
+        } else {
+            setFormData({
+                name: '',
+                description: '',
+                status: 'active',
+            });
+        }
+        setFormErrors({}); // Clear errors when dialog opens/closes
+    }, [editingCategory]);
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { id, value } = e.target;
@@ -99,6 +109,53 @@ export default function CategoryIndex() {
                 const newErrors = { ...prev };
                 delete newErrors.status;
                 return newErrors;
+            });
+        }
+    };
+
+    // Handle form submission
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+
+        // Client-side validation
+        const errors: { [key: string]: string } = {};
+        if (!formData.name.trim()) errors.name = 'Name is required.';
+        if (!formData.status) errors.status = 'Status is required.';
+
+        if (Object.keys(errors).length > 0) {
+            setFormErrors(errors);
+            toast('Validation Error', {
+                description: 'Please correct the highlighted fields.',
+            });
+            return;
+        }
+
+        if (editingCategory) {
+            // Update existing category
+            router.post(route('dashboard.category.update', editingCategory.id), formData, {
+                onSuccess: () => {
+                    setIsDialogOpen(false);
+                    setEditingCategory(null);
+                },
+                onError: (errors) => {
+                    setFormErrors(errors);
+                    toast('Update Failed', {
+                        description: 'There was an error updating the category. Please check your input.',
+                    });
+                },
+            });
+        } else {
+            // Create new category
+            router.post(route('dashboard.category.store'), formData, {
+                onSuccess: () => {
+                    setIsDialogOpen(false);
+                },
+                onError: (errors) => {
+                    setFormErrors(errors);
+                    toast('Creation Failed', {
+                        description: 'There was an error creating the category. Please check your input.',
+                    });
+                },
             });
         }
     };
@@ -137,7 +194,7 @@ export default function CategoryIndex() {
                                     {editingCategory ? 'Edit the category and click save.' : 'Fill in the new category details.'}
                                 </DialogDescription>
                             </DialogHeader>
-                            <form className="grid gap-4 py-4">
+                            <form onSubmit={handleSubmit} className="grid gap-4 py-4">
                                 <div className="grid grid-cols-4 items-center gap-4">
                                     <Label htmlFor="name" className="text-right">
                                         Name
