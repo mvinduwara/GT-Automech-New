@@ -16,24 +16,29 @@ class BrandController extends Controller
      */
     public function index(Request $request)
     {
-        // Start a new query builder instance for the Brand model
         $query = Brand::query();
 
-        // Handle search functionality: filter brands by name if a search term is provided
+        // Handle search functionality
         if ($search = $request->input('search')) {
-            $query->where('name', 'like', '%' . $search . '%');
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', '%' . $search . '%')
+                    ->orWhere('description', 'like', '%' . $search . '%');
+            });
         }
 
-        // Handle pagination: retrieve paginated results, 10 items per page
+        // Handle status filter
+        if ($status = $request->input('status')) {
+            $query->where('status', $status);
+        }
+
         $brands = $query->paginate(10);
 
-        // Render the Inertia page for brands index
         return Inertia::render('inventory/brand/index', [
-            'brands' => $brands, // Pass the paginated brands data to the frontend
-            'filters' => $request->only(['search']), // Pass current search filter back to maintain state
+            'brands' => $brands,
+            'filters' => $request->only(['search', 'status']),
             'flash' => [
-                'success' => session('success'), // Retrieve success message from session
-                'error' => session('error'),   // Retrieve error message from session
+                'success' => session('success'),
+                'error' => session('error'),
             ],
         ]);
     }
@@ -59,7 +64,6 @@ class BrandController extends Controller
 
             // Redirect to the brand index page with a success flash message
             return redirect()->route('dashboard.brand.index')->with('success', 'Brand created successfully!');
-
         } catch (ValidationException $e) {
             // Catch validation exceptions, log errors, and redirect back with input and errors
             Log::error('Brand creation validation failed.', ['errors' => $e->errors(), 'request' => $request->all()]);
@@ -93,7 +97,6 @@ class BrandController extends Controller
 
             // Redirect to the brand index page with a success flash message
             return redirect()->route('dashboard.brand.index')->with('success', 'Brand updated successfully!');
-
         } catch (ValidationException $e) {
             // Catch validation exceptions, log errors, and redirect back with input and errors
             Log::error('Brand update validation failed.', ['errors' => $e->errors(), 'brand_id' => $brand->id, 'request' => $request->all()]);

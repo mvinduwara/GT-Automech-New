@@ -16,27 +16,30 @@ class CategoryController extends Controller
      */
     public function index(Request $request)
     {
-        // Start a new query builder instance for the Category model
         $query = Category::query();
 
-        // Handle search functionality: filter categories by name if a search term is provided
+        // Search by name
         if ($search = $request->input('search')) {
             $query->where('name', 'like', '%' . $search . '%');
         }
 
-        // Handle pagination: retrieve paginated results, 10 items per page
-        $categories = $query->paginate(10);
+        // Filter by status
+        if ($status = $request->input('status')) {
+            $query->where('status', $status);
+        }
 
-        // Render the Inertia page for categories index
+        $categories = $query->paginate(10)->withQueryString();
+
         return Inertia::render('inventory/category/index', [
-            'categories' => $categories, // Pass the paginated categories data to the frontend
-            'filters' => $request->only(['search']), // Pass current search filter back to maintain state
+            'categories' => $categories,
+            'filters' => $request->only(['search', 'status']), // pass filters back
             'flash' => [
-                'success' => session('success'), // Retrieve success message from session
-                'error' => session('error'),   // Retrieve error message from session
+                'success' => session('success'),
+                'error' => session('error'),
             ],
         ]);
     }
+
 
     /**
      * Store a newly created category in storage.
@@ -59,7 +62,6 @@ class CategoryController extends Controller
 
             // Redirect to the category index page with a success flash message
             return redirect()->route('dashboard.category.index')->with('success', 'Category created successfully!');
-
         } catch (ValidationException $e) {
             // Catch validation exceptions, log errors, and redirect back with input and errors
             Log::error('Category creation validation failed.', ['errors' => $e->errors(), 'request' => $request->all()]);
@@ -93,7 +95,6 @@ class CategoryController extends Controller
 
             // Redirect to the category index page with a success flash message
             return redirect()->route('dashboard.category.index')->with('success', 'Category updated successfully!');
-
         } catch (ValidationException $e) {
             // Catch validation exceptions, log errors, and redirect back with input and errors
             Log::error('Category update validation failed.', ['errors' => $e->errors(), 'category_id' => $category->id, 'request' => $request->all()]);
