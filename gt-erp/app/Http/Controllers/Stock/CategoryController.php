@@ -20,9 +20,9 @@ class CategoryController extends Controller
 
         // Search by name and description
         if ($search = $request->input('search')) {
-            $query->where(function($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', '%' . $search . '%')
-                  ->orWhere('description', 'like', '%' . $search . '%');
+                    ->orWhere('description', 'like', '%' . $search . '%');
             });
         }
 
@@ -30,6 +30,7 @@ class CategoryController extends Controller
         if ($status = $request->input('status')) {
             $query->where('status', $status);
         }
+        $query->orderBy('created_at', 'desc');
 
         $categories = $query->paginate(10)->withQueryString();
 
@@ -61,16 +62,15 @@ class CategoryController extends Controller
 
             return redirect()->route('dashboard.category.index')
                 ->with('success', 'Category created successfully!');
-
         } catch (ValidationException $e) {
             Log::error('Category creation validation failed.', [
-                'errors' => $e->errors(), 
+                'errors' => $e->errors(),
                 'request' => $request->all()
             ]);
             return redirect()->back()->withErrors($e->errors())->withInput();
         } catch (\Exception $e) {
             Log::error('Failed to create category.', [
-                'error' => $e->getMessage(), 
+                'error' => $e->getMessage(),
                 'request' => $request->all()
             ]);
             return redirect()->back()->with('error', 'Failed to create category. Please try again.');
@@ -92,24 +92,23 @@ class CategoryController extends Controller
             $category->update($validatedData);
 
             Log::info('Category updated successfully.', [
-                'category_id' => $category->id, 
+                'category_id' => $category->id,
                 'category_name' => $validatedData['name']
             ]);
 
             return redirect()->route('dashboard.category.index')
                 ->with('success', 'Category updated successfully!');
-
         } catch (ValidationException $e) {
             Log::error('Category update validation failed.', [
-                'errors' => $e->errors(), 
-                'category_id' => $category->id, 
+                'errors' => $e->errors(),
+                'category_id' => $category->id,
                 'request' => $request->all()
             ]);
             return redirect()->back()->withErrors($e->errors())->withInput();
         } catch (\Exception $e) {
             Log::error('Failed to update category.', [
-                'error' => $e->getMessage(), 
-                'category_id' => $category->id, 
+                'error' => $e->getMessage(),
+                'category_id' => $category->id,
                 'request' => $request->all()
             ]);
             return redirect()->back()->with('error', 'Failed to update category. Please try again.');

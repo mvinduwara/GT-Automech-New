@@ -18,7 +18,7 @@ import {
 //   services,
 // } from '@/lib/db';
 
-import { formatCurrency } from '@/lib/db';
+import { formatCurrency, services } from '@/lib/db';
 import { Head } from "@inertiajs/react";
 import { ChevronLeft, ChevronRight, DollarSign, Eye, FileText, Gauge, Plus } from 'lucide-react';
 import React, { useCallback, useEffect, useState } from 'react';
@@ -46,25 +46,6 @@ interface SelectionButtonProps {
   children: React.ReactNode;
   className?: string;
 }
-
-interface VehicleServicesResponse {
-    data: Service[];
-    meta?: {
-        total_services: number;
-        services_with_options: number;
-        services_without_options: number;
-    };
-}
-
-interface VehicleServiceOptionsResponse {
-    data: ServiceOption[];
-    meta?: {
-        service_id: number;
-        service_name: string;
-        options_count: number;
-    };
-}
-
 
 const SelectionButton: React.FC<SelectionButtonProps> = ({
   isSelected,
@@ -94,14 +75,12 @@ const SelectionButton: React.FC<SelectionButtonProps> = ({
 
 export default function Open() {
   const [currentStep, setCurrentStep] = useState(1);
-  const [services, setServices] = useState<Service[]>([]);
   const [jobCardData, setJobCardData] = useState<JobCardData>({
-    services: []
-    // services: services.map(service => ({
-    //   service,
-    //   option: service.options[0],
-    //   ignored: false
-    // }))
+    services: services.map(service => ({
+      service,
+      option: service.options[0],
+      ignored: false
+    }))
   });
 
   // Search states
@@ -120,16 +99,9 @@ export default function Open() {
   const [vehicleResults, setVehicleResults] = useState<Vehicle[]>([]);
 
   const [oilBrands, setOilBrands] = useState<OilBrand[]>([]);
-  const [availableOils, setAvailableOils] = useState<Oil[]>([]);
-  const [oilFilters, setOilFilters] = useState<OilFilter[]>([]);
-  const [drainPlugSeals, setDrainPlugSeals] = useState<DrainPlugSeal[]>([]);
-
-  console.log("oilBrands", oilBrands);
-  console.log("availableOils", availableOils);
-  console.log("oilFilters", oilFilters);
-  console.log("drainPlugSeals", drainPlugSeals);
-  console.log("jobCardData services", jobCardData.services);
-
+const [availableOils, setAvailableOils] = useState<Oil[]>([]);
+const [oilFilters, setOilFilters] = useState<OilFilter[]>([]);
+const [drainPlugSeals, setDrainPlugSeals] = useState<DrainPlugSeal[]>([]);
   // const handleCustomerSearch = useCallback((value: string) => {
   //   setCustomerSearch(value);
   //   if (value.length >= 2) {
@@ -166,7 +138,7 @@ export default function Open() {
       setShowVehicleOptions(false);
     }
   }, []);
-  console.log("vehicleResults", vehicleResults)
+console.log("vehicleResults",vehicleResults)
   // const handleVehicleSearch = useCallback((value: string) => {
   //   setVehicleSearch(value);
   //   if (value.length >= 2) {
@@ -179,33 +151,11 @@ export default function Open() {
   // }, []);
 
 
-  useEffect(() => {
-    fetchOilBrands().then(res => setOilBrands(res.data));
-    fetchOilFilters().then(res => setOilFilters(res.data));
-    fetchDrainPlugSeals().then(res => setDrainPlugSeals(res.data));
-    fetchVehicleServices().then(res => setServices(res.data));
-  }, []);
-
-  useEffect(() => {
-  if (services.length > 0) {
-    const jobCardServices = services.map(service => ({
-      service,
-      option: service.options[0],
-      ignored: false
-    }));
-    
-    setJobCardData(prev => ({
-      ...prev,
-      services: jobCardServices
-    }));
-  }
-}, [services]);
-
-
-  console.log("firstOilBrand", oilBrands[0]);
-  console.log("firstOilFilter", oilFilters[0]);
-  console.log("firstDrainPlugSeal", drainPlugSeals[0]);
-  console.log("firstVehicleService", services);
+useEffect(() => {
+  fetchOilBrands().then(res => setOilBrands(res.data));
+  fetchOilFilters().then(res => setOilFilters(res.data));
+  fetchDrainPlugSeals().then(res => setDrainPlugSeals(res.data));
+}, []);
 
   const selectCustomer = (customer: Customer) => {
     setJobCardData(prev => ({ ...prev, customer }));
@@ -234,41 +184,23 @@ export default function Open() {
   };
 
 
-  const fetchOilBrands = () =>
-    fetch('/dashboard/job-card/selections/oil-brands').then(r => r.json());
+const fetchOilBrands = () =>
+  fetch('/dashboard/job-card/selections/oil-brands').then(r => r.json());
 
-  const fetchOilsByBrand = (brandId: number) =>
-    fetch(`/dashboard/job-card/selections/oils?brand_id=${brandId}`).then(r => r.json());
+const fetchOilsByBrand = (brandId: number) =>
+  fetch(`/dashboard/job-card/selections/oils?brand_id=${brandId}`).then(r => r.json());
 
-  const fetchOilFilters = () =>
-    fetch('/dashboard/job-card/selections/oil-filters').then(r => r.json());
+const fetchOilFilters = () =>
+  fetch('/dashboard/job-card/selections/oil-filters').then(r => r.json());
 
-  const fetchDrainPlugSeals = () =>
-    fetch('/dashboard/job-card/selections/drain-plug-seals').then(r => r.json());
-
-  const fetchVehicleServices = (): Promise<VehicleServicesResponse> => 
-    fetch('/dashboard/job-card/selections/vehicle-services')
-        .then(r => {
-            if (!r.ok) {
-                throw new Error(`HTTP error! status: ${r.status}`);
-            }
-            return r.json();
-        });
-
-const fetchVehicleServiceOptions = (serviceId: number): Promise<VehicleServiceOptionsResponse> => 
-    fetch(`/dashboard/job-card/selections/vehicle-service-options?service_id=${serviceId}`)
-        .then(r => {
-            if (!r.ok) {
-                throw new Error(`HTTP error! status: ${r.status}`);
-            }
-            return r.json();
-        });
+const fetchDrainPlugSeals = () =>
+  fetch('/dashboard/job-card/selections/drain-plug-seals').then(r => r.json());
 
 
   const selectOilBrand = (brand: OilBrand) => {
-    setJobCardData(prev => ({ ...prev, oilBrand: brand, oil: undefined }));
-    fetchOilsByBrand(brand.id).then(res => setAvailableOils(res.data));
-  };
+  setJobCardData(prev => ({ ...prev, oilBrand: brand, oil: undefined }));
+  fetchOilsByBrand(brand.id).then(res => setAvailableOils(res.data));
+};
 
 
   const selectOil = (oil: Oil) => {
@@ -467,8 +399,7 @@ const fetchVehicleServiceOptions = (serviceId: number): Promise<VehicleServiceOp
                 {jobCardData.mileage && (
                   <div className="mt-4 p-4 bg-emerald-50 border border-emerald-200 rounded-xl">
                     <p className="text-emerald-700 font-semibold">
-                      Current Mileage: {jobCardData.mileage} km
-                      {/* Current Mileage: {jobCardData.mileage.toLocaleString()} km */}
+                      Current Mileage: {jobCardData.mileage.toLocaleString()} km
                     </p>
                   </div>
                 )}
@@ -502,6 +433,8 @@ const fetchVehicleServiceOptions = (serviceId: number): Promise<VehicleServiceOp
         );
 
       case 5:
+        const availableOils = jobCardData.oilBrand ? getOilsByBrand(jobCardData.oilBrand.id) : [];
+
         return (
           <div className="space-y-8">
             <div className="text-center">
@@ -731,8 +664,7 @@ const fetchVehicleServiceOptions = (serviceId: number): Promise<VehicleServiceOp
             <div className="text-lg font-semibold text-slate-800">{jobCardData.vehicle.vehicle_no}</div>
             <div className="text-slate-600">{jobCardData.vehicle.make_year} {jobCardData.vehicle.model.name}</div>
             {jobCardData.mileage && (
-              <div className="text-sm text-slate-500 mt-1">Mileage: {jobCardData.mileage} km</div>
-              // <div className="text-sm text-slate-500 mt-1">Mileage: {jobCardData.mileage.toLocaleString()} km</div>
+              <div className="text-sm text-slate-500 mt-1">Mileage: {jobCardData.mileage.toLocaleString()} km</div>
             )}
           </div>
         )}

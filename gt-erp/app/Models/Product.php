@@ -69,6 +69,11 @@ class Product extends Model
         return $this->hasMany(Stock::class);
     }
 
+    public function getPriceAttribute(): ?float
+    {
+        return $this->stocks()->latest()->first()->selling_price ?? null;
+    }
+
     /**
      * Get the total quantity in stock for this product.
      */

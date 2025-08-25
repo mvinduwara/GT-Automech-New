@@ -309,7 +309,6 @@ export default function BrandIndex() {
                                         { preserveState: true, replace: true },
                                     );
                                 }}
-                                className="bg-blue-600 px-6 text-white hover:bg-blue-700"
                             >
                                 Apply Filters
                             </Button>

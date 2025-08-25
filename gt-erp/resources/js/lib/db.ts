@@ -414,5 +414,6 @@ export const getServiceById = (id: number): Service | undefined => {
 };
 
 export const formatCurrency = (amount: number): string => {
-    return `Rs.${amount.toLocaleString()}/=`;
+    return `Rs.${amount}/=`;
+    // return `Rs.${amount.toLocaleString()}/=`;
 };

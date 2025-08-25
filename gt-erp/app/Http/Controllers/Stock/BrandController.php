@@ -30,6 +30,7 @@ class BrandController extends Controller
         if ($status = $request->input('status')) {
             $query->where('status', $status);
         }
+        $query->orderBy('created_at', 'desc');
 
         $brands = $query->paginate(10);
 

@@ -5,7 +5,7 @@ namespace App\Exports;
 use App\Models\Product;
 use Illuminate\Support\Facades\Log;
 use Maatwebsite\Excel\Concerns\{
-    FromQuery,
+    FromCollection,
     WithHeadings,
     WithMapping,
     WithStyles,
@@ -14,13 +14,13 @@ use Maatwebsite\Excel\Concerns\{
 };
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
-class StockExport implements FromQuery, WithHeadings, WithMapping, WithStyles, WithTitle, ShouldAutoSize
+class StockExport implements FromCollection, WithHeadings, WithMapping, WithStyles, WithTitle, ShouldAutoSize
 {
-    public function query()
+    public function collection()
     {
-        return Product::query()
-            ->with(['category', 'brand', 'unitOfMeasure', 'stocks'])
-            ->whereHas('stocks', fn($q) => $q->where('status', 'active'));
+        return Product::with(['category', 'brand', 'unitOfMeasure', 'stocks'])
+            ->whereHas('stocks', fn($q) => $q->where('status', 'active'))
+            ->get();
     }
 
     public function headings(): array

@@ -278,7 +278,6 @@ export default function CategoryIndex() {
                                 onClick={() => {
                                     router.get(route('dashboard.category.index'), { search: searchTerm, status: statusFilter }, { preserveState: true, replace: true });
                                 }}
-                                className="bg-blue-600 hover:bg-blue-700 text-white px-6"
                             >
                                 Apply Filters
                             </Button>
