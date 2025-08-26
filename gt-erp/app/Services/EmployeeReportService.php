@@ -27,24 +27,28 @@ class EmployeeReportService
 
         // Header
         $sheet->setCellValue('A1', 'Employee ID');
-        $sheet->setCellValue('B1', 'Name');
-        $sheet->setCellValue('C1', 'Email');
-        $sheet->setCellValue('D1', 'Phone');
-        $sheet->setCellValue('E1', 'Department');
-        $sheet->setCellValue('F1', 'Status');
-        $sheet->setCellValue('G1', 'Salary');
+        $sheet->setCellValue('B1', 'First Name');
+        $sheet->setCellValue('C1', 'Last Name');
+        $sheet->setCellValue('D1', 'Email');
+        $sheet->setCellValue('E1', 'Phone');
+        $sheet->setCellValue('F1', 'Department');
+        $sheet->setCellValue('G1', 'Status');
+        // $sheet->setCellValue('H1', 'Salary');
+
 
         $row = 2;
         foreach ($employees as $emp) {
             $sheet->setCellValue('A' . $row, $emp->id);
-            $sheet->setCellValue('B' . $row, $emp->name);
-            $sheet->setCellValue('C' . $row, $emp->email);
-            $sheet->setCellValue('D' . $row, $emp->phone);
-            $sheet->setCellValue('E' . $row, $emp->department->name ?? ''); // ✅ FIXED
-            $sheet->setCellValue('F' . $row, $emp->status);
-            $sheet->setCellValue('G' . $row, $emp->salary);
+            $sheet->setCellValue('B' . $row, $emp->first_name); // First Name column
+            $sheet->setCellValue('C' . $row, $emp->last_name);  // Last Name column
+            $sheet->setCellValue('D' . $row, $emp->email);
+            $sheet->setCellValue('E' . $row, $emp->mobile);     // Phone column
+            $sheet->setCellValue('F' . $row, $emp->department->name ?? '');
+            $sheet->setCellValue('G' . $row, $emp->status);
+            // $sheet->setCellValue('H' . $row, $emp->salary);
             $row++;
         }
+
 
 
         // Format salary as currency

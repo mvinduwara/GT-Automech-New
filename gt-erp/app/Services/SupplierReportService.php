@@ -22,26 +22,31 @@ class SupplierReportService
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
 
-        // Header row
         $sheet->setCellValue('A1', 'Supplier ID');
         $sheet->setCellValue('B1', 'Name');
         $sheet->setCellValue('C1', 'Email');
         $sheet->setCellValue('D1', 'Phone');
         $sheet->setCellValue('E1', 'Address');
-        $sheet->setCellValue('F1', 'Status');
-        $sheet->setCellValue('G1', 'Balance');
+        $sheet->setCellValue('F1', 'Registered Date');
+        $sheet->setCellValue('G1', 'Closed Date');
+        $sheet->setCellValue('H1', 'Status');
+        // $sheet->setCellValue('I1', 'Balance');
+
 
         $row = 2;
         foreach ($suppliers as $sup) {
             $sheet->setCellValue('A' . $row, $sup->id);
             $sheet->setCellValue('B' . $row, $sup->name);
             $sheet->setCellValue('C' . $row, $sup->email);
-            $sheet->setCellValue('D' . $row, $sup->phone);
+            $sheet->setCellValue('D' . $row, $sup->mobile); // <-- corrected from phone
             $sheet->setCellValue('E' . $row, $sup->address);
-            $sheet->setCellValue('F' . $row, $sup->status);
-            $sheet->setCellValue('G' . $row, $sup->balance ?? 0);
+            $sheet->setCellValue('F' . $row, optional($sup->register_date)->format('Y-m-d'));
+            $sheet->setCellValue('G' . $row, optional($sup->close_date)->format('Y-m-d'));
+            $sheet->setCellValue('H' . $row, $sup->status);
+            // $sheet->setCellValue('I' . $row, $sup->balance ?? 0);
             $row++;
         }
+
 
         // Format Balance column as currency
         $sheet->getStyle('G2:G' . ($row - 1))
