@@ -40,13 +40,28 @@ export default function Reports() {
                 <p className="mt-2 text-sm text-gray-600">Click the button above to download the detailed Excel file.</p>
             </div>
 
-            {/* Petty Cash Report */}
-            <Head title="Petty Cash Report" />
+            {/* Petty Cash Items Report */}
+            <Head title="Petty Cash Items Report" />
             <div className="rounded bg-white p-6 shadow">
-                <h1 className="mb-4 text-2xl font-bold">Petty Cash Report</h1>
+                <h1 className="mb-4 text-2xl font-bold">Petty Cash Items Report</h1>
 
                 <button onClick={downloadPettyCashReport} className="rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700">
-                    Download Petty Cash Report
+                    Download Petty Cash Items Report
+                </button>
+
+                <p className="mt-2 text-sm text-gray-600">Click the button above to download the detailed Excel file.</p>
+            </div>
+
+            {/* Petty Cash Vouchers Report */}
+            <Head title="Petty Cash Vouchers Report" />
+            <div className="rounded bg-white p-6 shadow">
+                <h1 className="mb-4 text-2xl font-bold">Petty Cash Vouchers Report</h1>
+
+                <button
+                    onClick={() => (window.location.href = route('dashboard.reports.petty_cash_vouchers.download'))}
+                    className="rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
+                >
+                    Download Petty Cash Vouchers Report
                 </button>
 
                 <p className="mt-2 text-sm text-gray-600">Click the button above to download the detailed Excel file.</p>
@@ -83,6 +98,21 @@ export default function Reports() {
 
                 <button onClick={downloadPurchaseOrderReport} className="rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700">
                     Download Purchase Order Report
+                </button>
+
+                <p className="mt-2 text-sm text-gray-600">Click the button above to download the detailed Excel file.</p>
+            </div>
+
+            {/* Purchase Order Items Report */}
+            <Head title="Purchase Order Items Report" />
+            <div className="rounded bg-white p-6 shadow">
+                <h1 className="mb-4 text-2xl font-bold">Purchase Order Items Report</h1>
+
+                <button
+                    onClick={() => (window.location.href = route('dashboard.reports.purchase_order_items.download'))}
+                    className="rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
+                >
+                    Download Purchase Order Items Report
                 </button>
 
                 <p className="mt-2 text-sm text-gray-600">Click the button above to download the detailed Excel file.</p>

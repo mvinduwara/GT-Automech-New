@@ -33,7 +33,8 @@ class EmployeeReportService
         $sheet->setCellValue('E1', 'Phone');
         $sheet->setCellValue('F1', 'Department');
         $sheet->setCellValue('G1', 'Status');
-        // $sheet->setCellValue('H1', 'Salary');
+        $sheet->setCellValue('H1', 'Hired Date');
+        $sheet->setCellValue('I1', 'Job Title');
 
 
         $row = 2;
@@ -45,7 +46,8 @@ class EmployeeReportService
             $sheet->setCellValue('E' . $row, $emp->mobile);     // Phone column
             $sheet->setCellValue('F' . $row, $emp->department->name ?? '');
             $sheet->setCellValue('G' . $row, $emp->status);
-            // $sheet->setCellValue('H' . $row, $emp->salary);
+            $sheet->setCellValue('H' . $row, $emp->hire_date);
+            $sheet->setCellValue('I' . $row, $emp->job_title);
             $row++;
         }
 
