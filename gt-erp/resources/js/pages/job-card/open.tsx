@@ -48,21 +48,21 @@ interface SelectionButtonProps {
 }
 
 interface VehicleServicesResponse {
-    data: Service[];
-    meta?: {
-        total_services: number;
-        services_with_options: number;
-        services_without_options: number;
-    };
+  data: Service[];
+  meta?: {
+    total_services: number;
+    services_with_options: number;
+    services_without_options: number;
+  };
 }
 
 interface VehicleServiceOptionsResponse {
-    data: ServiceOption[];
-    meta?: {
-        service_id: number;
-        service_name: string;
-        options_count: number;
-    };
+  data: ServiceOption[];
+  meta?: {
+    service_id: number;
+    service_name: string;
+    options_count: number;
+  };
 }
 
 
@@ -187,19 +187,19 @@ export default function Open() {
   }, []);
 
   useEffect(() => {
-  if (services.length > 0) {
-    const jobCardServices = services.map(service => ({
-      service,
-      option: service.options[0],
-      ignored: false
-    }));
-    
-    setJobCardData(prev => ({
-      ...prev,
-      services: jobCardServices
-    }));
-  }
-}, [services]);
+    if (services.length > 0) {
+      const jobCardServices = services.map(service => ({
+        service,
+        option: service.options[0],
+        ignored: false
+      }));
+
+      setJobCardData(prev => ({
+        ...prev,
+        services: jobCardServices
+      }));
+    }
+  }, [services]);
 
 
   console.log("firstOilBrand", oilBrands[0]);
@@ -246,23 +246,23 @@ export default function Open() {
   const fetchDrainPlugSeals = () =>
     fetch('/dashboard/job-card/selections/drain-plug-seals').then(r => r.json());
 
-  const fetchVehicleServices = (): Promise<VehicleServicesResponse> => 
+  const fetchVehicleServices = (): Promise<VehicleServicesResponse> =>
     fetch('/dashboard/job-card/selections/vehicle-services')
-        .then(r => {
-            if (!r.ok) {
-                throw new Error(`HTTP error! status: ${r.status}`);
-            }
-            return r.json();
-        });
+      .then(r => {
+        if (!r.ok) {
+          throw new Error(`HTTP error! status: ${r.status}`);
+        }
+        return r.json();
+      });
 
-const fetchVehicleServiceOptions = (serviceId: number): Promise<VehicleServiceOptionsResponse> => 
+  const fetchVehicleServiceOptions = (serviceId: number): Promise<VehicleServiceOptionsResponse> =>
     fetch(`/dashboard/job-card/selections/vehicle-service-options?service_id=${serviceId}`)
-        .then(r => {
-            if (!r.ok) {
-                throw new Error(`HTTP error! status: ${r.status}`);
-            }
-            return r.json();
-        });
+      .then(r => {
+        if (!r.ok) {
+          throw new Error(`HTTP error! status: ${r.status}`);
+        }
+        return r.json();
+      });
 
 
   const selectOilBrand = (brand: OilBrand) => {
@@ -326,7 +326,7 @@ const fetchVehicleServiceOptions = (serviceId: number): Promise<VehicleServiceOp
         total += item.option.price;
       }
     });
-
+    console.log("Total Amount", total)
     return total;
   };
 
