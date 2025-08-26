@@ -16,6 +16,16 @@ export default function Reports() {
         window.location.href = route('dashboard.reports.employee.download');
     };
 
+    // ✅ Download Supplier Report
+    const downloadSupplierReport = () => {
+        window.location.href = route('dashboard.reports.supplier.download');
+    };
+
+    // ✅ Download Purchase Order Report
+    const downloadPurchaseOrderReport = () => {
+        window.location.href = route('dashboard.reports.purchase_order.download');
+    };
+
     return (
         <>
             {/* Stock Report */}
@@ -47,11 +57,32 @@ export default function Reports() {
             <div className="rounded bg-white p-6 shadow">
                 <h1 className="mb-4 text-2xl font-bold">Employee Report</h1>
 
-                <button
-                    onClick={downloadEmployeeReport}
-                    className="rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
-                >
+                <button onClick={downloadEmployeeReport} className="rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700">
                     Download Employee Report
+                </button>
+
+                <p className="mt-2 text-sm text-gray-600">Click the button above to download the detailed Excel file.</p>
+            </div>
+
+            {/* Supplier Report */}
+            <Head title="Supplier Report" />
+            <div className="rounded bg-white p-6 shadow">
+                <h1 className="mb-4 text-2xl font-bold">Supplier Report</h1>
+
+                <button onClick={downloadSupplierReport} className="rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700">
+                    Download Supplier Report
+                </button>
+
+                <p className="mt-2 text-sm text-gray-600">Click the button above to download the detailed Excel file.</p>
+            </div>
+
+            {/* Purchase Order Report */}
+            <Head title="Purchase Order Report" />
+            <div className="rounded bg-white p-6 shadow">
+                <h1 className="mb-4 text-2xl font-bold">Purchase Order Report</h1>
+
+                <button onClick={downloadPurchaseOrderReport} className="rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700">
+                    Download Purchase Order Report
                 </button>
 
                 <p className="mt-2 text-sm text-gray-600">Click the button above to download the detailed Excel file.</p>
