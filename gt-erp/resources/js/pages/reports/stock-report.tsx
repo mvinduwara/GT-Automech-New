@@ -1,122 +1,117 @@
+import { Button } from '@/components/ui/button';
+import AppLayout from '@/layouts/app-layout';
+import { BreadcrumbItem } from '@/types';
 import { Head } from '@inertiajs/react';
+import { Download } from 'lucide-react';
+
+const breadcrumbs: BreadcrumbItem[] = [
+    {
+        title: 'Reports',
+        href: '/dashboard/reports',
+    },
+];
+
+// Download Stock Report
+const downloadStockReport = () => {
+    window.location.href = route('dashboard.reports.stock.download');
+};
+
+// Download Petty Cash Report
+const downloadPettyCashReport = () => {
+    window.location.href = route('dashboard.reports.petty_cash.download');
+};
+
+// ✅ Download Employee Report
+const downloadEmployeeReport = () => {
+    window.location.href = route('dashboard.reports.employee.download');
+};
+
+// ✅ Download Supplier Report
+const downloadSupplierReport = () => {
+    window.location.href = route('dashboard.reports.supplier.download');
+};
+
+// ✅ Download Purchase Order Report
+const downloadPurchaseOrderReport = () => {
+    window.location.href = route('dashboard.reports.purchase_order.download');
+};
 
 export default function Reports() {
-    // Download Stock Report
-    const downloadStockReport = () => {
-        window.location.href = route('dashboard.reports.stock.download');
-    };
-
-    // Download Petty Cash Report
-    const downloadPettyCashReport = () => {
-        window.location.href = route('dashboard.reports.petty_cash.download');
-    };
-
-    // ✅ Download Employee Report
-    const downloadEmployeeReport = () => {
-        window.location.href = route('dashboard.reports.employee.download');
-    };
-
-    // ✅ Download Supplier Report
-    const downloadSupplierReport = () => {
-        window.location.href = route('dashboard.reports.supplier.download');
-    };
-
-    // ✅ Download Purchase Order Report
-    const downloadPurchaseOrderReport = () => {
-        window.location.href = route('dashboard.reports.purchase_order.download');
-    };
-
     return (
-        <>
-            {/* Stock Report */}
-            <Head title="Stock Report" />
-            <div className="mb-6 rounded bg-white p-6 shadow">
-                <h1 className="mb-4 text-2xl font-bold">Stock Report</h1>
+        <AppLayout breadcrumbs={breadcrumbs}>
+            <Head title="Inventory" />
+            <div className="flex h-full flex-1 flex-col gap-6 overflow-x-auto rounded-xl p-6">
+                <div className="flex items-center justify-between">
+                    <h1 className="text-2xl font-bold text-gray-900">Reports Overview</h1>
+                </div>
+                <>
+                    <Head title="Reports" />
 
-                <button onClick={downloadStockReport} className="rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700">
-                    Download Stock Report
-                </button>
+                    <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+                        {/* Stock Report */}
+                        <div className="flex flex-col items-start justify-between gap-4 rounded-md bg-gradient-to-r from-slate-50 to-red-300 p-5 shadow-md">
+                            <p className="font-medium text-neutral-700">Stock Report</p>
+                            <Button variant={'outline'} onClick={downloadStockReport} c>
+                                <Download className="h-4 w-4" /> Download
+                            </Button>
+                        </div>
 
-                <p className="mt-2 text-sm text-gray-600">Click the button above to download the detailed Excel file.</p>
+                        {/* Petty Cash Items Report */}
+                        <div className="flex flex-col items-start justify-between gap-4 rounded-md bg-gradient-to-r from-slate-50 to-lime-300 p-5 shadow-md">
+                            <p className="font-medium text-neutral-700">Petty Cash Items Report</p>
+                            <Button variant={'outline'} onClick={downloadPettyCashReport}>
+                                <Download className="h-4 w-4" /> Download
+                            </Button>
+                        </div>
+
+                        {/* Petty Cash Vouchers Report */}
+                        <div className="flex flex-col items-start justify-between gap-4 rounded-md bg-gradient-to-r from-neutral-300 to-stone-400 p-5 shadow-md">
+                            <p className="font-medium text-neutral-700">Petty Cash Vouchers Report</p>
+                            <Button
+                                variant={'outline'}
+                                onClick={() => (window.location.href = route('dashboard.reports.petty_cash_vouchers.download'))}
+                            >
+                                <Download className="h-4 w-4" /> Download
+                            </Button>
+                        </div>
+
+                        {/* Employee Report */}
+                        <div className="flex flex-col items-start justify-between gap-4 rounded-md bg-gradient-to-r from-violet-200 to-pink-200 p-5 shadow-md">
+                            <p className="font-medium text-neutral-700">Employee Report</p>
+                            <Button variant={'outline'} onClick={downloadEmployeeReport}>
+                                <Download className="h-4 w-4" /> Download
+                            </Button>
+                        </div>
+
+                        {/* Supplier Report */}
+                        <div className="flex flex-col items-start justify-between gap-4 rounded-md bg-gradient-to-r from-teal-200 to-teal-500 p-5 shadow-md">
+                            <p className="font-medium text-neutral-700">Supplier Report</p>
+                            <Button variant={'outline'} onClick={downloadSupplierReport}>
+                                <Download className="h-4 w-4" /> Download
+                            </Button>
+                        </div>
+
+                        {/* Purchase Order Report */}
+                        <div className="flex flex-col items-start justify-between gap-4 rounded-md bg-gradient-to-r from-blue-200 to-cyan-200 p-5 shadow-md">
+                            <p className="font-medium text-neutral-700">Purchase Order Report</p>
+                            <Button variant={'outline'} onClick={downloadPurchaseOrderReport}>
+                                <Download className="h-4 w-4" /> Download
+                            </Button>
+                        </div>
+
+                        {/* Purchase Order Items Report */}
+                        <div className="flex flex-col items-start justify-between gap-4 rounded-md bg-gradient-to-r from-slate-50 to-green-300 p-5 shadow-md">
+                            <p className="font-medium text-neutral-700">Purchase Order Items Report</p>
+                            <Button
+                                variant={'outline'}
+                                onClick={() => (window.location.href = route('dashboard.reports.purchase_order_items.download'))}
+                            >
+                                <Download className="h-4 w-4" /> Download
+                            </Button>
+                        </div>
+                    </div>
+                </>
             </div>
-
-            {/* Petty Cash Items Report */}
-            <Head title="Petty Cash Items Report" />
-            <div className="rounded bg-white p-6 shadow">
-                <h1 className="mb-4 text-2xl font-bold">Petty Cash Items Report</h1>
-
-                <button onClick={downloadPettyCashReport} className="rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700">
-                    Download Petty Cash Items Report
-                </button>
-
-                <p className="mt-2 text-sm text-gray-600">Click the button above to download the detailed Excel file.</p>
-            </div>
-
-            {/* Petty Cash Vouchers Report */}
-            <Head title="Petty Cash Vouchers Report" />
-            <div className="rounded bg-white p-6 shadow">
-                <h1 className="mb-4 text-2xl font-bold">Petty Cash Vouchers Report</h1>
-
-                <button
-                    onClick={() => (window.location.href = route('dashboard.reports.petty_cash_vouchers.download'))}
-                    className="rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
-                >
-                    Download Petty Cash Vouchers Report
-                </button>
-
-                <p className="mt-2 text-sm text-gray-600">Click the button above to download the detailed Excel file.</p>
-            </div>
-
-            {/* Employee Report */}
-            <Head title="Employee Report" />
-            <div className="rounded bg-white p-6 shadow">
-                <h1 className="mb-4 text-2xl font-bold">Employee Report</h1>
-
-                <button onClick={downloadEmployeeReport} className="rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700">
-                    Download Employee Report
-                </button>
-
-                <p className="mt-2 text-sm text-gray-600">Click the button above to download the detailed Excel file.</p>
-            </div>
-
-            {/* Supplier Report */}
-            <Head title="Supplier Report" />
-            <div className="rounded bg-white p-6 shadow">
-                <h1 className="mb-4 text-2xl font-bold">Supplier Report</h1>
-
-                <button onClick={downloadSupplierReport} className="rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700">
-                    Download Supplier Report
-                </button>
-
-                <p className="mt-2 text-sm text-gray-600">Click the button above to download the detailed Excel file.</p>
-            </div>
-
-            {/* Purchase Order Report */}
-            <Head title="Purchase Order Report" />
-            <div className="rounded bg-white p-6 shadow">
-                <h1 className="mb-4 text-2xl font-bold">Purchase Order Report</h1>
-
-                <button onClick={downloadPurchaseOrderReport} className="rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700">
-                    Download Purchase Order Report
-                </button>
-
-                <p className="mt-2 text-sm text-gray-600">Click the button above to download the detailed Excel file.</p>
-            </div>
-
-            {/* Purchase Order Items Report */}
-            <Head title="Purchase Order Items Report" />
-            <div className="rounded bg-white p-6 shadow">
-                <h1 className="mb-4 text-2xl font-bold">Purchase Order Items Report</h1>
-
-                <button
-                    onClick={() => (window.location.href = route('dashboard.reports.purchase_order_items.download'))}
-                    className="rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
-                >
-                    Download Purchase Order Items Report
-                </button>
-
-                <p className="mt-2 text-sm text-gray-600">Click the button above to download the detailed Excel file.</p>
-            </div>
-        </>
+        </AppLayout>
     );
 }
