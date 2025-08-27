@@ -49,7 +49,7 @@ export default function Reports() {
 
                     <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
                         {/* Stock Report */}
-                        <div className="flex flex-col items-start justify-between gap-4 rounded-md bg-gradient-to-r from-slate-50 to-red-300 p-5 shadow-md">
+                        <div className="flex flex-col items-start justify-between gap-4 rounded-md bg-gradient-to-r from-red-300 to-slate-50 p-5 shadow-md">
                             <p className="font-medium text-neutral-700">Stock Report</p>
                             <Button variant={'outline'} onClick={downloadStockReport} c>
                                 <Download className="h-4 w-4" /> Download
@@ -57,7 +57,7 @@ export default function Reports() {
                         </div>
 
                         {/* Petty Cash Items Report */}
-                        <div className="flex flex-col items-start justify-between gap-4 rounded-md bg-gradient-to-r from-slate-50 to-lime-300 p-5 shadow-md">
+                        <div className="flex flex-col items-start justify-between gap-4 rounded-md bg-gradient-to-r from-lime-300 to-slate-50 p-5 shadow-md">
                             <p className="font-medium text-neutral-700">Petty Cash Items Report</p>
                             <Button variant={'outline'} onClick={downloadPettyCashReport}>
                                 <Download className="h-4 w-4" /> Download
@@ -65,7 +65,7 @@ export default function Reports() {
                         </div>
 
                         {/* Petty Cash Vouchers Report */}
-                        <div className="flex flex-col items-start justify-between gap-4 rounded-md bg-gradient-to-r from-neutral-300 to-stone-400 p-5 shadow-md">
+                        <div className="flex flex-col items-start justify-between gap-4 rounded-md bg-gradient-to-r from-stone-400 to-neutral-300 p-5 shadow-md">
                             <p className="font-medium text-neutral-700">Petty Cash Vouchers Report</p>
                             <Button
                                 variant={'outline'}
@@ -76,7 +76,7 @@ export default function Reports() {
                         </div>
 
                         {/* Employee Report */}
-                        <div className="flex flex-col items-start justify-between gap-4 rounded-md bg-gradient-to-r from-violet-200 to-pink-200 p-5 shadow-md">
+                        <div className="flex flex-col items-start justify-between gap-4 rounded-md bg-gradient-to-r from-pink-200 to-violet-200 p-5 shadow-md">
                             <p className="font-medium text-neutral-700">Employee Report</p>
                             <Button variant={'outline'} onClick={downloadEmployeeReport}>
                                 <Download className="h-4 w-4" /> Download
@@ -84,7 +84,7 @@ export default function Reports() {
                         </div>
 
                         {/* Supplier Report */}
-                        <div className="flex flex-col items-start justify-between gap-4 rounded-md bg-gradient-to-r from-teal-200 to-teal-500 p-5 shadow-md">
+                        <div className="flex flex-col items-start justify-between gap-4 rounded-md bg-gradient-to-r from-teal-500 to-teal-200 p-5 shadow-md">
                             <p className="font-medium text-neutral-700">Supplier Report</p>
                             <Button variant={'outline'} onClick={downloadSupplierReport}>
                                 <Download className="h-4 w-4" /> Download
@@ -92,7 +92,7 @@ export default function Reports() {
                         </div>
 
                         {/* Purchase Order Report */}
-                        <div className="flex flex-col items-start justify-between gap-4 rounded-md bg-gradient-to-r from-blue-200 to-cyan-200 p-5 shadow-md">
+                        <div className="flex flex-col items-start justify-between gap-4 rounded-md bg-gradient-to-r from-cyan-200 to-blue-200 p-5 shadow-md">
                             <p className="font-medium text-neutral-700">Purchase Order Report</p>
                             <Button variant={'outline'} onClick={downloadPurchaseOrderReport}>
                                 <Download className="h-4 w-4" /> Download
@@ -100,7 +100,7 @@ export default function Reports() {
                         </div>
 
                         {/* Purchase Order Items Report */}
-                        <div className="flex flex-col items-start justify-between gap-4 rounded-md bg-gradient-to-r from-slate-50 to-green-300 p-5 shadow-md">
+                        <div className="flex flex-col items-start justify-between gap-4 rounded-md bg-gradient-to-r from-green-300 to-slate-50 p-5 shadow-md">
                             <p className="font-medium text-neutral-700">Purchase Order Items Report</p>
                             <Button
                                 variant={'outline'}
