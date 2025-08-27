@@ -49,7 +49,7 @@ export default function Reports() {
 
                     <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
                         {/* Stock Report */}
-                        <div className="flex flex-col items-start justify-between gap-4 rounded-md bg-gradient-to-r from-red-300 to-slate-50 p-5 shadow-md">
+                        <div className="flex flex-col items-start justify-between gap-4 rounded-md bg-gradient-to-r from-red-300 to-amber-200 p-5 shadow-md">
                             <p className="font-medium text-neutral-700">Stock Report</p>
                             <Button variant={'outline'} onClick={downloadStockReport} c>
                                 <Download className="h-4 w-4" /> Download
@@ -57,7 +57,7 @@ export default function Reports() {
                         </div>
 
                         {/* Petty Cash Items Report */}
-                        <div className="flex flex-col items-start justify-between gap-4 rounded-md bg-gradient-to-r from-lime-300 to-slate-50 p-5 shadow-md">
+                        <div className="flex flex-col items-start justify-between gap-4 rounded-md bg-gradient-to-r from-lime-300 to-teal-200 p-5 shadow-md">
                             <p className="font-medium text-neutral-700">Petty Cash Items Report</p>
                             <Button variant={'outline'} onClick={downloadPettyCashReport}>
                                 <Download className="h-4 w-4" /> Download
@@ -100,7 +100,7 @@ export default function Reports() {
                         </div>
 
                         {/* Purchase Order Items Report */}
-                        <div className="flex flex-col items-start justify-between gap-4 rounded-md bg-gradient-to-r from-green-300 to-slate-50 p-5 shadow-md">
+                        <div className="flex flex-col items-start justify-between gap-4 rounded-md bg-gradient-to-r from-green-300 to-zinc-300 p-5 shadow-md">
                             <p className="font-medium text-neutral-700">Purchase Order Items Report</p>
                             <Button
                                 variant={'outline'}
