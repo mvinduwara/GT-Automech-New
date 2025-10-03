@@ -3,7 +3,7 @@ import { NavUser } from '@/components/nav-user';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { type NavItem } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
-import { FileText, HandCoins, Home, IdCard, LayoutGrid, NotepadText, TicketCheck, Trash, UserPlus, UserRound, UserRoundCheck, Users } from 'lucide-react';
+import { Car, FileText, HandCoins, Home, IdCard, LayoutGrid, NotepadText, StickyNote, TicketCheck, Trash, UserPlus, UserRound, UserRoundCheck, Users } from 'lucide-react';
 import { useMemo } from 'react';
 import AppLogo from './app-logo';
 
@@ -25,7 +25,7 @@ const mainNavItems: (NavItem & { roles?: string[] })[] = [
         title: 'Customer',
         href: '/dashboard/customer',
         icon: Users,
-        roles: [USER_ROLES.CASHIER],
+        roles: [USER_ROLES.CASHIER,USER_ROLES.ADMIN],
     },
     {
         title: 'Inventory',
@@ -49,31 +49,13 @@ const mainNavItems: (NavItem & { roles?: string[] })[] = [
         title: 'Jobcard',
         href: '/dashboard/job-card',
         icon: IdCard,
-        roles: [USER_ROLES.ADMIN],
-    },
-    {
-        title: 'Jobcard',
-        href: '/dashboard/job-card',
-        icon: IdCard,
-        roles: [USER_ROLES.CASHIER],
-    },
-    {
-        title: 'Jobcard',
-        href: '/dashboard/job-card',
-        icon: IdCard,
-        roles: [USER_ROLES.SERVICEMANAGER],
+        roles: [USER_ROLES.CASHIER,USER_ROLES.SERVICEMANAGER,USER_ROLES.ADMIN],
     },
     {
         title: 'Petty Cash',
         href: '/dashboard/petty-cash',
         icon: HandCoins,
-        roles: [USER_ROLES.CASHIER],
-    },
-    {
-        title: 'Petty Cash',
-        href: '/dashboard/petty-cash',
-        icon: HandCoins,
-        roles: [USER_ROLES.ADMIN, USER_ROLES.SERVICEMANAGER],
+        roles: [USER_ROLES.CASHIER,USER_ROLES.ADMIN, USER_ROLES.SERVICEMANAGER],
     },
     {
         title: 'GRN',
@@ -81,13 +63,12 @@ const mainNavItems: (NavItem & { roles?: string[] })[] = [
         icon: NotepadText,
         roles: [USER_ROLES.CASHIER, USER_ROLES.ADMIN, USER_ROLES.SERVICEMANAGER],
     },
-    // {
-    //     title: 'Invoice',
-    //     href: '/dashboard/invoice',
-    //     icon: StickyNote,
-    //     roles: [USER_ROLES.CASHIER, USER_ROLES.ADMIN, USER_ROLES.SERVICEMANAGER],
-    // },
-
+    {
+        title: 'Vehicle Services',
+        href: '/dashboard/vehicle-services',
+        icon: Car,
+        roles: [USER_ROLES.CASHIER, USER_ROLES.ADMIN, USER_ROLES.SERVICEMANAGER],
+    },
     {
         title: 'Employee',
         href: '/dashboard/employee',
@@ -98,7 +79,7 @@ const mainNavItems: (NavItem & { roles?: string[] })[] = [
         title: 'Vehicle',
         href: '/dashboard/vehicle',
         icon: UserRoundCheck,
-        roles: [USER_ROLES.CASHIER],
+        roles: [USER_ROLES.CASHIER,USER_ROLES.ADMIN],
     },
     {
         title: 'Supplier',
@@ -109,6 +90,12 @@ const mainNavItems: (NavItem & { roles?: string[] })[] = [
     {
         title: 'Reports',
         href: '/dashboard/reports/stock',
+        icon: FileText,
+        roles: [USER_ROLES.CASHIER, USER_ROLES.ADMIN, USER_ROLES.SERVICEMANAGER],
+    },
+    {
+        title: 'Invoice',
+        href: '/dashboard/invoice',
         icon: FileText,
         roles: [USER_ROLES.CASHIER, USER_ROLES.ADMIN, USER_ROLES.SERVICEMANAGER],
     },

@@ -54,7 +54,7 @@ class SelectionController extends Controller
     {
         Log::info("=== Starting oilBrands search ===");
 
-        $categoryId = $this->getCategoryId('Oil, Engine');
+        $categoryId = $this->getCategoryId('Engine Oil');
 
         if (!$categoryId) {
             Log::error('Oil brands search failed: Category not found');
@@ -120,7 +120,7 @@ class SelectionController extends Controller
 
         // NOTE: This looks wrong - you're searching for "Filter, Oil" but the method is called oils()
         // Should this be "Oil, Engine" instead?
-        $categoryId = $this->getCategoryId('Filter, Oil');
+        $categoryId = $this->getCategoryId('Engine Oil');
 
         if (!$categoryId) {
             Log::error('Oils search failed: Category not found');
@@ -201,7 +201,7 @@ class SelectionController extends Controller
     {
         Log::info("=== Starting oilFilters search ===");
 
-        $categoryId = $this->getCategoryId('Filter, Oil');
+        $categoryId = $this->getCategoryId('Oil Filter');
 
         if (!$categoryId) {
             Log::error('Oil filters search failed: Category not found');
@@ -269,7 +269,7 @@ class SelectionController extends Controller
     {
         Log::info("=== Starting drainPlugSeals search ===");
 
-        $categoryId = $this->getCategoryId('Drain Plug Seals');
+        $categoryId = $this->getCategoryId('Air Filter');
 
         if (!$categoryId) {
             Log::error('Drain plug seals search failed: Category not found');

@@ -23,7 +23,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Artisan::call('view:cache');
 
         return Inertia::render('cache-clear');
-        // return Inertia::render('cache-clear');;
     });
 });
 
@@ -42,3 +41,4 @@ require __DIR__ . '/employee.php';
 require __DIR__ . '/vehicle.php';
 require __DIR__ . '/supplier.php';
 require __DIR__ . '/reports.php';
+require __DIR__ . '/vehicle-services.php';

@@ -413,7 +413,71 @@ export const getServiceById = (id: number): Service | undefined => {
     return services.find(service => service.id === id);
 };
 
-export const formatCurrency = (amount: number): string => {
-    return `Rs.${amount}/=`;
-    // return `Rs.${amount.toLocaleString()}/=`;
+export const formatCurrency = (
+    amount: number | string,
+    options?: {
+        showDecimals?: boolean;
+        minDecimals?: number;
+        maxDecimals?: number;
+        showThousandsSeparator?: boolean;
+        currency?: string;
+        suffix?: string;
+    }
+): string => {
+    let numAmount = Number(amount);
+    if (isNaN(numAmount)) {
+        return 'Rs.0.00/=';
+    }
+
+    const {
+        showDecimals = true,
+        minDecimals = 2,
+        maxDecimals = 2,
+        showThousandsSeparator = true,
+        currency = 'Rs.',
+        suffix = '/='
+    } = options || {};
+
+    const formattedNumber = numAmount.toLocaleString('en-US', {
+        minimumFractionDigits: showDecimals ? minDecimals : 0,
+        maximumFractionDigits: showDecimals ? maxDecimals : 0,
+        useGrouping: showThousandsSeparator
+    });
+
+    return `${currency}${formattedNumber}${suffix}`;
+};
+
+export const formatCurrencyx = (
+    amount: number,
+    options?: {
+        showDecimals?: boolean;
+        minDecimals?: number;
+        maxDecimals?: number;
+        showThousandsSeparator?: boolean;
+        currency?: string;
+        suffix?: string;
+    }
+): string => {
+    // Handle null, undefined, or NaN values
+    if (amount == null || isNaN(amount)) {
+        return 'Rs.0.00/=';
+    }
+
+    const {
+        showDecimals = true,
+        minDecimals = 2,
+        maxDecimals = 2,
+        showThousandsSeparator = true,
+        currency = 'Rs.',
+        suffix = '/='
+    } = options || {};
+
+    // Format number with proper decimal places and thousands separator
+    const formattedNumber = amount.toLocaleString('en-US', {
+        minimumFractionDigits: showDecimals ? minDecimals : 0,
+        maximumFractionDigits: showDecimals ? maxDecimals : 0,
+        useGrouping: showThousandsSeparator
+    });
+
+    return `${currency}${formattedNumber}${suffix}`;
 };

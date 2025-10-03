@@ -9,20 +9,14 @@ import {
   ServiceOption,
   Vehicle
 } from '@/types/types';
-// import {
-//   drainPlugSeals,
-//   formatCurrency,
-//   getOilsByBrand,
-//   oilBrands,
-//   oilFilters,
-//   services,
-// } from '@/lib/db';
 
 import { formatCurrency } from '@/lib/db';
-import { Head } from "@inertiajs/react";
+import { Head, router, usePage } from "@inertiajs/react";
 import { ChevronLeft, ChevronRight, DollarSign, Eye, FileText, Gauge, Plus } from 'lucide-react';
 import React, { useCallback, useEffect, useState } from 'react';
 import { searchCustomers, searchVehicles } from './actions';
+import { toast } from 'sonner';
+import CustomerCreateDialog from '../customer/CustomerCreateDialog';
 
 interface JobCardData {
   customer?: Customer;
@@ -104,12 +98,23 @@ export default function Open() {
     // }))
   });
 
-  // Search states
+  const { auth, url } = usePage().props;
+  const params = new URLSearchParams(window.location.search);
+  const job_card_id = params.get('job_card_id');
+
   const [customerSearch, setCustomerSearch] = useState('');
   const [vehicleSearch, setVehicleSearch] = useState('');
   const [showCustomerOptions, setShowCustomerOptions] = useState(false);
   const [showVehicleOptions, setShowVehicleOptions] = useState(false);
   const [showServiceModal, setShowServiceModal] = useState(false);
+  const [jobCardId, setJobCardId] = useState(0);
+
+  useEffect(() => {
+    if (job_card_id) {
+      console.log("Created Job Card ID:", job_card_id);
+      setJobCardId(job_card_id);
+    }
+  }, [job_card_id]);
 
   // New states for mileage and advance payment
   const [mileageInput, setMileageInput] = useState('');
@@ -186,11 +191,26 @@ export default function Open() {
     fetchVehicleServices().then(res => setServices(res.data));
   }, []);
 
+  // useEffect(() => {
+  //   if (services.length > 0) {
+  //     const jobCardServices = services.map(service => ({
+  //       service,
+  //       option: service.options[0],
+  //       ignored: false
+  //     }));
+
+  //     setJobCardData(prev => ({
+  //       ...prev,
+  //       services: jobCardServices
+  //     }));
+  //   }
+  // }, [services]);
+
   useEffect(() => {
     if (services.length > 0) {
       const jobCardServices = services.map(service => ({
         service,
-        option: service.options[0],
+        option: service.options && service.options.length > 0 ? service.options[0] : null,
         ignored: false
       }));
 
@@ -200,7 +220,6 @@ export default function Open() {
       }));
     }
   }, [services]);
-
 
   console.log("firstOilBrand", oilBrands[0]);
   console.log("firstOilFilter", oilFilters[0]);
@@ -270,6 +289,46 @@ export default function Open() {
     fetchOilsByBrand(brand.id).then(res => setAvailableOils(res.data));
   };
 
+  const handleViewInvoice = () => {
+    console.log("handleViewInvoice")
+    if (!canProceedToNext()) return console.log('Complete all steps first.');
+    if (!canProceedToNext()) return toast.error('Complete all steps first.');
+
+    // const payload = {
+    //   customer_id: jobCardData.customer?.id,
+    //   vehicle_id: jobCardData.vehicle?.id,
+    //   mileage: jobCardData.mileage,
+    //   oil_brand_id: jobCardData.oilBrand?.id,
+    //   oil_id: jobCardData.oil?.id,
+    //   oil_filter_id: jobCardData.oilFilter?.id,
+    //   drain_plug_seal_id: jobCardData.drainPlugSeal?.id,
+    //   services: jobCardData.services.map(s => ({
+    //     service_id: s.service.id,
+    //     option_id: s.option?.id,
+    //     ignored: s.ignored,
+    //   })),
+    //   advance_payment: jobCardData.advancePayment,
+    // };
+
+    // router.post('/dashboard/job-card/invoice/store', payload, {
+    //   onSuccess: () => toast.success('Invoice created!'),
+    //   onError: (errors) => {
+    //     console.error(errors);
+    //     toast.error('Failed to create invoice.');
+    //   },
+    // });
+    const params = new URLSearchParams(window.location.search);
+    const jobCardId = params.get("job_card_id");
+
+    const advancePayment = parseFloat(advancePaymentInput);
+
+    if (advancePayment >= 0) {
+      window.location.href = `/dashboard/job-card/${jobCardId}/invoice?advance=${advancePayment}`;
+    }else{
+      window.location.href = `/dashboard/job-card/${jobCardId}/invoice`;
+    }
+    // window.location.href = `/dashboard/job-card/invoice?job_card_id=${jobCardId}`;
+  };
 
   const selectOil = (oil: Oil) => {
     setJobCardData(prev => ({ ...prev, oil }));
@@ -288,7 +347,11 @@ export default function Open() {
       ...prev,
       services: prev.services.map(item => {
         if (item.service.id === serviceId) {
-          const newOption = optionId ? item.service.options.find(opt => opt.id === optionId) : item.option;
+          // const newOption = optionId ? item.service.options.find(opt => opt.id === optionId) : item.option;
+          const newOption = optionId
+            ? item.service.options?.find(opt => opt.id === optionId)
+            : item.option;
+
           return {
             ...item,
             option: newOption,
@@ -299,6 +362,87 @@ export default function Open() {
       })
     }));
   };
+
+  const createJobCardxx = () => {
+    console.log("Creating Job Card");
+
+    // Validate required fields
+    if (!jobCardData.customer || !jobCardData.vehicle || !jobCardData.mileage) {
+      toast.error("Please fill in all required fields.");
+      return;
+    }
+
+    // Prepare payload
+    const payload = {
+      customer_id: jobCardData.customer.id,
+      vehicle_id: jobCardData.vehicle.id,
+      mileage: jobCardData.mileage,
+    };
+
+    console.log("Creating Job Card with payload:", payload);
+
+    router.post("/dashboard/job-card/store", payload, {
+      onSuccess: (page) => {
+        toast.success(page.props.flash.success); // flash message
+        console.log("Job Card ID:", page.props.flash.job_card_id); // ✅ works now
+        setJobCardId(page.props.flash.job_card_id);
+      },
+      onError: (errors) => {
+        console.error("Validation errors:", errors);
+        toast.error("Failed to create Job Card");
+      },
+      onFinish: () => {
+        console.log("Request finished");
+      }
+    });
+  };
+
+
+  const createJobCard = () => {
+    console.log("Creating Job Card");
+
+    // Validate required fields
+    if (!jobCardData.customer || !jobCardData.vehicle || !jobCardData.mileage) {
+      toast.error("Please fill in all required fields.");
+      return;
+    }
+
+    // Prepare payload
+    const payload = {
+      customer_id: jobCardData.customer.id,
+      vehicle_id: jobCardData.vehicle.id,
+      mileage: jobCardData.mileage,
+    };
+
+    console.log("Creating Job Card with payload:", payload);
+
+    router.post("/dashboard/job-card/store", payload, {
+      onSuccess: (page) => {
+        console.log("dashboard/job-card/store", page)
+        // Access flash data from the page props
+        const flashData = page.props.flash;
+
+        if (flashData?.success) {
+          toast.success(flashData?.success);
+        }
+
+        if (flashData?.job_card_id) {
+          console.log("Job Card ID:", flashData?.job_card_id);
+          setJobCardId(flashData?.job_card_id);
+        }
+      },
+      onError: (errors) => {
+        console.error("Validation errors:", errors);
+        toast.error("Failed to create Job Card");
+      },
+      onFinish: () => {
+        console.log("Request finished");
+      }
+    });
+  };
+
+
+  useEffect(() => { createJobCard() }, [jobCardData?.mileage && jobCardData?.mileage > 0]);
 
   const canProceedToNext = () => {
     switch (currentStep) {
@@ -317,23 +461,157 @@ export default function Open() {
 
   const getTotalAmount = () => {
     let total = 0;
+    if (jobCardData.oil) total += Number(jobCardData.oil.price) || 0;
+    if (jobCardData.oilFilter) total += Number(jobCardData.oilFilter.price) || 0;
+    if (jobCardData.drainPlugSeal) total += Number(jobCardData.drainPlugSeal.price) || 0;
+
+    const servicesTotal = jobCardData.services
+      .filter(({ ignored }) => !ignored)
+      .reduce((sum, { option, service }) => {
+        const servicePrice = Number(option ? option.price : (service.base_price || 0)) || 0;
+        return sum + servicePrice;
+      }, 0);
+
+    total += servicesTotal;
+
+    console.log("Total Amount", total);
+    return total;
+  };
+
+  const getTotalAmountx = () => {
+    let total = 0;
     if (jobCardData.oil) total += jobCardData.oil.price;
     if (jobCardData.oilFilter) total += jobCardData.oilFilter.price;
     if (jobCardData.drainPlugSeal) total += jobCardData.drainPlugSeal.price;
 
-    jobCardData.services.forEach(item => {
-      if (!item.ignored && item.option) {
-        total += item.option.price;
+    // jobCardData.services.forEach(item => {
+    //   if (!item.ignored) {
+    //     const servicePrice = item.option ? item.option.price : (item.service.base_price || 0);
+    //     total += servicePrice;
+    //   }
+    // });
+
+    // jobCardData.services
+    //   .filter(({ ignored }) => !ignored)
+    //   .reduce((total, { option, service }) => {
+    //     const servicePrice = Number(option ? option.price : (service.base_price || 0));
+    //     return total + servicePrice;
+    //   }, 0)
+
+    const servicesTotal = jobCardData.services
+      .filter(({ ignored }) => !ignored)
+      .reduce((sum, { option, service }) => {
+        const servicePrice = Number(option ? option.price : (service.base_price || 0));
+        return sum + servicePrice;
+      }, 0);
+
+    total += servicesTotal;
+
+    console.log("Total Amount", total);
+    return total;
+  };
+
+  function handleSaveJobCard() {
+
+    if (currentStep === 8) {
+      saveServices();
+      return;
+    }
+
+    console.log("job card data", {
+      "jobCardData.customer": jobCardData.customer?.id,
+      "jobCardData.vehicle": jobCardData.vehicle?.id,
+      "jobCardData.mileage": jobCardData.mileage,
+      "jobCardData.oilBrand": jobCardData.oilBrand?.id,
+      "jobCardData.oil": jobCardData.oil?.id,
+      "jobCardData.oilFilter": jobCardData.oilFilter?.id,
+      "jobCardData.drainPlugSeal": jobCardData.drainPlugSeal?.id,
+    })
+
+    console.log("Creating service Job Card");
+
+    // Validate required fields
+    if (!jobCardData.customer || !jobCardData.vehicle || !jobCardData.mileage || !jobCardData.oilBrand
+      || !jobCardData.oil || !jobCardData.oilFilter || !jobCardData.drainPlugSeal
+    ) {
+      toast.error("Please fill in all required fields.");
+      return;
+    }
+
+    // Prepare payload
+    const payload = {
+      // job_card_id: jobCardData.customer.id,
+      job_card_id: jobCardId,
+      oil: jobCardData.oilBrand?.id,
+      oil_filter: jobCardData.oil?.id,
+      drain_plug_seal: jobCardData.oilFilter?.id,
+    };
+
+    console.log("Creating Job Card with payload:", payload);
+
+    router.post("/dashboard/job-card/service-job-card/store", payload, {
+      onSuccess: (page) => {
+        toast.success("Job Card created successfully!");
+        console.log("Job Card response:", page.props);
+      },
+      onError: (errors) => {
+        console.error("Validation errors:", errors);
+        toast.error("Failed to create Job Card");
+      },
+      onFinish: () => {
+        console.log("Request finished");
       }
     });
-    console.log("Total Amount", total)
-    return total;
+  }
+
+  const saveServices = async () => {
+    try {
+      if (!jobCardId) {
+        toast.error("Job Card ID not found");
+        return;
+      }
+
+      // Prepare services payload
+      const servicesPayload = jobCardData.services.map(service => ({
+        service_id: service.service.id,
+        option_id: service.option?.id || null,
+        ignored: service.ignored,
+      }));
+
+      const payload = {
+        job_card_id: jobCardId,
+        services: servicesPayload,
+      };
+
+      console.log("Saving services with payload:", payload);
+
+      router.post("/dashboard/job-card/services/store", payload, {
+        onSuccess: (page) => {
+          const response = page.props.flash || {};
+          if (response.success) {
+            toast.success("Services saved successfully!");
+            console.log("Services saved:", response.data);
+          }
+        },
+        onError: (errors) => {
+          console.error("Validation errors:", errors);
+          toast.error("Failed to save services");
+        },
+        onFinish: () => {
+          console.log("Services save request finished");
+        }
+      });
+
+    } catch (error) {
+      console.error("Error saving services:", error);
+      toast.error("An error occurred while saving services");
+    }
   };
 
   const getRemainingAmount = () => {
     const total = getTotalAmount();
     const advance = jobCardData.advancePayment || 0;
-    return total - advance;
+    return Math.max(total - advance, 0);
   };
 
   const renderStepContent = () => {
@@ -358,8 +636,9 @@ export default function Open() {
                     className="w-full px-6 py-4 text-lg border-2 border-slate-200 rounded-xl focus:border-blue-500 focus:outline-none transition-all duration-200 bg-white/50 backdrop-blur-sm shadow-sm"
                   />
                 </div>
-                <button disabled
-                  onClick={() => window.open('/customer/create', '_blank')}
+                {/* <CustomerCreateDialog /> */}
+                <button
+                  onClick={() => window.open('/dashboard/customer/create', '_blank')}
                   className="px-8 py-4 bg-emerald-500 text-white rounded-xl hover:bg-emerald-600 transition-all duration-200 flex items-center gap-3 text-lg font-medium shadow-lg"
                 // className="px-8 py-4 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white rounded-xl hover:from-emerald-600 hover:to-emerald-700 transition-all duration-200 flex items-center gap-3 text-lg font-medium shadow-lg"
                 >
@@ -367,7 +646,6 @@ export default function Open() {
                   Add Customer
                 </button>
               </div>
-
               {showCustomerOptions && customerResults.length > 0 && (
                 <div className="absolute top-full left-0 right-20 bg-white border-2 border-slate-200 rounded-xl mt-3 shadow-2xl z-10 overflow-hidden">
                   <div className="w-full flex flex-col">
@@ -409,10 +687,9 @@ export default function Open() {
                     className="w-full px-6 py-4 text-lg border-2 border-slate-200 rounded-xl focus:border-blue-500 focus:outline-none transition-all duration-200 bg-white/50 backdrop-blur-sm shadow-sm"
                   />
                 </div>
-                <button disabled
-                  onClick={() => window.open('/vehicle/create', '_blank')}
+                <button
+                  onClick={() => window.open('/dashboard/vehicle/create', '_blank')}
                   className="px-8 py-4 bg-emerald-500 text-white rounded-xl hover:bg-emerald-600 transition-all duration-200 flex items-center gap-3 text-lg font-medium shadow-lg"
-                // className="px-8 py-4 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white rounded-xl hover:from-emerald-600 hover:to-emerald-700 transition-all duration-200 flex items-center gap-3 text-lg font-medium shadow-lg"
                 >
                   <Plus className="w-5 h-5" />
                   Add Vehicle
@@ -520,7 +797,7 @@ export default function Open() {
                 >
                   <div className="h-full flex flex-col justify-between">
                     <div className="text-lg font-semibold text-slate-800">{oil.name}</div>
-                    <div className="text-2xl font-bold text-emerald-600">{formatCurrency(oil.price)}</div>
+                    <div className="text-2xl font-bold text-emerald-600">{formatCurrency(Number(oil.price))}</div>
                   </div>
                 </SelectionButton>
               ))}
@@ -729,7 +1006,7 @@ export default function Open() {
           <div className="border-b border-slate-200 pb-6">
             <h4 className="font-semibold text-slate-600 mb-3 text-sm uppercase tracking-wider">Vehicle</h4>
             <div className="text-lg font-semibold text-slate-800">{jobCardData.vehicle.vehicle_no}</div>
-            <div className="text-slate-600">{jobCardData.vehicle.make_year} {jobCardData.vehicle.model.name}</div>
+            <div className="text-slate-600">{jobCardData.vehicle.make_year} {jobCardData.vehicle.model?.name}</div>
             {jobCardData.mileage && (
               <div className="text-sm text-slate-500 mt-1">Mileage: {jobCardData.mileage} km</div>
               // <div className="text-sm text-slate-500 mt-1">Mileage: {jobCardData.mileage.toLocaleString()} km</div>
@@ -795,7 +1072,7 @@ export default function Open() {
           {currentStep === 9 && (
             <div className="mt-8">
               <Button
-                onClick={() => window.open('/dashboard/job-card/invoice', '_blank')}
+                onClick={handleViewInvoice}
                 className="w-full px-6 py-4 bg-gradient-to-r from-violet-500 to-violet-600 text-white rounded-xl hover:from-violet-600 hover:to-violet-700 transition-all duration-200 flex items-center justify-center gap-3 text-lg font-semibold shadow-lg"
               >
                 <FileText className="w-5 h-5" />
@@ -854,7 +1131,7 @@ export default function Open() {
                       jobCardData.services
                         .filter(({ ignored }) => !ignored)
                         .reduce((total, { option, service }) => {
-                          return total + (option ? option.price : service.base_price);
+                          return total + (Number(option ? option.price : service.base_price) || 0);
                         }, 0)
                     )}
                   </span>
@@ -866,6 +1143,7 @@ export default function Open() {
       </div>
     );
   };
+
 
   return (
     <div>
@@ -910,7 +1188,10 @@ export default function Open() {
                   </Button>
 
                   <Button
-                    onClick={() => setCurrentStep(Math.min(9, currentStep + 1))}
+                    onClick={() => {
+                      handleSaveJobCard();
+                      setCurrentStep(Math.min(9, currentStep + 1));
+                    }}
                     disabled={!canProceedToNext() || currentStep === 9}
                   >
                     {currentStep === 8 ? 'Next: Payment' : currentStep === 9 ? 'Complete' : 'Next'}

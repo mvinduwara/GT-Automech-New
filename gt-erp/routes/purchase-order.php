@@ -24,7 +24,7 @@ Route::middleware(['auth', 'is_admin'])->group(function () {
         });
 });
 
-Route::middleware(['auth', 'is_cashier'])->group(function () {
+Route::middleware(['auth', 'is_admin_or_cashier'])->group(function () {
     Route::prefix('dashboard/purchase-order')
         ->name('dashboard.purchase-order.')
         ->group(function () {

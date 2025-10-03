@@ -161,11 +161,9 @@ export default function Index({ petty_cash }: { petty_cash: pettyCash[] }) {
             <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
                 <div className="flex items-center justify-between">
                     <h1 className="h1 font-bold">All Petty Cash Vouchers</h1>
-                    {auth?.user?.role === 'cashier' && (
-                        <Link href={route('dashboard.petty-cash.create')}>
-                            <Button>Add New PettyCash Voucher</Button>
-                        </Link>
-                    )}
+                    <Link href={route('dashboard.petty-cash.create')}>
+                        <Button>Add New PettyCash Voucher</Button>
+                    </Link>
                 </div>
 
                 <div className="flex h-full flex-1 flex-col overflow-y-auto">
@@ -195,10 +193,10 @@ export default function Index({ petty_cash }: { petty_cash: pettyCash[] }) {
                                                 petty_cash.status === 'approved'
                                                     ? 'secondary'
                                                     : petty_cash.status === 'paid'
-                                                      ? 'default'
-                                                      : petty_cash.status === 'rejected'
-                                                        ? 'destructive'
-                                                        : 'outline'
+                                                        ? 'default'
+                                                        : petty_cash.status === 'rejected'
+                                                            ? 'destructive'
+                                                            : 'outline'
                                             }
                                         >
                                             {petty_cash.status}
@@ -295,7 +293,7 @@ export default function Index({ petty_cash }: { petty_cash: pettyCash[] }) {
                                                                                         <div className="flex items-center space-x-2">
                                                                                             <Switch
                                                                                                 id={`checked-switch-${item.id}`}
-                                                                                                checked={itemStatus}
+                                                                                                checked={item.checked?true:false}
                                                                                                 onCheckedChange={(checked) =>
                                                                                                     handleToggleChecked(item.id, checked)
                                                                                                 }

@@ -5,7 +5,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/api/vehicles/search', [VehicleController::class, 'search'])->name('api.vehicles.search');
 
-Route::middleware(['auth', 'is_cashier'])->group(function () {
+Route::middleware(['auth', 'is_admin_or_cashier'])->group(function () {
     Route::prefix('dashboard/vehicle')
         ->name('dashboard.vehicle.')
         ->group(function () {

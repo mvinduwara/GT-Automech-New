@@ -4,7 +4,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <style>
         html {
             background-color: oklch(1 0 0);
@@ -26,6 +26,18 @@
         rel="stylesheet">
 
     @routes
+    {{-- <script>
+        (function() {
+            const methods = [
+                'log', 'debug', 'info', 'warn', 'error', 'assert', 'clear', 'count',
+                'countReset', 'dir', 'dirxml', 'group', 'groupCollapsed', 'groupEnd',
+                'table', 'time', 'timeEnd', 'timeLog', 'trace'
+            ];
+            for (let i = 0; i < methods.length; i++) {
+                console[methods[i]] = function() {};
+            }
+        })();
+    </script> --}}
     @viteReactRefresh
     @vite(['resources/js/app.tsx', "resources/js/pages/{$page['component']}.tsx"])
     @inertiaHead

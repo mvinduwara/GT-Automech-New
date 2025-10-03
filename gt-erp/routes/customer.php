@@ -5,7 +5,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/api/customers/search', [CustomerController::class, 'search'])->name('api.customers.search');
 
-Route::middleware(['auth', 'is_cashier'])->group(function () {
+Route::middleware(['auth', 'is_admin_or_cashier'])->group(function () {
     Route::prefix('dashboard/customer')
         ->name('dashboard.customer.')
         ->group(function () {

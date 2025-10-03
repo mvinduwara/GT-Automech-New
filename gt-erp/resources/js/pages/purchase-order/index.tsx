@@ -126,7 +126,7 @@ export default function Index({ purchaseOrders, filters }: PageProps<{
                                     A list of all purchase orders.
                                 </CardDescription>
                             </div>
-                            {userRole === "cashier" && (
+                            {(userRole === "cashier" || userRole === "admin") && (
                                 <Button asChild>
                                     <Link href='/dashboard/purchase-order/create'>Create</Link>
                                 </Button>

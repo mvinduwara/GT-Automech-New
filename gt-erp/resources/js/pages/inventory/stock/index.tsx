@@ -341,7 +341,7 @@ export default function Index() {
                                     <TableRow
                                         key={stock.id}
                                         onClick={() => handleRowClick(stock)}
-                                        className={`cursor-pointer transition-colors hover:bg-gray-100  ${stock.status === 'inactive'
+                                        className={`cursor-pointer transition-colors hover:bg-gray-100  ${stock.status == 'deactive'
                                             ? 'text-red-500 '
                                             : ''
                                             } ${stock.quantity <=
