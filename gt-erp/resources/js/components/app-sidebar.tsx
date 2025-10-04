@@ -3,7 +3,7 @@ import { NavUser } from '@/components/nav-user';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { type NavItem } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
-import { Car, FileText, HandCoins, Home, IdCard, LayoutGrid, NotepadText, StickyNote, TicketCheck, Trash, UserPlus, UserRound, UserRoundCheck, Users } from 'lucide-react';
+import { File,Cog , Car, FileText, HandCoins, Home, IdCard, LayoutGrid, NotepadText, StickyNote, TicketCheck, Trash, UserPlus, UserRound, UserRoundCheck, Users } from 'lucide-react';
 import { useMemo } from 'react';
 import AppLogo from './app-logo';
 
@@ -66,7 +66,7 @@ const mainNavItems: (NavItem & { roles?: string[] })[] = [
     {
         title: 'Vehicle Services',
         href: '/dashboard/vehicle-services',
-        icon: Car,
+        icon: Cog,
         roles: [USER_ROLES.CASHIER, USER_ROLES.ADMIN, USER_ROLES.SERVICEMANAGER],
     },
     {
@@ -78,7 +78,7 @@ const mainNavItems: (NavItem & { roles?: string[] })[] = [
     {
         title: 'Vehicle',
         href: '/dashboard/vehicle',
-        icon: UserRoundCheck,
+        icon: Car,
         roles: [USER_ROLES.CASHIER,USER_ROLES.ADMIN],
     },
     {
@@ -90,7 +90,7 @@ const mainNavItems: (NavItem & { roles?: string[] })[] = [
     {
         title: 'Reports',
         href: '/dashboard/reports/stock',
-        icon: FileText,
+        icon: File,
         roles: [USER_ROLES.CASHIER, USER_ROLES.ADMIN, USER_ROLES.SERVICEMANAGER],
     },
     {
