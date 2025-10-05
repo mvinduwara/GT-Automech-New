@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Invoice extends Model
 {
@@ -13,33 +15,97 @@ class Invoice extends Model
         'invoice_no',
         'job_card_id',
         'customer_id',
+        'user_id',
+        'services_total',
+        'products_total',
+        'charges_total',
         'subtotal',
-        'discount_total',
         'advance_payment',
         'total',
         'status',
         'invoice_date',
         'due_date',
         'remarks',
+        'terms_conditions',
     ];
 
-    public function items()
+    protected $casts = [
+        'services_total' => 'decimal:2',
+        'products_total' => 'decimal:2',
+        'charges_total' => 'decimal:2',
+        'subtotal' => 'decimal:2',
+        'advance_payment' => 'decimal:2',
+        'total' => 'decimal:2',
+        'invoice_date' => 'date',
+        'due_date' => 'date',
+    ];
+
+    // ADD THIS LINE - Automatically append accessor to JSON/Array output
+    protected $appends = ['remaining'];
+
+    /**
+     * Boot method to calculate totals before saving
+     */
+    protected static function booted()
+    {
+        static::saving(function ($invoice) {
+            // Calculate subtotal from all line items
+            $invoice->subtotal = $invoice->services_total + $invoice->products_total + $invoice->charges_total;
+            
+            // Total is subtotal (discounts already applied in job card items)
+            $invoice->total = $invoice->subtotal;
+            
+            // Update status based on payment
+            $invoice->updatePaymentStatus();
+        });
+    }
+
+    /**
+     * Update payment status based on advance payment
+     */
+    public function updatePaymentStatus(): void
+    {
+        if ($this->status === 'cancelled') {
+            return;
+        }
+
+        if ($this->advance_payment >= $this->total) {
+            $this->status = 'paid';
+        } elseif ($this->advance_payment > 0) {
+            $this->status = 'partial';
+        } else {
+            $this->status = 'unpaid';
+        }
+    }
+
+    /**
+     * Get remaining balance
+     */
+    public function getRemainingAttribute(): float
+    {
+        return max(0, $this->total - $this->advance_payment);
+    }
+
+    /**
+     * Relationships
+     */
+    public function items(): HasMany
     {
         return $this->hasMany(InvoiceItem::class);
     }
 
-    public function customer()
+    public function customer(): BelongsTo
     {
         return $this->belongsTo(Customer::class);
     }
 
-    public function jobCard()
+    public function jobCard(): BelongsTo
     {
         return $this->belongsTo(JobCard::class);
     }
 
-    public function getRemainingAttribute(): float
+    public function user(): BelongsTo
     {
-        return max(0, $this->total - $this->advance_payment);
+        return $this->belongsTo(User::class);
     }
 }

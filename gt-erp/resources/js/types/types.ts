@@ -120,6 +120,7 @@ export interface pettyCash {
 
 export interface Customer {
     id: number;
+    title?: string;
     name: string;
     mobile: string;
     email?: string;

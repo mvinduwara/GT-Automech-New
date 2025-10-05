@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Head, Link, usePage } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -17,11 +17,9 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
-import { TrashIcon, PencilIcon } from 'lucide-react';
-import { BreadcrumbItem } from '@/types';
-import { PageProps } from '@inertiajs/inertia';
 import { format } from 'date-fns';
 import AppLayout from '@/layouts/app-layout';
+import { BreadcrumbItem } from '@/types';
 
 interface Invoice {
     id: number;
@@ -31,7 +29,13 @@ interface Invoice {
     total: number;
     status: string;
     invoice_date: string;
-    due_date: string;
+    due_date: string | null;
+}
+
+interface PaginationLink {
+    url: string | null;
+    label: string;
+    active: boolean;
 }
 
 interface FilterOption {
@@ -39,20 +43,23 @@ interface FilterOption {
     label: string;
 }
 
-interface Props extends PageProps {
+interface Props {
     invoices: {
         data: Invoice[];
-        links: any[];
+        links: PaginationLink[];
         current_page: number;
         last_page: number;
+        from: number | null;
+        to: number | null;
+        total: number;
     };
     filters: {
-        search: string;
-        status: string;
-        date_from: string;
-        date_to: string;
+        search?: string;
+        status?: string;
+        date_from?: string;
+        date_to?: string;
     };
-    statusOptions: FilterOption[];
+    statusOptions?: FilterOption[];
 }
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -62,21 +69,39 @@ const breadcrumbs: BreadcrumbItem[] = [
     },
 ];
 
-export default function Index() {
-    const { invoices, filters, statusOptions } = usePage<Props>().props;
-    const [search, setSearch] = useState(filters.search);
-    const [status, setStatus] = useState(filters.status);
-    const [dateFrom, setDateFrom] = useState(filters.date_from);
-    const [dateTo, setDateTo] = useState(filters.date_to);
+// Default status options if backend doesn't provide them
+const defaultStatusOptions: FilterOption[] = [
+    { value: '', label: 'All Statuses' },
+    { value: 'draft', label: 'Draft' },
+    { value: 'unpaid', label: 'Unpaid' },
+    { value: 'partial', label: 'Partially Paid' },
+    { value: 'paid', label: 'Paid' },
+    { value: 'cancelled', label: 'Cancelled' },
+];
+
+export default function Index({ invoices, filters = {}, statusOptions }: Props) {
+    const [search, setSearch] = useState(filters.search || '');
+    const [status, setStatus] = useState(filters.status || '');
+    const [dateFrom, setDateFrom] = useState(filters.date_from || '');
+    const [dateTo, setDateTo] = useState(filters.date_to || '');
+
+    // Use provided statusOptions or fallback to defaults
+    const availableStatusOptions = statusOptions || defaultStatusOptions;
 
     const handleApplyFilters = () => {
-        // Use Inertia's router to preserve state
-        window.location.href = route('dashboard.invoice.index', {
-            search,
-            status,
-            date_from: dateFrom,
-            date_to: dateTo,
-        });
+        router.get(
+            route('dashboard.invoice.index'),
+            {
+                search: search || undefined,
+                status: status || undefined,
+                date_from: dateFrom || undefined,
+                date_to: dateTo || undefined,
+            },
+            {
+                preserveState: true,
+                preserveScroll: true,
+            }
+        );
     };
 
     const handleClearFilters = () => {
@@ -84,7 +109,31 @@ export default function Index() {
         setStatus('');
         setDateFrom('');
         setDateTo('');
-        window.location.href = route('dashboard.invoice.index');
+        router.get(
+            route('dashboard.invoice.index'),
+            {},
+            {
+                preserveState: false,
+            }
+        );
+    };
+
+    const getStatusBadgeClass = (status: string) => {
+        const statusLower = status.toLowerCase();
+        switch (statusLower) {
+            case 'paid':
+                return 'bg-green-100 text-green-800';
+            case 'partial':
+                return 'bg-blue-100 text-blue-800';
+            case 'unpaid':
+                return 'bg-yellow-100 text-yellow-800';
+            case 'cancelled':
+                return 'bg-red-100 text-red-800';
+            case 'draft':
+                return 'bg-gray-100 text-gray-800';
+            default:
+                return 'bg-gray-100 text-gray-800';
+        }
     };
 
     return (
@@ -93,9 +142,6 @@ export default function Index() {
             <div className="flex h-full flex-1 flex-col gap-6 p-6">
                 <div className="flex items-center justify-between">
                     <h1 className="text-2xl font-bold">All Invoices</h1>
-                    {/* <Link href={route('dashboard.invoice.create')}>
-                        <Button>Add New Invoice</Button>
-                    </Link> */}
                 </div>
 
                 {/* Filters Section */}
@@ -104,15 +150,26 @@ export default function Index() {
                         placeholder="Search by invoice number..."
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                                handleApplyFilters();
+                            }
+                        }}
                         className="w-full"
                     />
-                    <Select value={status} onValueChange={setStatus}>
+                    <Select 
+                        value={status || 'all'} 
+                        onValueChange={(value) => setStatus(value === 'all' ? '' : value)}
+                    >
                         <SelectTrigger>
                             <SelectValue placeholder="Select status" />
                         </SelectTrigger>
                         <SelectContent>
-                            {statusOptions.map((option) => (
-                                <SelectItem key={option.value} value={option.value != "" ? option.value : "0"}>
+                            {availableStatusOptions.map((option) => (
+                                <SelectItem 
+                                    key={option.value || 'all'} 
+                                    value={option.value || 'all'}
+                                >
                                     {option.label}
                                 </SelectItem>
                             ))}
@@ -151,74 +208,87 @@ export default function Index() {
                                 <TableHead>Status</TableHead>
                                 <TableHead>Invoice Date</TableHead>
                                 <TableHead>Due Date</TableHead>
-                                {/* <TableHead className="text-center">Actions</TableHead> */}
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {invoices.data.map((invoice) => (
-                                <TableRow key={invoice.id}>
-
-                                    <TableCell className='hover:underline'>
-                                        <Link href={route('dashboard.invoice.view', { invoice_id: invoice.id })}>{invoice.invoice_no}</Link>
+                            {invoices.data.length > 0 ? (
+                                invoices.data.map((invoice) => (
+                                    <TableRow key={invoice.id}>
+                                        <TableCell className='hover:underline'>
+                                            <Link 
+                                                href={route('dashboard.invoice.show', invoice.id)}
+                                            >
+                                                {invoice.invoice_no}
+                                            </Link>
+                                        </TableCell>
+                                        <TableCell>{invoice.customer?.name || 'N/A'}</TableCell>
+                                        <TableCell>{invoice.job_card?.job_card_no || 'N/A'}</TableCell>
+                                        <TableCell>Rs. {Number(invoice.total).toLocaleString()}</TableCell>
+                                        <TableCell>
+                                            <span
+                                                className={`rounded px-2 py-1 text-xs ${getStatusBadgeClass(invoice.status)}`}
+                                            >
+                                                {invoice.status.charAt(0).toUpperCase() + invoice.status.slice(1)}
+                                            </span>
+                                        </TableCell>
+                                        <TableCell>
+                                            {format(new Date(invoice.invoice_date), 'MMM dd, yyyy')}
+                                        </TableCell>
+                                        <TableCell>
+                                            {invoice.due_date 
+                                                ? format(new Date(invoice.due_date), 'MMM dd, yyyy')
+                                                : 'N/A'
+                                            }
+                                        </TableCell>
+                                    </TableRow>
+                                ))
+                            ) : (
+                                <TableRow>
+                                    <TableCell colSpan={7} className="text-center py-8 text-gray-500">
+                                        No invoices found
                                     </TableCell>
-                                    <TableCell>{invoice.customer?.name || 'N/A'}</TableCell>
-                                    <TableCell>{invoice.job_card?.job_card_no || 'N/A'}</TableCell>
-                                    <TableCell>{invoice.total}</TableCell>
-                                    <TableCell>
-                                        <span
-                                            className={`rounded px-2 py-1 text-xs ${invoice.status === 'paid'
-                                                ? 'bg-green-100 text-green-800'
-                                                : invoice.status === 'pending'
-                                                    ? 'bg-yellow-100 text-yellow-800'
-                                                    : 'bg-red-100 text-red-800'
-                                                }`}
-                                        >
-                                            {invoice.status.charAt(0).toUpperCase() + invoice.status.slice(1)}
-                                        </span>
-                                    </TableCell>
-                                    <TableCell>
-                                        {format(new Date(invoice.invoice_date), 'MMM dd, yyyy')}
-                                    </TableCell>
-                                    <TableCell>
-                                        {format(new Date(invoice.due_date), 'MMM dd, yyyy')}
-                                    </TableCell>
-                                    {/* <TableCell className="text-center">
-                                        <div className="flex items-center justify-center gap-2">
-                                            <Link href={route('dashboard.invoice.edit', { invoice_id: invoice.id })}>
-                                                <Button variant="ghost" size="icon">
-                                                    <PencilIcon className="h-4 w-4" />
-                                                </Button>
-                                            </Link> 
-                                            <Button variant="ghost" size="icon" className="text-red-600">
-                                                <TrashIcon className="h-4 w-4" />
-                                            </Button>
-                                        </div>
-                                    </TableCell> */}
                                 </TableRow>
-                            ))}
+                            )}
                         </TableBody>
                     </Table>
                 </div>
 
                 {/* Pagination */}
-                <div className="flex items-center justify-between">
-                    <div>
-                        Showing {invoices.data.length} of {invoices.total} invoices
+                {invoices.data.length > 0 && (
+                    <div className="flex items-center justify-between">
+                        <div className="text-sm text-gray-700">
+                            Showing {invoices.from || 0} to {invoices.to || 0} of {invoices.total} invoices
+                        </div>
+                        <div className="flex gap-2">
+                            {invoices.links.map((link, index) => {
+                                if (!link.url) {
+                                    return (
+                                        <span
+                                            key={index}
+                                            className="px-3 py-1 rounded bg-gray-100 text-gray-400 cursor-not-allowed"
+                                            dangerouslySetInnerHTML={{ __html: link.label }}
+                                        />
+                                    );
+                                }
+
+                                return (
+                                    <Link
+                                        key={index}
+                                        href={link.url}
+                                        preserveState
+                                        preserveScroll
+                                        className={`px-3 py-1 rounded ${
+                                            link.active
+                                                ? 'bg-primary text-white'
+                                                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                        }`}
+                                        dangerouslySetInnerHTML={{ __html: link.label }}
+                                    />
+                                );
+                            })}
+                        </div>
                     </div>
-                    <div className="flex gap-2">
-                        {invoices.links.map((link, index) => (
-                            <Link
-                                key={index}
-                                href={link.url}
-                                className={`px-3 py-1 rounded ${link.active
-                                    ? 'bg-primary text-white'
-                                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                                    }`}
-                                dangerouslySetInnerHTML={{ __html: link.label }}
-                            />
-                        ))}
-                    </div>
-                </div>
+                )}
             </div>
         </AppLayout>
     );

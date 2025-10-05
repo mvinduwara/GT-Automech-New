@@ -42,3 +42,5 @@ require __DIR__ . '/vehicle.php';
 require __DIR__ . '/supplier.php';
 require __DIR__ . '/reports.php';
 require __DIR__ . '/vehicle-services.php';
+require __DIR__ . '/job-card-charges.php';
+require __DIR__ . '/insurance.php';

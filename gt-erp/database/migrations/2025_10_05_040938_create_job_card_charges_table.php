@@ -1,0 +1,34 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::create('job_card_charges', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('job_card_id')->references('id')->on('job_cards')->onDelete('restrict');
+            $table->foreignId('user_id')->constrained('users')->onDelete('restrict');
+            $table->string('name');
+            $table->integer('charge')->default(0);
+            $table->enum('discount_type', ['percentage', 'amount'])->nullable();
+            $table->decimal('discount_value', 12, 2)->default(0);
+            $table->integer('total')->default(0);
+            $table->timestamps();
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('job_card_charges');
+    }
+};

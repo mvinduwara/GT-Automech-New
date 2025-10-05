@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\JobCard\JobCardEmployeeController;
 use App\Http\Controllers\JobCard\ServiceJobCardController;
 use App\Http\Controllers\User\UserController;
 use Illuminate\Support\Facades\Route;
@@ -20,14 +21,6 @@ Route::middleware(['auth', 'is_admin'])->group(function () {
 
 Route::middleware(['auth'])->group(function () {
 
-    Route::prefix('dashboard/service-job-card')->name('dashboard.service-job-card.')->group(function () {
-        Route::put('{serviceJobCard}/assign-employees', [ServiceJobCardController::class, 'assignEmployees'])
-            ->name('assign-employees');
-
-        Route::get('{serviceJobCard}', [ServiceJobCardController::class, 'show'])
-            ->name('show');
-    });
-
-    Route::get('api/employees/search', [ServiceJobCardController::class, 'searchEmployees'])
+    Route::get('api/employees/search', [JobCardEmployeeController::class, 'searchEmployees'])
         ->name('api.employees.search');
 });

@@ -60,15 +60,14 @@ export default function Index() {
                         <h2 className="mb-2 text-lg font-semibold">Pending Job Cards</h2>
                         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                             {pendingJobCards.map((card) => (
-                                <div
-                                    key={card.id}
-                                    className="rounded-xl border bg-white p-4 shadow"
-                                >
-                                    <h3 className="font-bold">{card.job_card_no}</h3>
-                                    <p>Customer: {card.customer?.name}</p>
-                                    <p>Vehicle: {card.vehicle?.vehicle_no}</p>
-                                    <p>Mileage: {card.mileage}</p>
-                                    <p className="text-yellow-600">Status: {card.status}</p>
+                                <div key={card.id}  className="rounded-xl border bg-white hover:bg-sky-50 p-4 shadow duration-500">
+                                    <a target="_blank" href={`/dashboard/job-card/${card.id}/form`}>
+                                        <h3 className="font-bold">{card.job_card_no}</h3>
+                                        <p>Customer: {card.customer?.name}</p>
+                                        <p>Vehicle: {card.vehicle?.vehicle_no}</p>
+                                        <p>Mileage: {card.mileage}</p>
+                                        <p className="text-yellow-600">Status: {card.status}</p>
+                                    </a>
                                 </div>
                             ))}
                         </div>
@@ -142,8 +141,8 @@ export default function Index() {
                             {jobCards.data.map((card: any) => (
                                 <TableRow key={card.id}>
                                     <TableCell className="cursor-pointer hover:underline">
-                                        <Link href={`/dashboard/job-card/${card.id}/view`}>
-                                            {card.job_card_no}</Link>
+                                        <a target="_blank" href={`/dashboard/job-card/${card.id}/form`}>
+                                            {card.job_card_no}</a>
                                     </TableCell>
                                     <TableCell>{card.customer?.name}</TableCell>
                                     <TableCell>{card.vehicle?.vehicle_no}</TableCell>

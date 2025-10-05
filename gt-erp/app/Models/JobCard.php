@@ -19,6 +19,9 @@ class JobCard extends Model
         'remarks',
         'type',
         'status',
+        'ac',
+        'electronic',
+        'mechanical',
     ];
 
     public function vehicle()
@@ -39,6 +42,10 @@ class JobCard extends Model
     {
         return $this->hasMany(JobCardVehicleService::class);
     }
+    public function jobCardCharges(): HasMany
+    {
+        return $this->hasMany(JobCardCharges::class);
+    }
 
     public function serviceJobCard(): HasOne
     {
@@ -58,5 +65,65 @@ class JobCard extends Model
             ->sum(function ($service) {
                 return $service->vehicleServiceOption->price ?? 0;
             });
+    }
+
+    public function jobCardProducts(): HasMany
+    {
+        return $this->hasMany(JobCardProducts::class);
+    }
+
+    public function getProductsTotalAttribute(): float
+    {
+        return $this->jobCardProducts->sum('total');
+    }
+
+    public function acTechnician()
+    {
+        return $this->belongsTo(Employee::class, 'ac');
+    }
+
+    public function electronicTechnician()
+    {
+        return $this->belongsTo(Employee::class, 'electronic');
+    }
+
+    public function mechanicalTechnician()
+    {
+        return $this->belongsTo(Employee::class, 'mechanical');
+    }
+
+    // Add this to your existing JobCard.php model
+
+    public function invoice(): HasOne
+    {
+        return $this->hasOne(Invoice::class);
+    }
+
+    public function hasInvoice(): bool
+    {
+        return $this->invoice()->exists();
+    }
+
+    public function insurance(): HasOne
+    {
+        return $this->hasOne(Insurance::class);
+    }
+
+    public function hasInsurance(): bool
+    {
+        return $this->insurance()->exists();
+    }
+
+    public function getGrandTotalAttribute(): float
+    {
+        $servicesTotal = $this->jobCardVehicleServices()
+            ->where('is_included', true)
+            ->sum('total');
+
+        $productsTotal = $this->jobCardProducts()->sum('total');
+
+        $chargesTotal = $this->jobCardCharges()->sum('total');
+
+        return $servicesTotal + $productsTotal + $chargesTotal;
     }
 }

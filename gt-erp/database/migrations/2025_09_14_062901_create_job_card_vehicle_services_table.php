@@ -17,6 +17,10 @@ return new class extends Migration
             $table->foreignId('vehicle_service_id')->references('id')->on('vehicle_services')->onDelete('restrict');
             $table->foreignId('vehicle_service_option_id')->references('id')->on('vehicle_service_options')->onDelete('restrict');
             $table->boolean('is_included')->default(true);
+            $table->integer('subtotal')->default(0);
+            $table->enum('discount_type', ['percentage', 'amount'])->nullable();
+            $table->decimal('discount_value', 12, 2)->default(0);
+            $table->integer('total')->default(0);
             $table->timestamps();
         });
     }

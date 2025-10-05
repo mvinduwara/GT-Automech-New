@@ -34,9 +34,9 @@ type Employee = {
     };
 };
 
-type ServiceJobCard = {
+type JobCard = {
     id: number;
-    job_card_id: number;
+    job_card_no: string;
     ac?: number;
     electronic?: number;
     mechanical?: number;
@@ -46,32 +46,67 @@ type ServiceJobCard = {
 };
 
 type EmployeeAssignmentFormProps = {
-    serviceJobCard: ServiceJobCard;
+    jobCard: JobCard;
 };
 
-function EmployeeAssignmentForm({ serviceJobCard }: EmployeeAssignmentFormProps) {
+function EmployeeAssignmentForm({ jobCard }: EmployeeAssignmentFormProps) {
     const [isOpen, setIsOpen] = useState(false);
-    
+    const [currentJobCard, setCurrentJobCard] = useState<JobCard>(jobCard);
+
     // Separate search states for each technician type
     const [acSearchMobile, setAcSearchMobile] = useState("");
     const [electronicSearchMobile, setElectronicSearchMobile] = useState("");
     const [mechanicalSearchMobile, setMechanicalSearchMobile] = useState("");
-    
+
     // Separate search results for each technician type
     const [acSearchResults, setAcSearchResults] = useState<Employee[]>([]);
     const [electronicSearchResults, setElectronicSearchResults] = useState<Employee[]>([]);
     const [mechanicalSearchResults, setMechanicalSearchResults] = useState<Employee[]>([]);
-    
+
     // Separate loading states for each search
     const [acSearching, setAcSearching] = useState(false);
     const [electronicSearching, setElectronicSearching] = useState(false);
     const [mechanicalSearching, setMechanicalSearching] = useState(false);
 
     const { data, setData, put, processing, errors, reset } = useForm({
-        ac: serviceJobCard.ac || '',
-        electronic: serviceJobCard.electronic || '',
-        mechanical: serviceJobCard.mechanical || '',
+        ac: currentJobCard.ac || '',
+        electronic: currentJobCard.electronic || '',
+        mechanical: currentJobCard.mechanical || '',
     });
+
+    // Fetch fresh job card data when dialog opens
+    useEffect(() => {
+        if (isOpen) {
+            fetchJobCardData();
+        }
+    }, [isOpen]);
+
+    const fetchJobCardData = async () => {
+        try {
+            const response = await fetch(route('dashboard.job-card.show', jobCard.id), {
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const freshJobCard = await response.json();
+            setCurrentJobCard(freshJobCard);
+            
+            // Update form data with fresh values
+            setData({
+                ac: freshJobCard.ac || '',
+                electronic: freshJobCard.electronic || '',
+                mechanical: freshJobCard.mechanical || '',
+            });
+        } catch (error) {
+            console.error('Failed to fetch job card data:', error);
+        }
+    };
 
     // Generic search function
     const searchEmployees = async (mobile: string, setResults: (results: Employee[]) => void, setLoading: (loading: boolean) => void) => {
@@ -88,11 +123,11 @@ function EmployeeAssignmentForm({ serviceJobCard }: EmployeeAssignmentFormProps)
                     'Content-Type': 'application/json',
                 }
             });
-            
+
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
-            
+
             const employees = await response.json();
             setResults(employees);
         } catch (error) {
@@ -128,10 +163,12 @@ function EmployeeAssignmentForm({ serviceJobCard }: EmployeeAssignmentFormProps)
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
 
-        put(route('dashboard.service-job-card.assign-employees', serviceJobCard.id), {
+        put(route('dashboard.job-card.assign-employees', jobCard.id), {
             onSuccess: () => {
                 setIsOpen(false);
                 clearAllSearches();
+                // Fetch fresh data after successful assignment
+                fetchJobCardData();
             },
             onError: (errors) => {
                 console.error('Failed to assign employees:', errors);
@@ -151,9 +188,9 @@ function EmployeeAssignmentForm({ serviceJobCard }: EmployeeAssignmentFormProps)
     const handleCancel = () => {
         // Reset form data to original values
         setData({
-            ac: serviceJobCard.ac || '',
-            electronic: serviceJobCard.electronic || '',
-            mechanical: serviceJobCard.mechanical || '',
+            ac: currentJobCard.ac || '',
+            electronic: currentJobCard.electronic || '',
+            mechanical: currentJobCard.mechanical || '',
         });
         clearAllSearches();
         setIsOpen(false);
@@ -161,14 +198,7 @@ function EmployeeAssignmentForm({ serviceJobCard }: EmployeeAssignmentFormProps)
 
     const handleOpenChange = (open: boolean) => {
         setIsOpen(open);
-        if (open) {
-            // Reset form data when opening dialog
-            setData({
-                ac: serviceJobCard.ac || '',
-                electronic: serviceJobCard.electronic || '',
-                mechanical: serviceJobCard.mechanical || '',
-            });
-        } else {
+        if (!open) {
             clearAllSearches();
         }
     };
@@ -178,8 +208,8 @@ function EmployeeAssignmentForm({ serviceJobCard }: EmployeeAssignmentFormProps)
     };
 
     const getCurrentAssignedEmployee = (type: 'ac' | 'electronic' | 'mechanical') => {
-        const technicianKey = `${type}_technician` as keyof ServiceJobCard;
-        const technician = serviceJobCard[technicianKey] as Employee | undefined;
+        const technicianKey = `${type}_technician` as keyof JobCard;
+        const technician = currentJobCard[technicianKey] as Employee | undefined;
         return technician ? getEmployeeDisplayName(technician) : "Not assigned";
     };
 
@@ -193,7 +223,7 @@ function EmployeeAssignmentForm({ serviceJobCard }: EmployeeAssignmentFormProps)
     ) => (
         <div className="space-y-4 p-4 border rounded-lg">
             <h3 className="font-medium text-lg">{displayName}</h3>
-            
+
             {/* Current Assignment */}
             <div className="bg-gray-50 p-3 rounded-md">
                 <p className="text-sm text-gray-600">Current: {getCurrentAssignedEmployee(type)}</p>
@@ -229,7 +259,7 @@ function EmployeeAssignmentForm({ serviceJobCard }: EmployeeAssignmentFormProps)
                         <SelectValue placeholder={`Select ${displayName.toLowerCase()}`} />
                     </SelectTrigger>
                     <SelectContent>
-                        <SelectItem value="1">No assignment</SelectItem>
+                        <SelectItem value="0">No assignment</SelectItem>
                         {searchResults.map((employee) => (
                             <SelectItem key={employee.id} value={employee.id.toString()}>
                                 {getEmployeeDisplayName(employee)}
@@ -259,7 +289,7 @@ function EmployeeAssignmentForm({ serviceJobCard }: EmployeeAssignmentFormProps)
             <AlertDialogTrigger asChild>
                 <Button variant="outline">
                     Assign Technicians
-                    {(serviceJobCard.ac || serviceJobCard.electronic || serviceJobCard.mechanical) && (
+                    {(currentJobCard.ac || currentJobCard.electronic || currentJobCard.mechanical) && (
                         <span className="ml-1 h-2 w-2 bg-green-500 rounded-full"></span>
                     )}
                 </Button>
@@ -269,7 +299,7 @@ function EmployeeAssignmentForm({ serviceJobCard }: EmployeeAssignmentFormProps)
                     <AlertDialogHeader>
                         <AlertDialogTitle>Assign Technicians</AlertDialogTitle>
                         <AlertDialogDescription>
-                            Job Card No. {serviceJobCard.job_card_id}
+                            Job Card No. {jobCard.job_card_no}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
 
