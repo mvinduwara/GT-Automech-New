@@ -1,7 +1,6 @@
 <?php
 
 use App\Http\Controllers\JobCard\JobCardEmployeeController;
-use App\Http\Controllers\JobCard\ServiceJobCardController;
 use App\Http\Controllers\User\UserController;
 use Illuminate\Support\Facades\Route;
 

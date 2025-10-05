@@ -10,7 +10,6 @@ Route::middleware(['auth'])->group(function () {
         ->group(function () {
 
             Route::get('/vehicle-services', [VehicleServiceController::class, 'index'])->name("vehicle-services.index");
-            // Route::post('/vehicle-services', [VehicleServiceController::class, 'index'])->name("vehicle-services.index");
             Route::post('/vehicle-services/create', [VehicleServiceController::class, 'create'])->name("vehicle-services.create");
             Route::post('/vehicle-services/{vehicleService_id}/update', [VehicleServiceController::class, 'update'])->name("vehicle-services.update");
             Route::get('/vehicle-services/{vehicleService_id}', [VehicleServiceController::class, 'serviceIndex'])->name("vehicle-services.service.index");

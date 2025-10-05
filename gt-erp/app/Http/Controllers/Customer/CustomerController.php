@@ -37,7 +37,7 @@ class CustomerController extends Controller
             return redirect()->back()->with('error', 'Failed to load customers.');
         }
     }
-    
+
     public function create(Request $request)
     {
         return Inertia::render('customer/create');
@@ -126,6 +126,7 @@ class CustomerController extends Controller
                 'address'
             )
                 ->where('mobile', 'like', $searchTerm)
+                ->orderBy('id', 'desc')
                 ->take(10)
                 ->get();
 
