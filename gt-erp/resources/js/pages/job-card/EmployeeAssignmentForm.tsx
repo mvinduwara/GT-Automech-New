@@ -117,7 +117,7 @@ function EmployeeAssignmentForm({ jobCard }: EmployeeAssignmentFormProps) {
 
         setLoading(true);
         try {
-            const response = await fetch(`/api/employees/search?mobile=${encodeURIComponent(mobile)}`, {
+            const response = await fetch(`/api/employees/search?q=${encodeURIComponent(mobile)}`, {
                 headers: {
                     'Accept': 'application/json',
                     'Content-Type': 'application/json',

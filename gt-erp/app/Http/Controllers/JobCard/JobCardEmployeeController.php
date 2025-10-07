@@ -14,14 +14,18 @@ class JobCardEmployeeController extends Controller
     public function searchEmployees(Request $request): JsonResponse
     {
         $request->validate([
-            'mobile' => 'required|string|min:1'
+            'q' => 'required|string|min:1'
         ]);
 
-        $mobile = $request->input('mobile');
+        $mobile = $request->input('q');
 
         $employees = Employee::with('department')
-            ->where('mobile', 'LIKE', '%' . $mobile . '%')
             ->where('status', 'active')
+            ->where(function ($query) use ($mobile) {
+                $query->where('mobile', 'LIKE', '%' . $mobile . '%')
+                    ->orWhere('first_name', 'LIKE', '%' . $mobile . '%')
+                    ->orWhere('last_name', 'LIKE', '%' . $mobile . '%');
+            })
             ->orderBy('first_name')
             ->limit(20)
             ->get(['id', 'first_name', 'last_name', 'mobile', 'job_title', 'department_id']);

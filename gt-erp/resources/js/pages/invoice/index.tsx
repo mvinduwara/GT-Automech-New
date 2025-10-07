@@ -215,11 +215,11 @@ export default function Index({ invoices, filters = {}, statusOptions }: Props) 
                                 invoices.data.map((invoice) => (
                                     <TableRow key={invoice.id}>
                                         <TableCell className='hover:underline'>
-                                            <Link 
+                                            <a  target='_blank'
                                                 href={route('dashboard.invoice.show', invoice.id)}
                                             >
                                                 {invoice.invoice_no}
-                                            </Link>
+                                            </a>
                                         </TableCell>
                                         <TableCell>{invoice.customer?.name || 'N/A'}</TableCell>
                                         <TableCell>{invoice.job_card?.job_card_no || 'N/A'}</TableCell>

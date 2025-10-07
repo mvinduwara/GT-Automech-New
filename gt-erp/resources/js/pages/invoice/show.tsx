@@ -136,8 +136,11 @@ export default function Show({ invoice }: Props) {
     };
 
     const handleBack = () => {
-        router.visit(route('dashboard.job-card.form', invoice.job_card.id));
+        // const url = route('dashboard.job-card.form', invoice.job_card.id);
+        // window.open(url, '_blank');
+        window.close();
     };
+
 
     const serviceItems = invoice.items.filter(item => item.item_type === 'service');
     const productItems = invoice.items.filter(item => item.item_type === 'product');
@@ -153,7 +156,7 @@ export default function Show({ invoice }: Props) {
                     <div className="flex items-center justify-between">
                         <Button variant="ghost" onClick={handleBack}>
                             <ArrowLeft className="h-4 w-4 mr-2" />
-                            Back to Job Card
+                            Back
                         </Button>
                         <div className="flex gap-2">
                             <PaymentUpdateForm

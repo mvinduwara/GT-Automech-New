@@ -13,10 +13,11 @@ import JobCardProductsForm from "./JobCardProductsForm";
 import EmployeeAssignmentForm from "./EmployeeAssignmentForm";
 import CreateInvoiceForm from "../invoice/CreateInvoiceForm";
 import CreateInsuranceForm from "../insurance/CreateInsuranceForm";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, ArrowLeft } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import JobCardStatusForm from "./JobCardStatusForm";
 import JobCardTypeForm from "./JobCardTypeForm";
+import { Button } from "@/components/ui/button";
 
 type JobCardType = "general" | "service" | "insurance";
 type JobCardStatus = "pending" | "complete" | "cancelled";
@@ -226,6 +227,10 @@ export default function Form({
     return calculateServicesTotal() + calculateChargesTotal() + calculateProductsTotal();
   };
 
+  const handleBack = () => {
+    window.close();
+  };
+
   return (
     <div>
       <Head title={`Job Card - ${jobCard.job_card_no}`} />
@@ -236,10 +241,16 @@ export default function Form({
           <div className="mb-6">
             <div className="flex items-center justify-between mb-4">
               <div>
+                <div className="flex gap-2 items-center ">
+                  <Button variant="ghost" onClick={handleBack}>
+                    <ArrowLeft className="h-4 w-4 mr-2" />
+                    Close
+                  </Button>
+                  <h1 className="text-3xl font-bold text-gray-900">
+                    {jobCard.job_card_no}
+                  </h1>
+                </div>
 
-                <h1 className="text-3xl font-bold text-gray-900">
-                  {jobCard.job_card_no}
-                </h1>
                 <p className="text-sm text-gray-500 mt-1">
                   Created on {format(new Date(jobCard.date), "PPP")}
                 </p>

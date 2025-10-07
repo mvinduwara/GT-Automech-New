@@ -5,7 +5,7 @@ import {
 } from '@/types/types';
 
 import { Head, router } from "@inertiajs/react";
-import { ChevronLeft, ChevronRight, Gauge, Plus } from 'lucide-react';
+import { ArrowLeft, ChevronLeft, ChevronRight, Gauge, Plus } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import { toast } from 'sonner';
 import { searchCustomers, searchVehicles } from './actions';
@@ -42,6 +42,10 @@ export default function Open() {
       setShowCustomerOptions(false);
     }
   }, []);
+
+  const handleBack = () => {
+    window.close();
+  };
 
   const handleVehicleSearch = useCallback(async (value: string) => {
     setVehicleSearch(value);
@@ -303,9 +307,15 @@ export default function Open() {
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-6">
         <div className="container mx-auto">
           <div className="mb-8">
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">
-              Open Job Card
-            </h1>
+            <div className="flex gap-2 items-center ">
+              <Button variant="ghost" onClick={handleBack}>
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Close
+              </Button>
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">
+                Open Job Card
+              </h1>
+            </div>
             <div className="flex items-center mt-4 text-lg">
               <span className="bg-primary text-white px-4 py-2 rounded-lg font-semibold shadow-lg">
                 Step {currentStep} of 3
