@@ -19,10 +19,9 @@ Route::middleware(['auth', 'is_admin_or_cashier'])->group(function () {
             Route::delete('/{vehicle}', [VehicleController::class, 'destroy'])->name('destroy');
         });
 
-    // Move these OUTSIDE the vehicle prefix group
-    Route::post('/dashboard/brand/store', [VehicleBrandController::class, 'store'])
-        ->name('dashboard.brand.store');
+    Route::post('/dashboard/vehicle-brand/store', [VehicleBrandController::class, 'store'])
+        ->name('dashboard.vehicle-brand.store');
 
-    Route::post('/dashboard/model/store', [VehicleModelController::class, 'store'])
-        ->name('dashboard.model.store');
+    Route::post('/dashboard/vehicle-model/store', [VehicleModelController::class, 'store'])
+        ->name('dashboard.vehicle-model.store');
 });

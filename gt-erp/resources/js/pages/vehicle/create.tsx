@@ -93,7 +93,7 @@ export default function Create() {
     const handleAddBrand = (e: React.FormEvent) => {
         e.preventDefault();
         e.stopPropagation();
-        brandForm.post(route('dashboard.brand.store'), {
+        brandForm.post(route('dashboard.vehicle-brand.store'), {
             onSuccess: () => {
                 toast.success('Brand added successfully');
                 setBrandDialogOpen(false);
@@ -108,7 +108,7 @@ export default function Create() {
     const handleAddModel = (e: React.FormEvent) => {
         e.preventDefault();
         e.stopPropagation();
-        modelForm.post(route('dashboard.model.store'), {
+        modelForm.post(route('dashboard.vehicle-model.store'), {
             onSuccess: () => {
                 toast.success('Model added successfully');
                 setModelDialogOpen(false);
