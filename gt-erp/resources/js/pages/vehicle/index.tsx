@@ -108,9 +108,17 @@ export default function Index() {
             <div className="flex flex-col gap-4 overflow-x-auto rounded-xl p-4">
                 <div className="flex items-center justify-between">
                     <h1 className="text-2xl font-bold">Vehicles</h1>
+                    <div className="flex gap-1">
+                    <Button asChild>
+                        <Link href={route('dashboard.vehicle-brands.index')}>Vehicle Brands</Link>
+                    </Button>
+                    <Button asChild>
+                        <Link href={route('dashboard.vehicle-models.index')}>Vehicle Models</Link>
+                    </Button>
                     <Button asChild>
                         <Link href={route('dashboard.vehicle.create')}>Add Vehicle</Link>
                     </Button>
+                    </div>
                 </div>
 
                 {/* Filters Section */}
