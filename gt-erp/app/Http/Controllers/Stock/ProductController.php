@@ -110,14 +110,14 @@ class ProductController extends Controller
                 'part_number' => 'required|string|max:255|unique:products,part_number',
                 'description' => 'nullable|string',
                 'category_id' => [
-                    'required',
+                    'nullable',
                     'integer',
                     Rule::exists('categories', 'id')->where(function ($query) {
                         return $query->where('status', 'active');
                     }),
                 ],
                 'brand_id' => [
-                    'required',
+                    'nullable',
                     'integer',
                     Rule::exists('brands', 'id')->where(function ($query) {
                         return $query->where('status', 'active');
@@ -188,14 +188,14 @@ class ProductController extends Controller
                 ],
                 'description' => 'nullable|string',
                 'category_id' => [
-                    'required',
+                    'nullable',
                     'integer',
                     Rule::exists('categories', 'id')->where(function ($query) {
                         return $query->where('status', 'active');
                     }),
                 ],
                 'brand_id' => [
-                    'required',
+                    'nullable',
                     'integer',
                     Rule::exists('brands', 'id')->where(function ($query) {
                         return $query->where('status', 'active');
