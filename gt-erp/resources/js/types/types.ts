@@ -33,7 +33,7 @@ export interface pettyCash {
     requested_by_user_id: number;
     approved_by_user_id: number;
     description: string;
-    requested_by?: User; 
+    requested_by?: User;
     approved_by?: User;
     total_amount: number;
     status: string;
@@ -58,7 +58,7 @@ export type Product = {
     part_number: string;
     description: string;
     category: Category;
-    brand: Brand;
+    brand: Brand | null;
     unit_of_measure: UnitOfMeasure;
     status: 'active' | 'deactive';
     reorder_level: number;
@@ -128,12 +128,12 @@ export interface Customer {
     created_at: string;
 }
 
-export interface VehicleBrand  {
+export interface VehicleBrand {
     id: number;
     name: string;
 };
 
-export interface VehicleModel  {
+export interface VehicleModel {
     id: number;
     name: string;
     vehicle_brand_id: number;

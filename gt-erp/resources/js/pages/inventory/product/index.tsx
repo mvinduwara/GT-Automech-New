@@ -272,7 +272,7 @@ export default function Index({
                                         <TableCell>{product.name}</TableCell>
                                         <TableCell>{product.part_number}</TableCell>
                                         <TableCell>{product.category.name}</TableCell>
-                                        <TableCell>{product.brand.name}</TableCell>
+                                        <TableCell>{product.brand?.name?product.brand.name:""}</TableCell>
                                         <TableCell>
                                             {product.unit_of_measure.name}
                                         </TableCell>
