@@ -36,7 +36,7 @@ export default function PaymentUpdateForm({
     const [isOpen, setIsOpen] = useState(false);
     const [loading, setLoading] = useState(false);
     const [paymentAmount, setPaymentAmount] = useState("");
-    console.log("remaining",remaining)
+    console.log("remaining", remaining)
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -47,16 +47,15 @@ export default function PaymentUpdateForm({
             alert("Please enter a valid payment amount");
             return;
         }
-
-        const newTotalPayment = currentAdvancePayment + amount;
-
+        console.log("currentAdvancePayment", currentAdvancePayment)
+        const newTotalPayment = parseFloat(currentAdvancePayment) + amount;
         if (newTotalPayment > totalAmount) {
             alert(`Payment exceeds remaining amount. Maximum: Rs. ${remaining}`);
             return;
         }
 
         setLoading(true);
-
+        console.log("newTotalPayment", newTotalPayment)
         router.patch(
             route('dashboard.invoice.payment', invoiceId),
             { advance_payment: newTotalPayment },
@@ -144,9 +143,12 @@ export default function PaymentUpdateForm({
                         <AlertDialogCancel type="button" disabled={loading}>
                             Cancel
                         </AlertDialogCancel>
-                        <AlertDialogAction type="submit" disabled={loading}>
+                        <Button variant={"default"} type="submit" disabled={loading}>
                             {loading ? 'Processing...' : 'Record Payment'}
-                        </AlertDialogAction>
+                        </Button>
+                        {/* <AlertDialogAction type="submit" disabled={loading}>
+                            {loading ? 'Processing...' : 'Record Payment'}
+                        </AlertDialogAction> */}
                     </AlertDialogFooter>
                 </form>
             </AlertDialogContent>

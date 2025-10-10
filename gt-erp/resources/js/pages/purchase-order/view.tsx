@@ -190,7 +190,7 @@ export default function View({ purchaseOrder }: PageProps<{ purchaseOrder: Purch
                                                 <TableCell>{originalItem?.quantity}</TableCell>
                                                 <TableCell className="text-center">
                                                     <Switch
-                                                        disabled={processing || purchaseOrder.status !== 'checked' || userRole !== 'admin'}
+                                                        disabled={processing || purchaseOrder.status === 'checked' }
                                                         checked={!!item.is_approved}
                                                         onCheckedChange={(checked) => handleApprovalChange(item.id, checked)}
                                                     />

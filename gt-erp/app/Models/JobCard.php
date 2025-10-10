@@ -47,11 +47,6 @@ class JobCard extends Model
         return $this->hasMany(JobCardCharges::class);
     }
 
-    public function serviceJobCard(): HasOne
-    {
-        return $this->hasOne(ServiceJobCard::class);
-    }
-
     public function includedServices(): HasMany
     {
         return $this->hasMany(JobCardVehicleService::class)

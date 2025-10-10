@@ -2,13 +2,16 @@
 
 namespace App\Http\Controllers\PettyCash;
 
+use App\Actions\Finance\CreateLedgerEntries;
 use App\Http\Controllers\Controller;
+use App\Models\Account;
 use App\Models\PettyCashVoucher;
 use App\Models\PettyCashItem;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class PettyCashController extends Controller
 {
@@ -254,7 +257,7 @@ class PettyCashController extends Controller
         return back()->with('success', 'Voucher status changed to pending!');
     }
 
-    public function setPaid($voucher_number)
+    public function setPaidx($voucher_number)
     {
         // Check if user is service manager
         if (auth()->user()->role !== 'service-manager') {
@@ -270,6 +273,51 @@ class PettyCashController extends Controller
 
         $pettyCash->update(['status' => 'paid']);
 
+        // $voucher = PettyCashVoucher::where('voucher_number', $voucher_number)->firstOrFail();
+
         return back()->with('success', 'Voucher marked as paid!');
+    }
+
+    public function setPaid($voucher_number)
+    {
+        // Check if user is service manager or admin
+        $userRole = auth()->user()->role;
+        if (!in_array($userRole, ['service-manager', 'admin'])) {
+            return back()->withErrors(['error' => 'Unauthorized Access.']);
+        }
+
+        $voucher = PettyCashVoucher::where('voucher_number', $voucher_number)->firstOrFail();
+
+        // Only allow approved vouchers to be set to paid
+        if ($voucher->status !== 'approved') {
+            return back()->withErrors(['error' => 'Only approved vouchers can be set to paid.']);
+        }
+
+        try {
+            DB::transaction(function () use ($voucher) {
+                // 1. Update the Voucher status
+                $voucher->update(['status' => 'paid']);
+
+                // 2. Record the transaction in the financial ledger
+                $expenseAccount = Account::where('code', '5000')->firstOrFail(); // Petty Cash Expenses
+                $cashAccount = Account::where('code', '1000')->firstOrFail(); // Cash & Bank
+
+                CreateLedgerEntries::run(
+                    description: "Petty cash expense for Voucher #{$voucher->voucher_number} - {$voucher->name}",
+                    date: $voucher->date,
+                    amount: $voucher->total_amount,
+                    debitAccount: $expenseAccount, // Expense increases
+                    creditAccount: $cashAccount,    // Cash asset decreases
+                    transactionable: $voucher
+                );
+            });
+
+            Log::info('Petty cash voucher marked as paid and ledger created', ['voucher_id' => $voucher->id]);
+            return back()->with('success', 'Voucher marked as paid!');
+
+        } catch (\Exception $e) {
+            Log::error('Failed to mark voucher as paid', ['voucher_id' => $voucher->id, 'error' => $e->getMessage()]);
+            return back()->withErrors(['error' => 'Failed to process payment: ' . $e->getMessage()]);
+        }
     }
 }

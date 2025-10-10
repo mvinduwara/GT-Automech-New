@@ -2,12 +2,15 @@
 
 namespace App\Http\Controllers\GRN;
 
+use App\Actions\Finance\CreateLedgerEntries;
 use App\Http\Controllers\Controller;
+use App\Models\Account;
 use App\Models\Grn;
 use App\Models\GrnItem;
 use App\Models\GrnLedger;
 use App\Models\PurchaseOrder;
 use App\Models\Supplier;
+use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -124,11 +127,23 @@ class GrnController extends Controller
                 'remarks' => 'GRN entry',
             ]);
 
+            $inventoryAccount = Account::where('code', '1200')->firstOrFail();
+            $payableAccount = Account::where('code', '2000')->firstOrFail();
+
+            CreateLedgerEntries::run(
+                description: "Inventory received via GRN #{$grn->grn_no}",
+                date: Carbon::parse($grn->date),
+                amount: $total,
+                debitAccount: $inventoryAccount,
+                creditAccount: $payableAccount,
+                transactionable: $grn
+            );
+
             DB::commit();
 
             $purchaseOrder = PurchaseOrder::findOrFail($validated['purchase_order_id']);
             $purchaseOrder->update(['status' => 'completed']);
-            Log::info('GRN stored successfully and purchase order completed ', ['grn_id' => $grn->id]);
+            Log::info('GRN stored successfully and purchase order completed and ledger created', ['grn_id' => $grn->id]);
             return redirect()->route('dashboard.grn.index')
                 ->with('success', 'GRN created successfully.');
         } catch (\Throwable $e) {
@@ -142,7 +157,7 @@ class GrnController extends Controller
     public function edit($grnId)
     {
         Log::info('GRN edit page opened', ['grn_id' => $grnId]);
-        $grn = Grn::with(['grnItems','supplier', 'purchaseOrder.purchaseOrderItems', 'purchaseOrder.purchaseOrderItems.stock.product'])
+        $grn = Grn::with(['grnItems', 'supplier', 'purchaseOrder.purchaseOrderItems', 'purchaseOrder.purchaseOrderItems.stock.product'])
             ->findOrFail($grnId);
 
         return Inertia::render('grn/edit', ['grn' => $grn]);

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Report\FinancialReportController;
 use App\Http\Controllers\Reports\EmployeeReportController;
 use App\Http\Controllers\Reports\PettyCashReportController;
 use App\Http\Controllers\Reports\PettyCashVoucherReportController;
@@ -39,5 +40,7 @@ Route::middleware(['auth', 'is_admin_or_cashier'])->group(function () {
         // Supplier Report Routes
         Route::get('/supplier', [SupplierReportController::class, 'index'])->name('supplier');
         Route::get('/supplier/download', [SupplierReportController::class, 'download'])->name('supplier.download');
+
+        Route::get('/profit-loss', [FinancialReportController::class, 'profitAndLoss'])->name('reports.profit-loss');
     });
 });

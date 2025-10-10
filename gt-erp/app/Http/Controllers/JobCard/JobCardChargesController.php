@@ -63,11 +63,7 @@ class JobCardChargesController extends Controller
 
             // Return JSON response with charge data for AJAX requests
             if ($request->wantsJson() || $request->header('X-Inertia')) {
-                return response()->json([
-                    'success' => true,
-                    'message' => 'Charge added successfully',
-                    'charge' => $charge,
-                ], 201);
+                return back()->with('success', 'Charge added successfully');
             }
 
             return back()->with('success', 'Charge added successfully');

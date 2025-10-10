@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers\Invoice;
 
+use App\Actions\Finance\CreateLedgerEntries;
 use App\Http\Controllers\Controller;
+use App\Models\Account;
 use App\Models\Invoice;
 use App\Models\JobCard;
 use App\Models\InvoiceItem;
@@ -50,7 +52,7 @@ class InvoiceController extends Controller
     public function create(Request $request)
     {
         $jobCardId = $request->input('job_card_id');
-        
+
         if (!$jobCardId) {
             return redirect()
                 ->route('dashboard.job-card.index')
@@ -97,89 +99,115 @@ class InvoiceController extends Controller
             'terms_conditions' => 'nullable|string|max:2000',
         ]);
 
-        DB::beginTransaction();
-
         try {
-            // Check if invoice already exists
-            if ($jobCard->hasInvoice()) {
-                Log::warning('Attempted to create duplicate invoice', [
+            $invoice = DB::transaction(function () use ($jobCard, $validated) {
+                // Check if invoice already exists
+                if ($jobCard->hasInvoice()) {
+                    Log::warning('Attempted to create duplicate invoice', [
+                        'job_card_id' => $jobCard->id,
+                        'existing_invoice_id' => $jobCard->invoice->id,
+                    ]);
+
+                    return redirect()
+                        ->route('dashboard.invoice.show', $jobCard->invoice->id)
+                        ->with('error', 'Invoice already exists for this job card');
+                }
+
+                // Generate invoice number
+                $invoiceNo = 'INV-' . date('Y') . '-' . str_pad(Invoice::count() + 1, 6, '0', STR_PAD_LEFT);
+
+                // Calculate totals
+                $servicesTotal = $jobCard->jobCardVehicleServices()
+                    ->where('is_included', true)
+                    ->sum('total');
+
+                $productsTotal = $jobCard->jobCardProducts()->sum('total');
+                $chargesTotal = $jobCard->jobCardCharges()->sum('total');
+
+                // Create invoice
+                $invoice = Invoice::create([
+                    'invoice_no' => $invoiceNo,
                     'job_card_id' => $jobCard->id,
-                    'existing_invoice_id' => $jobCard->invoice->id,
+                    'customer_id' => $jobCard->customer_id,
+                    'user_id' => auth()->id(),
+                    'services_total' => $servicesTotal,
+                    'products_total' => $productsTotal,
+                    'charges_total' => $chargesTotal,
+                    'advance_payment' => $validated['advance_payment'] ?? 0,
+                    'invoice_date' => $validated['invoice_date'],
+                    'due_date' => $validated['due_date'] ?? null,
+                    'remarks' => $validated['remarks'] ?? null,
+                    'terms_conditions' => $validated['terms_conditions'] ?? null,
+                    'status' => 'draft',
                 ]);
 
-                return redirect()
-                    ->route('dashboard.invoice.show', $jobCard->invoice->id)
-                    ->with('error', 'Invoice already exists for this job card');
-            }
+                // Create invoice items from services
+                foreach ($jobCard->jobCardVehicleServices()->where('is_included', true)->get() as $service) {
+                    InvoiceItem::create([
+                        'invoice_id' => $invoice->id,
+                        'item_type' => 'service',
+                        'job_card_vehicle_service_id' => $service->id,
+                        'description' => $service->vehicleService->name . ' - ' . $service->vehicleServiceOption->name,
+                        'quantity' => 1,
+                        'unit_price' => $service->total,
+                        'line_total' => $service->total,
+                    ]);
+                }
 
-            // Generate invoice number
-            $invoiceNo = 'INV-' . date('Y') . '-' . str_pad(Invoice::count() + 1, 6, '0', STR_PAD_LEFT);
+                // Create invoice items from products
+                foreach ($jobCard->jobCardProducts as $product) {
+                    InvoiceItem::create([
+                        'invoice_id' => $invoice->id,
+                        'item_type' => 'product',
+                        'job_card_product_id' => $product->id,
+                        'description' => $product->stock->product->name,
+                        'quantity' => $product->quantity,
+                        'unit_price' => $product->unit_price,
+                        'line_total' => $product->total,
+                    ]);
+                }
 
-            // Calculate totals
-            $servicesTotal = $jobCard->jobCardVehicleServices()
-                ->where('is_included', true)
-                ->sum('total');
-            
-            $productsTotal = $jobCard->jobCardProducts()->sum('total');
-            $chargesTotal = $jobCard->jobCardCharges()->sum('total');
+                // Create invoice items from charges
+                foreach ($jobCard->jobCardCharges as $charge) {
+                    InvoiceItem::create([
+                        'invoice_id' => $invoice->id,
+                        'item_type' => 'charge',
+                        'job_card_charge_id' => $charge->id,
+                        'description' => $charge->name,
+                        'quantity' => 1,
+                        'unit_price' => $charge->total,
+                        'line_total' => $charge->total,
+                    ]);
+                }
 
-            // Create invoice
-            $invoice = Invoice::create([
-                'invoice_no' => $invoiceNo,
-                'job_card_id' => $jobCard->id,
-                'customer_id' => $jobCard->customer_id,
-                'user_id' => auth()->id(),
-                'services_total' => $servicesTotal,
-                'products_total' => $productsTotal,
-                'charges_total' => $chargesTotal,
-                'advance_payment' => $validated['advance_payment'] ?? 0,
-                'invoice_date' => $validated['invoice_date'],
-                'due_date' => $validated['due_date'] ?? null,
-                'remarks' => $validated['remarks'] ?? null,
-                'terms_conditions' => $validated['terms_conditions'] ?? null,
-                'status' => 'draft',
-            ]);
+                $salesAccount = Account::where('code', '4000')->firstOrFail(); // Sales Revenue
+                $receivablesAccount = Account::where('code', '1100')->firstOrFail(); // Accounts Receivable
 
-            // Create invoice items from services
-            foreach ($jobCard->jobCardVehicleServices()->where('is_included', true)->get() as $service) {
-                InvoiceItem::create([
-                    'invoice_id' => $invoice->id,
-                    'item_type' => 'service',
-                    'job_card_vehicle_service_id' => $service->id,
-                    'description' => $service->vehicleService->name . ' - ' . $service->vehicleServiceOption->name,
-                    'quantity' => 1,
-                    'unit_price' => $service->total,
-                    'line_total' => $service->total,
-                ]);
-            }
+                CreateLedgerEntries::run(
+                    description: "Sale for Invoice #{$invoice->invoice_no}",
+                    date: $invoice->invoice_date,
+                    amount: $invoice->total,
+                    debitAccount: $receivablesAccount, // Asset (what you're owed) increases
+                    creditAccount: $salesAccount, // Income (what you've earned) increases
+                    transactionable: $invoice
+                );
 
-            // Create invoice items from products
-            foreach ($jobCard->jobCardProducts as $product) {
-                InvoiceItem::create([
-                    'invoice_id' => $invoice->id,
-                    'item_type' => 'product',
-                    'job_card_product_id' => $product->id,
-                    'description' => $product->stock->product->name,
-                    'quantity' => $product->quantity,
-                    'unit_price' => $product->unit_price,
-                    'line_total' => $product->total,
-                ]);
-            }
+                if ($invoice->advance_payment > 0) {
+                    $cashAccount = Account::where('code', '1000')->firstOrFail(); // Cash & Bank
+                    CreateLedgerEntries::run(
+                        description: "Initial payment for Invoice #{$invoice->invoice_no}",
+                        date: $invoice->invoice_date,
+                        amount: $invoice->advance_payment,
+                        debitAccount: $cashAccount, // Cash increases
+                        creditAccount: $receivablesAccount, // What you're owed decreases
+                        transactionable: $invoice
+                    );
+                }
+                return $invoice;
+            });
 
-            // Create invoice items from charges
-            foreach ($jobCard->jobCardCharges as $charge) {
-                InvoiceItem::create([
-                    'invoice_id' => $invoice->id,
-                    'item_type' => 'charge',
-                    'job_card_charge_id' => $charge->id,
-                    'description' => $charge->name,
-                    'quantity' => 1,
-                    'unit_price' => $charge->total,
-                    'line_total' => $charge->total,
-                ]);
-            }
-
-            DB::commit();
+            Log::info('Invoice and ledger entries created successfully', ['invoice_id' => $invoice->id]);
+            return redirect()->route('dashboard.invoice.show', $invoice->id)->with('success', 'Invoice created successfully');
 
             Log::info('Invoice created successfully', [
                 'invoice_id' => $invoice->id,
@@ -192,7 +220,6 @@ class InvoiceController extends Controller
             return redirect()
                 ->route('dashboard.invoice.show', $invoice->id)
                 ->with('success', 'Invoice created successfully');
-
         } catch (\Exception $e) {
             DB::rollBack();
 
@@ -243,24 +270,48 @@ class InvoiceController extends Controller
         ]);
 
         try {
-            $oldPayment = $invoice->advance_payment;
-            $invoice->update([
-                'advance_payment' => $validated['advance_payment'],
-            ]);
+            DB::transaction(function () use ($invoice, $validated) {
+                $oldPayment = $invoice->advance_payment;
+                $paymentAmount = (float) $validated['advance_payment'];
+                Log::info('Invoice advance_payment', [
+                    'advance_payment' => $validated['advance_payment'],
+                ]);
+                $invoice->update([
+                    'advance_payment' => $validated['advance_payment'],
+                ]);
 
-            Log::info('Invoice payment updated', [
-                'invoice_id' => $invoice->id,
-                'invoice_no' => $invoice->invoice_no,
-                'old_payment' => $oldPayment,
-                'new_payment' => $invoice->advance_payment,
-                'remaining' => $invoice->remaining,
-                'status' => $invoice->status,
-            ]);
+                Log::info('Invoice payment updated', [
+                    'invoice_id' => $invoice->id,
+                    'invoice_no' => $invoice->invoice_no,
+                    'old_payment' => $oldPayment,
+                    'new_payment' => $invoice->advance_payment,
+                    'remaining' => $invoice->remaining,
+                    'status' => $invoice->status,
+                ]);
 
-            return redirect()
-                ->back()
-                ->with('success', 'Payment updated successfully');
+                $invoice->increment('advance_payment', $paymentAmount);
 
+                // 2. Record the new payment in the financial ledger
+                $cashAccount = Account::where('code', '1000')->firstOrFail(); // Cash & Bank
+                $receivablesAccount = Account::where('code', '1100')->firstOrFail(); // Accounts Receivable
+
+                CreateLedgerEntries::run(
+                    description: "Payment received for Invoice #{$invoice->invoice_no}",
+                    date: now(),
+                    amount: $paymentAmount,
+                    debitAccount: $cashAccount,          // Asset (cash) increases
+                    creditAccount: $receivablesAccount,  // Asset (what you're owed) decreases
+                    transactionable: $invoice
+                );
+
+                Log::info('Invoice payment updated and ledger created', [
+                    'invoice_id' => $invoice->id,
+                    'payment_added' => $paymentAmount,
+                    'new_total_payment' => $invoice->advance_payment,
+                ]);
+            });
+
+            return redirect()->back()->with('success', 'Payment recorded successfully');
         } catch (\Exception $e) {
             Log::error('Failed to update invoice payment', [
                 'invoice_id' => $invoice->id,
@@ -290,7 +341,6 @@ class InvoiceController extends Controller
             return redirect()
                 ->back()
                 ->with('success', 'Invoice cancelled successfully');
-
         } catch (\Exception $e) {
             Log::error('Failed to cancel invoice', [
                 'invoice_id' => $invoice->id,
