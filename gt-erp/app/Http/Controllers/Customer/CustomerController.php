@@ -125,7 +125,10 @@ class CustomerController extends Controller
                 'mobile',
                 'address'
             )
-                ->where('mobile', 'like', $searchTerm)
+                ->where(function ($query) use ($searchTerm) {
+                    $query->where('mobile', 'like', "%{$searchTerm}%")
+                        ->orWhere('name', 'like', "%{$searchTerm}%");
+                })
                 ->orderBy('id', 'desc')
                 ->take(10)
                 ->get();

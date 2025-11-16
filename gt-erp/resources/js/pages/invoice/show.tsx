@@ -6,6 +6,7 @@ import { format } from "date-fns";
 import { Printer, ArrowLeft } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import PaymentUpdateForm from "./PaymentUpdateForm";
+import InvoiceStatusForm from "./InvoiceStatusForm";
 
 type InvoiceStatus = "draft" | "unpaid" | "partial" | "paid" | "cancelled";
 
@@ -159,6 +160,12 @@ export default function Show({ invoice }: Props) {
                             Back
                         </Button>
                         <div className="flex gap-2">
+                            <InvoiceStatusForm
+                                invoiceId={invoice.id}
+                                currentStatus={invoice.status}
+                                invoiceNo={invoice.invoice_no}
+                                disabled={invoice.status === 'cancelled'}
+                            />
                             <PaymentUpdateForm
                                 invoiceId={invoice.id}
                                 currentAdvancePayment={invoice.advance_payment}
@@ -217,10 +224,9 @@ export default function Show({ invoice }: Props) {
                                     <h3 className="font-semibold text-gray-900 mb-2">From:</h3>
                                     <div className="text-sm text-gray-600">
                                         <p className="font-medium text-gray-900">GT Automech</p>
-                                        <p>123 Business Street</p>
-                                        <p>Colombo, Sri Lanka</p>
-                                        <p>Tel: +94 11 234 5678</p>
-                                        <p>Email: info@yourcompany.lk</p>
+                                        <p>186/2, Raigama Junction, Kothalawala, Bandaragama</p>
+                                        <p>Tel: +94 77 409 8580</p>
+                                        <p>Email: info@gtdrive.lk</p>
                                     </div>
                                 </div>
                                 <div>

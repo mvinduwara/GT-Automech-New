@@ -13,7 +13,7 @@ import JobCardProductsForm from "./JobCardProductsForm";
 import EmployeeAssignmentForm from "./EmployeeAssignmentForm";
 import CreateInvoiceForm from "../invoice/CreateInvoiceForm";
 import CreateInsuranceForm from "../insurance/CreateInsuranceForm";
-import { AlertCircle, ArrowLeft } from "lucide-react";
+import { AlertCircle, ArrowLeft, Printer } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import JobCardStatusForm from "./JobCardStatusForm";
 import JobCardTypeForm from "./JobCardTypeForm";
@@ -188,25 +188,17 @@ export default function Form({
     }
   };
 
-  // const calculateServicesTotal = () => {
-  //   return existingServices
-  //     .filter(service => service.is_included)
-  //     .reduce((sum, service) => sum + service.total, 0);
-  // };
-
-  // const calculateChargesTotal = () => {
-  //   return existingCharges.reduce((sum, charge) => sum + charge.total, 0);
-  // };
-
-  // const calculateProductsTotal = () => {
-  //   return existingProducts.reduce((sum, product) => sum + product.total, 0);
-  // };
-
   const calculateProductsTotal = () => {
     return existingProducts.reduce(
       (sum, product) => sum + Number(product.total || 0),
       0
     );
+  };
+
+  const handlePrint = () => {
+    // window.print();
+    const url = route('dashboard.job-card.print', jobCard.id);
+    window.open(url, '_blank');
   };
 
   const calculateServicesTotal = () => {
@@ -222,7 +214,6 @@ export default function Form({
     );
   };
 
-
   const calculateGrandTotal = () => {
     return calculateServicesTotal() + calculateChargesTotal() + calculateProductsTotal();
   };
@@ -235,7 +226,7 @@ export default function Form({
     <div>
       <Head title={`Job Card - ${jobCard.job_card_no}`} />
 
-      <div className="py-6">
+      <div className="py-6 " >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Header Section */}
           <div className="mb-6">
@@ -281,13 +272,17 @@ export default function Form({
                 )
                 }
 
-
+                <Button variant="outline" onClick={handlePrint}>
+                  <Printer className="h-4 w-4 mr-2" />
+                  Print Job Card
+                </Button>
 
               </div>
             </div>
 
             {/* Action Buttons */}
             <div className="flex flex-wrap gap-2">
+
               <JobCardDrawer jobCard={jobCard} />
 
               {!jobCard.invoice && (
@@ -308,20 +303,6 @@ export default function Form({
                 </>
               )}
 
-
-              {/* <JobCardServiceForm
-                jobCardId={jobCard.id}
-                vehicleServices={vehicleServices}
-                existingServices={existingServices}
-              />
-              <JobCardProductsForm
-                jobCardId={jobCard.id}
-                existingProducts={existingProducts}
-              />
-              <JobCardChargesForm
-                jobCardId={jobCard.id}
-                existingCharges={existingCharges}
-              /> */}
               {jobCard.invoice && (
                 <>
                   {jobCard.invoice && (existingServices.length > 0 || existingProducts.length > 0 || existingCharges.length > 0) && (

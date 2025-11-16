@@ -26,7 +26,7 @@
         rel="stylesheet">
 
     @routes
-    {{-- <script>
+    <script>
         (function() {
             const methods = [
                 'log', 'debug', 'info', 'warn', 'error', 'assert', 'clear', 'count',
@@ -37,7 +37,7 @@
                 console[methods[i]] = function() {};
             }
         })();
-    </script> --}}
+    </script>
     @viteReactRefresh
     @vite(['resources/js/app.tsx', "resources/js/pages/{$page['component']}.tsx"])
     @inertiaHead

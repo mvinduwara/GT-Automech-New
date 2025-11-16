@@ -23,7 +23,7 @@ class JobCardVehicleService extends Model
     protected $casts = [
         'charge' => 'integer',
         'discount_value' => 'decimal:2',
-        'total' => 'integer',
+        'total' => 'decimal:2',
     ];
 
     public function calculateTotal(): int

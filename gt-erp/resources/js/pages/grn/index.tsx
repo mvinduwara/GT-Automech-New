@@ -96,7 +96,7 @@ export default function Index({ grns, filters }: Props) {
             {grns.map((g) => (
               <TableRow key={g.id}>
                 <TableCell>{g.grn_no}</TableCell>
-                <TableCell>{g.supplier}</TableCell>
+                <TableCell>{g.supplier??""}</TableCell>
                 <TableCell>{g.po}</TableCell>
                 <TableCell>{g.status}</TableCell>
                 <TableCell>LKR {g.total.toFixed(2)}</TableCell>

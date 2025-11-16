@@ -271,8 +271,8 @@ export default function Index({
                                     <TableRow key={product.id} className={product.status=='deactive'?"bg-red-100":""}>
                                         <TableCell>{product.name}</TableCell>
                                         <TableCell>{product.part_number}</TableCell>
-                                        <TableCell>{product.category.name}</TableCell>
-                                        <TableCell>{product.brand?.name?product.brand.name:""}</TableCell>
+                                        <TableCell>{product.category?.name ?? 'Uncategorized'}</TableCell>
+                                        <TableCell>{product.brand?.name ?? 'Uncategorized'}</TableCell>
                                         <TableCell>
                                             {product.unit_of_measure.name}
                                         </TableCell>

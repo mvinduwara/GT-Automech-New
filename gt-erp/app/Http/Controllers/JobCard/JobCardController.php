@@ -7,6 +7,7 @@ use App\Models\Customer;
 use App\Models\JobCard;
 use App\Models\Vehicle;
 use App\Models\VehicleService;
+use App\Traits\SendsSms;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
@@ -14,6 +15,8 @@ use Illuminate\Support\Str;
 
 class JobCardController extends Controller
 {
+    use SendsSms;
+
     public function index(Request $request)
     {
         $query = JobCard::with(['customer', 'vehicle', 'user'])
@@ -81,17 +84,36 @@ class JobCardController extends Controller
             $vehicle = $jobCard->vehicle;
 
             $name = $customer->name ?? 'Customer';
-            $phone = $customer->phone ?? null;
+            $phone = $customer->mobile ?? null;
             $vehicleName = $vehicle->vehicle_name ?? 'your vehicle';
             $vehicleType = $vehicle->type ?? '';
 
-            // ✅ Send SMS if phone is available
-            if ($phone) {
-                $message = "Dear $name, your job card for $vehicleName ($vehicleType) has been successfully created (Job Card: {$jobCard->job_card_no}).  
-Your appointment is pending approval and you will be notified once confirmed.  
-Location: https://maps.app.goo.gl/x4FGjy16VmYhBeHd8  
-Thank you for choosing GT AutoMech!";
+            Log::info('Checking customer phone for Job Card SMS', [
+                'job_card_id' => $jobCard->id,
+                'customer_id' => $jobCard->customer_id,
+                'customer_object_loaded' => $customer ? true : false,
+                'phone_variable_value' => $phone // <--- THIS IS THE KEY VALUE TO CHECK
+            ]);
 
+            if ($phone) {
+                // 2. === ADD THIS LOG (INSIDE THE 'IF') ===
+                // This will only run if the 'if ($phone)' check passes
+                Log::info('Attempting to send Job Card creation SMS...', [
+                    'job_card_id' => $jobCard->id,
+                    'phone' => $phone
+                ]);
+
+                $name = $customer->name ?? 'Customer';
+                // Get vehicle number
+                $vehicleNo = $vehicle->vehicle_no ?? 'your vehicle';
+
+                $message = "Dear $name,\n" .
+                    "Your job card {$jobCard->job_card_no} for vehicle $vehicleNo has been created.\n" . //
+                    "Status: Pending Approval\n" .
+                    "We will notify you once confirmed.\n" .
+                    "- GT AutoMech";
+
+                // 3. This call now uses the Trait's sendSms method
                 $this->sendSMS($phone, $message);
             }
 
@@ -528,39 +550,24 @@ Thank you for choosing GT AutoMech!";
         }
     }
 
-    private function sendSMS($mobile, $message)
+    public function print(JobCard $jobCard)
     {
-        $api_key = "bLaMZXA6GmkuAZKeeUTB";
-        $sender_id = "GT AUTOMECH";
-        $user_id = "29273";
-        $url = "https://app.notify.lk/api/v1/send";
+        // Eager load all necessary relationships for the print view
+        $jobCard->load([
+            'customer',
+            'vehicle.brand',
+            'vehicle.model',
+            'user', // The Service Advisor who created it
+            'acTechnician',
+            'electronicTechnician',
+            'mechanicalTechnician',
+            'jobCardVehicleServices.vehicleService',
+            'jobCardVehicleServices.vehicleServiceOption',
+            'jobCardProducts.stock.product',
+            'jobCardCharges'
+        ]);
 
-        $data = [
-            'user_id' => $user_id,
-            'api_key' => $api_key,
-            'sender_id' => $sender_id,
-            'to' => $mobile,
-            'message' => $message,
-        ];
-
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $url);
-        curl_setopt($ch, CURLOPT_POST, true);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($data));
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-
-        $response = curl_exec($ch);
-        $error = curl_error($ch);
-        curl_close($ch);
-
-        if ($error) {
-            Log::error('Notify.lk SMS Error', ['error' => $error]);
-            return false;
-        }
-
-        $decoded = json_decode($response, true);
-        Log::info('Notify.lk SMS Response', $decoded);
-
-        return $decoded;
+        // Return the Blade view, passing the loaded job card data
+        return view('jobcard.print', ['jobCard' => $jobCard]);
     }
 }

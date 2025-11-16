@@ -47,6 +47,44 @@ export default function PaymentUpdateForm({
             alert("Please enter a valid payment amount");
             return;
         }
+
+        // This client-side check remains useful for immediate user feedback
+        if (amount > remaining) {
+            alert(`Payment exceeds remaining amount. Maximum: Rs. ${remaining}`);
+            return;
+        }
+
+        setLoading(true);
+
+        // 🔻 SEND 'payment_amount' INSTEAD OF 'advance_payment' - THIS IS THE FIX 🔻
+        router.patch(
+            route('dashboard.invoice.payment', invoiceId),
+            { payment_amount: amount }, // Send only the new payment amount
+            {
+                onSuccess: () => {
+                    setIsOpen(false);
+                    setPaymentAmount("");
+                },
+                onError: (errors) => {
+                    console.error('Failed to update payment:', errors);
+                    alert('Failed to update payment. Please try again.');
+                },
+                onFinish: () => {
+                    setLoading(false);
+                }
+            }
+        );
+    };
+
+    const handleSubmitx = (e: React.FormEvent) => {
+        e.preventDefault();
+
+        const amount = parseFloat(paymentAmount);
+
+        if (!amount || amount <= 0) {
+            alert("Please enter a valid payment amount");
+            return;
+        }
         console.log("currentAdvancePayment", currentAdvancePayment)
         const newTotalPayment = parseFloat(currentAdvancePayment) + amount;
         if (newTotalPayment > totalAmount) {
@@ -58,7 +96,7 @@ export default function PaymentUpdateForm({
         console.log("newTotalPayment", newTotalPayment)
         router.patch(
             route('dashboard.invoice.payment', invoiceId),
-            { advance_payment: newTotalPayment },
+            { payment_amount: newTotalPayment },
             {
                 onSuccess: () => {
                     setIsOpen(false);

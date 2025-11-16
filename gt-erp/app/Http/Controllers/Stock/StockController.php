@@ -8,6 +8,7 @@ use App\Models\Product;
 use App\Models\Category;
 use App\Models\UnitOfMeasure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
@@ -75,6 +76,13 @@ class StockController extends Controller
                 $query->where('selling_price', '<=', $request->input('max_selling_price'));
             }
 
+            $totalStockBuyingValue = Stock::where('status', 'active')
+                ->sum(DB::raw('quantity * buying_price'));
+
+            // 8. Calculate total stock selling value
+            $totalStockSellingValue = Stock::where('status', 'active')
+                ->sum(DB::raw('quantity * selling_price'));
+
             $stocks = $query->paginate(20)->withQueryString();
 
             $categories = Category::select('id', 'name')->get();
@@ -87,6 +95,8 @@ class StockController extends Controller
                 'filters' => $request->only(['search', 'category_id', 'unit_of_measure_id', 'min_qty', 'max_qty', 'min_buying_price', 'max_buying_price', 'min_selling_price', 'max_selling_price']),
                 'categories' => $categories,
                 'unitOfMeasures' => $unitOfMeasures,
+                'totalStockBuyingValue' => (float) $totalStockBuyingValue,
+                'totalStockSellingValue' => (float) $totalStockSellingValue,
             ]);
         } catch (\Exception $e) {
             Log::error('Error fetching stock index data: ' . $e->getMessage());
@@ -137,7 +147,7 @@ class StockController extends Controller
                 'quantity' => ['required', 'integer', 'min:0'],
                 'buying_price' => ['required', 'numeric', 'min:0'],
                 'selling_price' => ['required', 'numeric', 'min:0'],
-                'status' => ['required', 'string', Rule::in(['active','deactive','out of stock','rejected'])],
+                'status' => ['required', 'string', Rule::in(['active', 'deactive', 'out of stock', 'rejected'])],
             ]);
 
             Stock::create($validated);
@@ -194,7 +204,7 @@ class StockController extends Controller
                 'quantity' => ['required', 'integer', 'min:0'],
                 'buying_price' => ['required', 'numeric', 'min:0'],
                 'selling_price' => ['required', 'numeric', 'min:0'],
-                'status' => ['required', 'string', Rule::in(['active','deactive','out of stock','rejected'])],
+                'status' => ['required', 'string', Rule::in(['active', 'deactive', 'out of stock', 'rejected'])],
             ]);
 
             $stock->update($validated);
@@ -221,10 +231,13 @@ class StockController extends Controller
                 return response()->json([]);
             }
 
-            $products = Product::where('part_number', 'like', '%' . $searchTerm . '%')
-                               ->orWhere('name', 'like', '%' . $searchTerm . '%')
-                               ->limit(10)
-                               ->get(['id', 'name', 'part_number', 'reorder_level']); // Fetch reorder_level for summary
+            $products = Product::where('status', 'active') // <-- Add this line
+                ->where(function ($query) use ($searchTerm) { // <-- Wrap search in brackets
+                    $query->where('part_number', 'like', '%' . $searchTerm . '%')
+                        ->orWhere('name', 'like', '%' . $searchTerm . '%');
+                })
+                ->limit(10)
+                ->get(['id', 'name', 'part_number', 'reorder_level']);
 
             Log::info('Product search performed successfully.', ['query' => $searchTerm, 'results_count' => $products->count()]);
             return response()->json($products);
@@ -233,5 +246,49 @@ class StockController extends Controller
             return response()->json(['error' => 'Failed to search products.'], 500);
         }
     }
-}
 
+    public function destroy(Stock $stock)
+    {
+        try {
+            // Check if the stock item has any history
+            if ($stock->hasTransactions()) {
+
+                // 1. SOFT DELETE: Stock is in use, so deactivate it.
+                $stock->status = 'deactive';
+                $stock->save();
+
+                Log::warning('Stock item soft-deleted (deactivated) due to existing history.', [
+                    'stock_id' => $stock->id,
+                    'product_id' => $stock->product_id
+                ]);
+
+                return redirect()->route('dashboard.stock.index')
+                    ->with('info', 'Stock item was deactivated (not deleted) because it has transaction history.');
+            } else {
+
+                // 2. HARD DELETE: Stock is unused, safe to permanently delete.
+                $stock->delete();
+
+                Log::info('Stock item permanently deleted.', [
+                    'stock_id' => $stock->id,
+                    'product_id' => $stock->product_id
+                ]);
+
+                return redirect()->route('dashboard.stock.index')
+                    ->with('success', 'Stock item permanently deleted.');
+            }
+        } catch (\Illuminate\Database\QueryException $e) {
+            // This will catch any final "restrict" constraint violations
+            Log::error('Failed to delete stock item due to a database constraint.', [
+                'stock_id' => $stock->id,
+                'error_code' => $e->getCode(),
+                'error' => $e->getMessage()
+            ]);
+
+            return redirect()->back()->with('error', 'This stock item cannot be deleted. It may be linked to other records.');
+        } catch (\Exception $e) {
+            Log::error('Error deleting stock item: ' . $e->getMessage(), ['stock_id' => $stock->id]);
+            return redirect()->back()->with('error', 'An error occurred while trying to delete the stock item.');
+        }
+    }
+}

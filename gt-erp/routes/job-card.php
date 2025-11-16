@@ -51,6 +51,7 @@ Route::middleware(['auth'])->group(function () {
             Route::put('{jobCard}/assign-employees', [JobCardEmployeeController::class, 'assignEmployees'])
                 ->name('assign-employees');
 
+            Route::get('/{jobCard}/print', [JobCardController::class, 'print'])->name('print');
             Route::get('{jobCard}', [JobCardEmployeeController::class, 'show'])
                 ->name('show');
         });

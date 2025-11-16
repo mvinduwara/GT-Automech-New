@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Support\Str;
 
 class Invoice extends Model
 {
@@ -48,6 +50,11 @@ class Invoice extends Model
      */
     protected static function booted()
     {
+
+        static::creating(function ($invoice) { // <-- Add this creating event
+            $invoice->review_token = (string) Str::uuid();
+        });
+
         static::saving(function ($invoice) {
             // Calculate subtotal from all line items
             $invoice->subtotal = $invoice->services_total + $invoice->products_total + $invoice->charges_total;
@@ -107,5 +114,10 @@ class Invoice extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function review(): HasOne // <-- Add this function
+    {
+        return $this->hasOne(CustomerReview::class);
     }
 }

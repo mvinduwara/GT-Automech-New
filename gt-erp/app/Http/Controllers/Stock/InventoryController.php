@@ -9,6 +9,7 @@ use App\Models\Product;
 use App\Models\Stock;
 use App\Models\UnitOfMeasure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
 class InventoryController extends Controller
@@ -60,9 +61,15 @@ class InventoryController extends Controller
                 ->get(['id', 'name', 'products_count']),
         ];
 
+        $stats['totalStockBuyingValue'] = (float) Stock::where('status', 'active')
+            ->sum(DB::raw('quantity * buying_price'));
+            
+        $stats['totalStockSellingValue'] = (float) Stock::where('status', 'active')
+            ->sum(DB::raw('quantity * selling_price'));
+
         return Inertia::render('inventory/index', [
             'stats' => $stats,
-            'insights' => $insights
+            'insights' => $insights,
         ]);
     }
 

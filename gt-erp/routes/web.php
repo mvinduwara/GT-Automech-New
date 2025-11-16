@@ -1,6 +1,9 @@
 <?php
 
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\Reviews\CustomerReviewController;
+use App\Http\Controllers\SmsTestController;
+use App\Http\Controllers\Reviews\AdminReviewController;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -26,6 +29,17 @@ Route::middleware(['auth', 'verified'])->group(function () {
     });
 });
 
+Route::middleware(['auth'])->group(function () {
+    Route::get('/test-sms', [SmsTestController::class, 'showTestForm'])->name('sms.test.form');
+    Route::post('/test-sms', [SmsTestController::class, 'sendTest'])->name('sms.test.send');
+});
+
+Route::get('/review/{token}', [CustomerReviewController::class, 'show'])->name('review.show');
+Route::post('/review/{token}', [CustomerReviewController::class, 'store'])->name('review.store');
+
+Route::middleware(['auth'])->group(function () {
+    Route::get('/dashboard/reviews', [AdminReviewController::class, 'index'])->name('dashboard.reviews.index');
+});
 
 require __DIR__ . '/settings.php';
 require __DIR__ . '/auth.php';

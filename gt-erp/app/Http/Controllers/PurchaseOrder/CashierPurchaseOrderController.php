@@ -42,7 +42,7 @@ class CashierPurchaseOrderController extends Controller
     {
         $purchaseOrder = PurchaseOrder::with('purchaseOrderItems.stock.product.category', 'purchaseOrderItems.stock.product.brand')
             ->findOrFail($purchase_order_id);
-        
+
         $stocks = Stock::with(['product.category', 'product.brand'])
             ->where('status', 'active')
             ->get();
@@ -90,14 +90,7 @@ class CashierPurchaseOrderController extends Controller
 
             // 4. Loop through the validated items and create purchase order items.
             foreach ($validated['items'] as $item) {
-                // Ensure the stock exists and has enough quantity
-                $stock = Stock::findOrFail($item['stock_id']);
-                if ($item['quantity'] > $stock->quantity) {
-                    DB::rollBack();
-                    Log::error('Insufficient stock quantity.', ['stock_id' => $stock->id, 'requested_quantity' => $item['quantity'], 'available_quantity' => $stock->quantity]);
-                    return back()->with('error', "Insufficient stock quantity for product '{$stock->product->name}'.");
-                }
-                
+
                 PurchaseOrderItem::create([
                     'purchase_order_id' => $purchaseOrder->id,
                     'stock_id' => $item['stock_id'],
@@ -110,7 +103,7 @@ class CashierPurchaseOrderController extends Controller
             DB::commit();
             Log::info('Purchase order created successfully.', ['purchase_order_id' => $purchaseOrder->id]);
 
-            return redirect()->route('dashboard.purchase-order.cashier.index')->with('success', 'Purchase order created successfully.');
+            return redirect()->route('dashboard.purchase-order.index')->with('success', 'Purchase order created successfully.');
         } catch (\Exception $e) {
             // 6. If any error occurs, roll back the transaction and log the error.
             DB::rollBack();
@@ -126,7 +119,24 @@ class CashierPurchaseOrderController extends Controller
     public function update(Request $request, $purchase_order_id)
     {
         try {
-            $purchaseOrder = PurchaseOrder::findOrFail($purchase_order_id);
+            // Eager load items to check for related GRNs
+            $purchaseOrder = PurchaseOrder::with('purchaseOrderItems')->findOrFail($purchase_order_id);
+
+            // 1. === ADD THIS CHECK ===
+            // Check 1: Is the PO status no longer 'pending'?
+            if ($purchaseOrder->status !== 'pending') {
+                Log::warning("Attempt to update a non-pending purchase order.", ['purchase_order_id' => $purchase_order_id, 'status' => $purchaseOrder->status]);
+                return back()->with('error', 'This purchase order cannot be updated because it has already been processed.');
+            }
+
+            // Check 2: Are any of its items already linked to a GRN?
+            $hasGrnItems = $purchaseOrder->purchaseOrderItems()->whereHas('grnItems')->exists();
+            if ($hasGrnItems) {
+                Log::warning("Attempt to update a purchase order with existing GRN items.", ['purchase_order_id' => $purchase_order_id]);
+                return back()->with('error', 'This purchase order cannot be updated because it is already linked to a Goods Received Note.');
+            }
+            // === END OF ADDED CHECK ===
+
 
             // 1. Validate the incoming request data.
             $validator = Validator::make($request->all(), [
@@ -143,23 +153,18 @@ class CashierPurchaseOrderController extends Controller
 
             // 2. Start a database transaction to ensure atomicity.
             DB::beginTransaction();
-            
+
             // 3. Update the purchase order details.
             $purchaseOrder->update([
                 'date' => $validated['date'],
             ]);
 
             // 4. Delete existing items and create new ones.
+            // This is now "safe" because the checks above have ensured
+            // that no GRN items are attached.
             $purchaseOrder->purchaseOrderItems()->delete();
 
             foreach ($validated['items'] as $item) {
-                // Ensure the stock exists and has enough quantity
-                $stock = Stock::findOrFail($item['stock_id']);
-                if ($item['quantity'] > $stock->quantity) {
-                    DB::rollBack();
-                    Log::error('Insufficient stock quantity.', ['stock_id' => $stock->id, 'requested_quantity' => $item['quantity'], 'available_quantity' => $stock->quantity]);
-                    return back()->with('error', "Insufficient stock quantity for product '{$stock->product->name}'.");
-                }
 
                 PurchaseOrderItem::create([
                     'purchase_order_id' => $purchaseOrder->id,
@@ -173,7 +178,7 @@ class CashierPurchaseOrderController extends Controller
             DB::commit();
             Log::info('Purchase order updated successfully.', ['purchase_order_id' => $purchaseOrder->id]);
 
-            return redirect()->route('dashboard.purchase-order.cashier.index')->with('success', 'Purchase order updated successfully.');
+            return redirect()->route('dashboard.purchase-order.index')->with('success', 'Purchase order updated successfully.');
         } catch (\Exception $e) {
             // 6. If any error occurs, roll back the transaction and log the error.
             DB::rollBack();

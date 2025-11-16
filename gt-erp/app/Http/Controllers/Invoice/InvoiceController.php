@@ -8,6 +8,7 @@ use App\Models\Account;
 use App\Models\Invoice;
 use App\Models\JobCard;
 use App\Models\InvoiceItem;
+use App\Traits\SendsSms; // 1. Import the Trait
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -16,6 +17,8 @@ use Illuminate\Support\Str;
 
 class InvoiceController extends Controller
 {
+    use SendsSms; // 2. Use the Trait
+
     /**
      * List all invoices
      */
@@ -37,6 +40,17 @@ class InvoiceController extends Controller
         if ($status = $request->input('status')) {
             $query->where('status', $status);
         }
+
+        // --- THIS IS THE FIX ---
+        // Date range filters
+        if ($dateFrom = $request->input('date_from')) {
+            $query->whereDate('invoice_date', '>=', $dateFrom);
+        }
+
+        if ($dateTo = $request->input('date_to')) {
+            $query->whereDate('invoice_date', '<=', $dateTo);
+        }
+        // --- END OF FIX ---
 
         $invoices = $query->paginate(20)->withQueryString();
 
@@ -100,6 +114,9 @@ class InvoiceController extends Controller
         ]);
 
         try {
+            // Eager load customer for SMS
+            $jobCard->load('customer');
+
             $invoice = DB::transaction(function () use ($jobCard, $validated) {
                 // Check if invoice already exists
                 if ($jobCard->hasInvoice()) {
@@ -108,9 +125,9 @@ class InvoiceController extends Controller
                         'existing_invoice_id' => $jobCard->invoice->id,
                     ]);
 
-                    return redirect()
-                        ->route('dashboard.invoice.show', $jobCard->invoice->id)
-                        ->with('error', 'Invoice already exists for this job card');
+                    // This redirect won't work inside a transaction,
+                    // but we can throw an exception to stop it.
+                    throw new \Exception('Invoice already exists for this job card');
                 }
 
                 // Generate invoice number
@@ -206,20 +223,36 @@ class InvoiceController extends Controller
                 return $invoice;
             });
 
+            // --- 🚀 3. SEND INVOICE CREATION SMS (AFTER TRANSACTION) ---
+            $customer = $jobCard->customer;
+            $phone = $customer->mobile ?? null; //
+
+            if ($phone) {
+                $name = $customer->name ?? 'Customer'; //
+                $vehicleNo = $jobCard->vehicle->vehicle_no ?? ''; //
+                $totalAmount = number_format($invoice->total, 2); //
+                $dueAmount = number_format($invoice->remaining, 2); //
+                $invoiceNo = $invoice->invoice_no; //
+
+                // $reviewUrl = route('review.show', $invoice->review_token);
+                $reviewUrl = 'https://gtdrive.lk/review/' . $invoice->review_token;
+
+                $message = "Dear $name,\n" .
+                    "Your invoice ($invoiceNo) for Rs. $totalAmount is ready. Amount due: Rs. $dueAmount.\n\n" .
+                    "We value your feedback! Please tell us about your service:\n" . // <-- Updated line
+                    "$reviewUrl\n\n" . // <-- Added review link
+                    "- GT AutoMech";
+
+                Log::info('Attempting to send invoice creation SMS', ['invoice_id' => $invoice->id, 'phone' => $phone]);
+                $this->sendSms($phone, $message);
+            }
+            // --- 🚀 END SMS ---
+
             Log::info('Invoice and ledger entries created successfully', ['invoice_id' => $invoice->id]);
             return redirect()->route('dashboard.invoice.show', $invoice->id)->with('success', 'Invoice created successfully');
 
-            Log::info('Invoice created successfully', [
-                'invoice_id' => $invoice->id,
-                'invoice_no' => $invoice->invoice_no,
-                'job_card_id' => $jobCard->id,
-                'total' => $invoice->total,
-                'items_count' => $invoice->items()->count(),
-            ]);
+            // --- Note: Removed unreachable code that was here ---
 
-            return redirect()
-                ->route('dashboard.invoice.show', $invoice->id)
-                ->with('success', 'Invoice created successfully');
         } catch (\Exception $e) {
             DB::rollBack();
 
@@ -228,6 +261,13 @@ class InvoiceController extends Controller
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
+
+            // Handle duplicate invoice exception gracefully
+            if ($e->getMessage() === 'Invoice already exists for this job card') {
+                return redirect()
+                    ->route('dashboard.job-card.index') // Or back()
+                    ->with('error', $e->getMessage());
+            }
 
             return redirect()
                 ->back()
@@ -266,30 +306,24 @@ class InvoiceController extends Controller
     public function updatePayment(Request $request, Invoice $invoice)
     {
         $validated = $request->validate([
-            'advance_payment' => 'required|numeric|min:0|max:' . $invoice->total,
+            'payment_amount' => 'required|numeric|min:0.01|max:' . $invoice->remaining,
         ]);
 
         try {
-            DB::transaction(function () use ($invoice, $validated) {
-                $oldPayment = $invoice->advance_payment;
-                $paymentAmount = (float) $validated['advance_payment'];
-                Log::info('Invoice advance_payment', [
-                    'advance_payment' => $validated['advance_payment'],
-                ]);
-                $invoice->update([
-                    'advance_payment' => $validated['advance_payment'],
-                ]);
+            // 4. Load customer for SMS
+            $invoice->load('customer');
 
-                Log::info('Invoice payment updated', [
-                    'invoice_id' => $invoice->id,
-                    'invoice_no' => $invoice->invoice_no,
-                    'old_payment' => $oldPayment,
-                    'new_payment' => $invoice->advance_payment,
-                    'remaining' => $invoice->remaining,
-                    'status' => $invoice->status,
-                ]);
+            DB::transaction(function () use ($invoice, $validated) {
+                $paymentAmount = (float) $validated['payment_amount'];
 
                 $invoice->increment('advance_payment', $paymentAmount);
+
+                // Get the *new* remaining balance
+                $newRemaining = $invoice->fresh()->remaining;
+
+                if ($newRemaining == 0) {
+                    $invoice->update(['status' => 'paid']);
+                }
 
                 // 2. Record the new payment in the financial ledger
                 $cashAccount = Account::where('code', '1000')->firstOrFail(); // Cash & Bank
@@ -299,12 +333,33 @@ class InvoiceController extends Controller
                     description: "Payment received for Invoice #{$invoice->invoice_no}",
                     date: now(),
                     amount: $paymentAmount,
-                    debitAccount: $cashAccount,          // Asset (cash) increases
-                    creditAccount: $receivablesAccount,  // Asset (what you're owed) decreases
+                    debitAccount: $cashAccount,
+                    creditAccount: $receivablesAccount,
                     transactionable: $invoice
                 );
 
-                Log::info('Invoice payment updated and ledger created', [
+                // --- 🚀 5. SEND PAYMENT CONFIRMATION SMS ---
+                $customer = $invoice->customer;
+                $phone = $customer->mobile ?? null; //
+
+                if ($phone) {
+                    $name = $customer->name ?? 'Customer'; //
+                    $paymentStr = number_format($paymentAmount, 2);
+                    $remainingStr = number_format($newRemaining, 2);
+                    $invoiceNo = $invoice->invoice_no; //
+
+                    $message = "Dear $name,\n" .
+                        "We received your payment of Rs. $paymentStr for Invoice $invoiceNo.\n" .
+                        "New Balance Due: Rs. $remainingStr\n" .
+                        "Thank you!\n" .
+                        "- GT AutoMech";
+
+                    Log::info('Attempting to send payment confirmation SMS', ['invoice_id' => $invoice->id, 'phone' => $phone]);
+                    $this->sendSms($phone, $message);
+                }
+                // --- 🚀 END SMS ---
+
+                Log::info('Invoice payment recorded and ledger created', [
                     'invoice_id' => $invoice->id,
                     'payment_added' => $paymentAmount,
                     'new_total_payment' => $invoice->advance_payment,
@@ -316,6 +371,7 @@ class InvoiceController extends Controller
             Log::error('Failed to update invoice payment', [
                 'invoice_id' => $invoice->id,
                 'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
             ]);
 
             return redirect()
@@ -350,6 +406,58 @@ class InvoiceController extends Controller
             return redirect()
                 ->back()
                 ->with('error', 'Failed to cancel invoice');
+        }
+    }
+
+    public function updateStatus(Request $request, Invoice $invoice)
+    {
+        $validated = $request->validate([
+            'status' => 'required|in:draft,unpaid,partial,paid,cancelled',
+        ]);
+
+        try {
+            DB::transaction(function () use ($invoice, $validated) {
+                $oldStatus = $invoice->status;
+                $newStatus = $validated['status'];
+
+                // Business logic validations
+                if ($oldStatus === 'cancelled') {
+                    throw new \Exception('Cannot change status of a cancelled invoice');
+                }
+
+                if ($newStatus === 'paid' && $invoice->advance_payment < $invoice->total) {
+                    throw new \Exception('Cannot mark as paid. Payment incomplete. Remaining: Rs. ' . $invoice->remaining);
+                }
+
+                if ($newStatus === 'partial' && $invoice->advance_payment <= 0) {
+                    throw new \Exception('Cannot mark as partial. No payments recorded yet.');
+                }
+
+                // Update status
+                $invoice->update(['status' => $newStatus]);
+
+                Log::info('Invoice status updated', [
+                    'invoice_id' => $invoice->id,
+                    'invoice_no' => $invoice->invoice_no,
+                    'old_status' => $oldStatus,
+                    'new_status' => $newStatus,
+                    'user_id' => auth()->id(),
+                ]);
+            });
+
+            return redirect()
+                ->back()
+                ->with('success', 'Invoice status updated successfully');
+        } catch (\Exception $e) {
+            Log::error('Failed to update invoice status', [
+                'invoice_id' => $invoice->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return redirect()
+                ->back()
+                ->with('error', $e->getMessage());
         }
     }
 }

@@ -92,7 +92,7 @@ class JobCardServiceController extends Controller
                     'subtotal' => $subtotal,
                     'discount_type' => $discountType,
                     'discount_value' => $discountValue,
-                    'total' => (int) $total,
+                    'total' => $total,
                 ]);
 
                 $createdServices[] = $jobCardService;

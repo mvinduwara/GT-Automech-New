@@ -239,7 +239,7 @@ function EmployeeAssignmentForm({ jobCard }: EmployeeAssignmentFormProps) {
                         type="text"
                         value={searchMobile}
                         onChange={(e) => setSearchMobile(e.target.value)}
-                        placeholder="Enter mobile number..."
+                        placeholder="Enter Name or mobile number..."
                         className="pl-10"
                     />
                 </div>

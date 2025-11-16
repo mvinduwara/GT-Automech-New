@@ -14,12 +14,12 @@ class DashboardController extends Controller
     public function index(Request $request)
     {
         // --- Financial Summary Logic ---
-        $startDate = $request->input('start_date') 
-            ? Carbon::parse($request->input('start_date')) 
+        $startDate = $request->input('start_date')
+            ? Carbon::parse($request->input('start_date'))
             : now()->startOfMonth();
 
-        $endDate = $request->input('end_date') 
-            ? Carbon::parse($request->input('end_date')) 
+        $endDate = $request->input('end_date')
+            ? Carbon::parse($request->input('end_date'))
             : now()->endOfMonth();
 
         // 1. Get total income
@@ -45,7 +45,7 @@ class DashboardController extends Controller
 
         // 6. Get income by category
         $incomeByCategory = $this->getIncomeByCategory($startDate, $endDate);
-        
+
         $financialSummary = [
             'totalIncome' => (float) $totalIncome,
             'totalExpenses' => (float) $totalExpenses,

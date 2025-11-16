@@ -229,13 +229,11 @@ export default function Index({ purchaseOrders, filters }: PageProps<{
                                                             </Button>
                                                         </Link>
                                                     )}
-                                                    {userRole === "cashier" && (
                                                         <Link href={`/dashboard/purchase-order/${purchaseOrder.id}/edit`}>
                                                             <Button variant={'ghost'} size={'sm'}>
                                                                 <Pencil className="h-5 w-5" />
                                                             </Button>
                                                         </Link>
-                                                    )}
                                                 </TableCell>
                                             </TableRow>
                                         ))

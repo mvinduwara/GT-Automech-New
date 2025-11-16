@@ -9,6 +9,8 @@ use App\Models\Grn;
 use App\Models\GrnItem;
 use App\Models\GrnLedger;
 use App\Models\PurchaseOrder;
+use App\Models\PurchaseOrderItem;
+use App\Models\Stock;
 use App\Models\Supplier;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
@@ -107,6 +109,31 @@ class GrnController extends Controller
             $total = 0;
             foreach ($validated['items'] as $item) {
                 $lineTotal = $item['quantity'] * $item['unit_price'];
+
+                // === START: STOCK UPDATE LOGIC ===
+
+                // 1. Find the Purchase Order Item to get the stock_id.
+                // We must assume the 'PurchaseOrderItem' model exists.
+                $poItem = PurchaseOrderItem::find($item['purchase_order_item_id']);
+
+                if (!$poItem || !$poItem->stock_id) {
+                    throw new \Exception("Stock information is missing for PO Item ID: {$item['purchase_order_item_id']}.");
+                }
+
+                $stockId = $poItem->stock_id;
+
+                // 2. Find the stock record
+                $stock = Stock::findOrFail($stockId); //
+
+                // 3. Update the stock record
+                $stock->increment('quantity', $item['quantity']); //
+                $stock->update([
+                    'buying_price' => $item['unit_price'], // Update to the latest buying price
+                    'status' => 'active' // Set to active as we've just received stock
+                ]);
+
+                // === END: STOCK UPDATE LOGIC ===
+
                 GrnItem::create([
                     'grn_id'                 => $grn->id,
                     'purchase_order_item_id' => $item['purchase_order_item_id'],
@@ -186,6 +213,21 @@ class GrnController extends Controller
 
         DB::beginTransaction();
         try {
+
+            // === START: STOCK REVERSAL LOGIC ===
+            // 1. Revert all old stock quantities from this GRN
+            foreach ($grn->grnItems as $oldItem) {
+                if ($oldItem->stock_id) {
+                    $stock = Stock::find($oldItem->stock_id);
+                    if ($stock) {
+                        // Use max(0, ...) to prevent quantity from going negative
+                        $newQuantity = max(0, $stock->quantity - $oldItem->quantity);
+                        $stock->update(['quantity' => $newQuantity]);
+                    }
+                }
+            }
+            // === END: STOCK REVERSAL LOGIC ===
+
             $grn->update([
                 'grn_no'            => $validated['grn_no'],
                 'supplier_id'       => $validated['supplier_id'],
@@ -203,11 +245,29 @@ class GrnController extends Controller
             $total = 0;
             foreach ($validated['items'] as $item) {
                 $lineTotal = $item['quantity'] * $item['unit_price'];
+
+                // === START: STOCK APPLICATION LOGIC ===
+                $poItem = PurchaseOrderItem::find($item['purchase_order_item_id']);
+                if (!$poItem || !$poItem->stock_id) {
+                    throw new \Exception("Stock information is missing for PO Item ID: {$item['purchase_order_item_id']}.");
+                }
+                $stockId = $poItem->stock_id;
+
+                // 2. Find and apply new stock quantity
+                $stock = Stock::findOrFail($stockId);
+                $stock->increment('quantity', $item['quantity']);
+                $stock->update([
+                    'buying_price' => $item['unit_price'],
+                    'status' => 'active'
+                ]);
+                // === END: STOCK APPLICATION LOGIC ===
+
                 GrnItem::updateOrCreate(
                     ['id' => $item['id'] ?? null],
                     [
                         'grn_id'                 => $grn->id,
                         'purchase_order_item_id' => $item['purchase_order_item_id'],
+                        'stock_id'               => $stockId, // <-- Save stock_id
                         'quantity'               => $item['quantity'],
                         'unit_price'             => $item['unit_price'],
                         'total_price'            => $lineTotal,
@@ -237,15 +297,38 @@ class GrnController extends Controller
     /* ---------- DESTROY ---------- */
     public function destroy($grnId)
     {
-        $grn = Grn::findOrFail($grnId);
+        // Eager load grnItems for reversal
+        $grn = Grn::with('grnItems')->findOrFail($grnId);
+
+        DB::beginTransaction(); // <-- Add transaction
         try {
+            // === START: STOCK REVERSAL LOGIC ===
+            foreach ($grn->grnItems as $item) {
+                if ($item->stock_id) {
+                    $stock = Stock::find($item->stock_id);
+                    if ($stock) {
+                        $newQuantity = max(0, $stock->quantity - $item->quantity);
+                        $stock->update(['quantity' => $newQuantity]);
+                    }
+                }
+            }
+            // === END: STOCK REVERSAL LOGIC ===
+
+            // Note: This also does not revert the accounting entries (GrnLedger / LedgerEntry).
+            // A hard delete is generally bad for accounting.
+            // Consider soft deletes or a formal "Reversal" action instead.
+
             $grn->delete();
+
+            DB::commit(); // <-- Commit transaction
+
             Log::info('GRN deleted', ['grn_id' => $grnId]);
             return redirect()->route('dashboard.grn.index')
                 ->with('success', 'GRN deleted successfully.');
         } catch (\Throwable $e) {
+            DB::rollBack(); // <-- Add rollback
             Log::error('GRN delete error', ['exception' => $e->getMessage()]);
-            return back()->with('error', 'Could not delete GRN.');
+            return back()->with('error', 'Could not delete GRN. ' . $e->getMessage());
         }
     }
 

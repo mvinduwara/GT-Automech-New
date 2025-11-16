@@ -1,6 +1,6 @@
 <?php
 
-use App\Http\Controllers\Report\FinancialReportController;
+use App\Http\Controllers\Reports\FinancialReportController;
 use App\Http\Controllers\Reports\EmployeeReportController;
 use App\Http\Controllers\Reports\PettyCashReportController;
 use App\Http\Controllers\Reports\PettyCashVoucherReportController;
@@ -16,6 +16,9 @@ Route::middleware(['auth', 'is_admin_or_cashier'])->group(function () {
         // Stock Report Routes
         Route::get('/stock', [StockReportController::class, 'index'])->name('stock');
         Route::get('/stock/download', [StockReportController::class, 'download'])->name('stock.download');
+
+        Route::get('/stock/filters', [StockReportController::class, 'getFilters'])->name('stock.filters');
+        Route::get('/stock/filtered/download', [StockReportController::class, 'downloadFiltered'])->name('stock.filtered.download');
 
         // Petty Cash Report Routes
         Route::get('/petty-cash', [PettyCashReportController::class, 'index'])->name('petty_cash');

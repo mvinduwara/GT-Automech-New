@@ -3,6 +3,7 @@ import AppLayout from '@/layouts/app-layout';
 import { BreadcrumbItem } from '@/types';
 import { Head } from '@inertiajs/react';
 import { Download } from 'lucide-react';
+import { FilteredStockReportDialog } from './FilteredStockReportDialog';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -108,6 +109,10 @@ export default function Reports() {
                             >
                                 <Download className="h-4 w-4" /> Download
                             </Button>
+                        </div>
+                        <div className="flex flex-col items-start justify-between gap-4 rounded-md bg-gradient-to-r from-indigo-300 to-purple-200 p-5 shadow-md">
+                            <p className="font-medium text-neutral-700">Filtered Stock Report (PDF)</p>
+                            <FilteredStockReportDialog />
                         </div>
                     </div>
                 </>

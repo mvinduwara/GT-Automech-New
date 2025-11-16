@@ -47,6 +47,7 @@ type ExistingService = {
 };
 
 type ServiceFormData = {
+  id: number ;
   vehicle_service_id: number | null;
   vehicle_service_option_id: number | null;
   is_included: boolean;
@@ -60,10 +61,10 @@ type JobCardServiceFormProps = {
   existingServices: ExistingService[];
 };
 
-function JobCardServiceForm({ 
-  jobCardId, 
-  vehicleServices, 
-  existingServices 
+function JobCardServiceForm({
+  jobCardId,
+  vehicleServices,
+  existingServices
 }: JobCardServiceFormProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [services, setServices] = useState<ServiceFormData[]>([]);
@@ -78,6 +79,7 @@ function JobCardServiceForm({
   const loadExistingServices = () => {
     if (existingServices && existingServices.length > 0) {
       const mappedServices = existingServices.map(service => ({
+        id:service.id,
         vehicle_service_id: service.vehicle_service_id,
         vehicle_service_option_id: service.vehicle_service_option_id,
         is_included: service.is_included,
@@ -91,6 +93,7 @@ function JobCardServiceForm({
   };
 
   const getEmptyService = (): ServiceFormData => ({
+    id: 0,
     vehicle_service_id: null,
     vehicle_service_option_id: null,
     is_included: true,
@@ -100,11 +103,6 @@ function JobCardServiceForm({
 
   const addService = () => {
     setServices([...services, getEmptyService()]);
-  };
-
-  const removeService = (index: number) => {
-    const newServices = services.filter((_, i) => i !== index);
-    setServices(newServices.length > 0 ? newServices : [getEmptyService()]);
   };
 
   const updateService = (index: number, field: keyof ServiceFormData, value: any) => {
@@ -134,7 +132,7 @@ function JobCardServiceForm({
     if (!option) return 0;
 
     const subtotal = option.price;
-    
+
     if (!service.discount_type || service.discount_value === 0) {
       return subtotal;
     }
@@ -142,7 +140,7 @@ function JobCardServiceForm({
     if (service.discount_type === 'percentage') {
       return Math.round(subtotal - (subtotal * service.discount_value / 100));
     }
-    
+
     return Math.max(0, subtotal - service.discount_value);
   };
 
@@ -191,6 +189,26 @@ function JobCardServiceForm({
     }
   };
 
+  const handleDeleteService = (serviceId: number) => {
+    router.delete(
+      route('dashboard.job-card.services.destroy', {
+        jobCard: jobCardId,
+        service: serviceId
+      }),
+      {
+        preserveScroll: true, // Keeps the user's scroll position
+        onSuccess: () => {
+          setIsOpen(false);
+        },
+        onError: () => {
+          // Optional: Show an error toast notification
+          alert('Failed to delete the service. Please try again.');
+        }
+      }
+    );
+  };
+
+
   const getTotalAmount = (): number => {
     return services
       .filter(s => s.is_included && s.vehicle_service_option_id)
@@ -221,6 +239,7 @@ function JobCardServiceForm({
                   <div className="flex gap-2">
                     <Button
                       type="button"
+                      hidden
                       variant={service.is_included ? "default" : "outline"}
                       size="sm"
                       onClick={() => updateService(index, 'is_included', !service.is_included)}
@@ -228,14 +247,37 @@ function JobCardServiceForm({
                       {service.is_included ? 'Included' : 'Excluded'}
                     </Button>
                     {services.length > 1 && (
-                      <Button
-                        type="button"
-                        variant="destructive"
-                        size="sm"
-                        onClick={() => removeService(index)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      // <Button
+                      //   type="button"
+                      //   variant="destructive"
+                      //   size="sm"
+                      //   onClick={() => removeService(index)}
+                      // >
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="destructive" size="icon" className="h-7 w-7 ">
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              This will permanently remove the service from this job card. This action cannot be undone.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                              className="bg-red-600 hover:bg-red-700"
+                              onClick={() => handleDeleteService(service?.id)}
+                            >
+                              Yes, delete it
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                      // </Button>
                     )}
                   </div>
                 </div>
@@ -245,7 +287,7 @@ function JobCardServiceForm({
                     <Label>Service Type</Label>
                     <Select
                       value={service.vehicle_service_id?.toString() || ''}
-                      onValueChange={(value) => 
+                      onValueChange={(value) =>
                         updateService(index, 'vehicle_service_id', parseInt(value))
                       }
                     >
@@ -266,7 +308,7 @@ function JobCardServiceForm({
                     <Label>Service Option</Label>
                     <Select
                       value={service.vehicle_service_option_id?.toString() || ''}
-                      onValueChange={(value) => 
+                      onValueChange={(value) =>
                         updateService(index, 'vehicle_service_option_id', parseInt(value))
                       }
                       disabled={!service.vehicle_service_id}
@@ -288,10 +330,10 @@ function JobCardServiceForm({
                     <Label>Discount Type</Label>
                     <Select
                       value={service.discount_type || 'none'}
-                      onValueChange={(value) => 
+                      onValueChange={(value) =>
                         updateService(
-                          index, 
-                          'discount_type', 
+                          index,
+                          'discount_type',
                           value === 'none' ? null : value
                         )
                       }
@@ -314,7 +356,7 @@ function JobCardServiceForm({
                       step="0.01"
                       min="0"
                       value={service.discount_value}
-                      onChange={(e) => 
+                      onChange={(e) =>
                         updateService(index, 'discount_value', parseFloat(e.target.value) || 0)
                       }
                       disabled={!service.discount_type}

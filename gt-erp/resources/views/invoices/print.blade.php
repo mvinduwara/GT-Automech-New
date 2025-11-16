@@ -147,8 +147,8 @@
                 <img src="{{ asset('assets/img/gt-nav.png') }}" alt="GT Logo">
                 <div>
                     <h1>GT Automech</h1>
-                    <p>Professional Car Service & Repairs</p>
-                    <p>www.gtdrive.lk • +94 77 000 0000</p>
+                    <p>186/2, Raigama Junction, Kothalawala, Bandaragama</p>
+                    <p>www.gtdrive.lk • info@gtdrive.lk • +94 77 409 8580</p>
                 </div>
             </div>
             <div class="meta">

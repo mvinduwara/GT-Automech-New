@@ -111,6 +111,7 @@ export default function Create({ stocks, categories, brands }: Props) {
 
     const handleConfirmAdd = () => {
         if (selectedStock) {
+
             // Check if the item is already in the list
             const existingItemIndex = data.items.findIndex(
                 (item) => item.stock_id === selectedStock.id
@@ -212,13 +213,13 @@ export default function Create({ stocks, categories, brands }: Props) {
                     </Card>
 
                     {/* Products & Filters Section */}
-                    <Card>
+                    <Card >
                         <CardHeader>
                             <CardTitle>Products</CardTitle>
                             <CardDescription>Select products to add to the purchase order.</CardDescription>
                         </CardHeader>
                         <CardContent>
-                            <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4 mb-4">
+                            <div className="flex flex-col overflow-y-auto overflow-x-auto sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4 mb-4">
                                 <Input
                                     type="text"
                                     placeholder="Search by Part Number..."
@@ -253,8 +254,8 @@ export default function Create({ stocks, categories, brands }: Props) {
                                     </SelectContent>
                                 </Select>
                             </div>
-                            <div className="max-h-96 overflow-y-auto border rounded-md">
-                                <Table>
+                            <div className="max-h-96 overflow-y-auto overflow-x-auto border rounded-md">
+                                <Table className="[&_*]:max-w-[200px] [&_*]:truncate [&_*]:overflow-hidden [&_*]:whitespace-nowrap">
                                     <TableHeader>
                                         <TableRow>
                                             <TableHead>Part No.</TableHead>
@@ -269,13 +270,30 @@ export default function Create({ stocks, categories, brands }: Props) {
                                         {filteredStocks.length > 0 ? (
                                             filteredStocks.map((stock) => (
                                                 <TableRow key={stock.id}>
-                                                    <TableCell className="font-medium">{stock.product.part_number}</TableCell>
-                                                    <TableCell>{stock.product.name}</TableCell>
-                                                    <TableCell>{stock.product.category.name}</TableCell>
-                                                    <TableCell>{stock.product.brand.name}</TableCell>
-                                                    <TableCell className="text-right">{stock.quantity}</TableCell>
+                                                    <TableCell
+                                                        className="font-medium whitespace-nowrap max-w-[300px] truncate overflow-hidden"
+                                                        title={stock.product.part_number} // tooltip
+                                                    >
+                                                        {stock.product.part_number}
+                                                    </TableCell>
+
+                                                    <TableCell
+                                                        className="whitespace-nowrap max-w-[300px] truncate overflow-hidden"
+                                                        title={stock.product.name} // tooltip
+                                                    >
+                                                        {stock.product.name}
+                                                    </TableCell>
+
+                                                    <TableCell>{stock.product.category?.name ?? "Uncategorized"}</TableCell>
+                                                    <TableCell>{stock.product.brand?.name ?? "No Brand"}</TableCell>
+
+                                                    <TableCell className="text-right">
+                                                        {stock.quantity}
+                                                    </TableCell>
+
                                                     <TableCell className="text-right">
                                                         <Button
+                                                            type='button'
                                                             variant="ghost"
                                                             size="icon"
                                                             onClick={() => handleAddProductClick(stock)}
@@ -302,7 +320,7 @@ export default function Create({ stocks, categories, brands }: Props) {
                             <CardTitle>Purchase Order Items</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <Table>
+                            <Table className="[&_*]:max-w-[200px] [&_*]:truncate [&_*]:overflow-hidden [&_*]:whitespace-nowrap">
                                 <TableHeader>
                                     <TableRow>
                                         <TableHead>Part No.</TableHead>
@@ -368,10 +386,10 @@ export default function Create({ stocks, categories, brands }: Props) {
                             />
                         </div>
                         <DialogFooter>
-                            <Button variant="outline" onClick={() => setIsModalOpen(false)}>
+                            <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)}>
                                 Cancel
                             </Button>
-                            <Button onClick={handleConfirmAdd}>
+                            <Button type="button" onClick={handleConfirmAdd}>
                                 Add Item
                             </Button>
                         </DialogFooter>

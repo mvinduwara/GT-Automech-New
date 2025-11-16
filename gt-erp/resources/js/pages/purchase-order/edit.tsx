@@ -265,8 +265,8 @@ export default function Edit({ purchaseOrder, purchaseOrderItems, stocks, catego
                                     </SelectContent>
                                 </Select>
                             </div>
-                            <div className="max-h-96 overflow-y-auto border rounded-md">
-                                <Table>
+                                <div className="max-h-96 overflow-y-auto overflow-x-auto border rounded-md">
+                                 <Table className="[&_*]:max-w-[200px] [&_*]:truncate [&_*]:overflow-hidden [&_*]:whitespace-nowrap">
                                     <TableHeader>
                                         <TableRow>
                                             <TableHead>Part No.</TableHead>
@@ -281,10 +281,21 @@ export default function Edit({ purchaseOrder, purchaseOrderItems, stocks, catego
                                         {filteredStocks.length > 0 ? (
                                             filteredStocks.map((stock) => (
                                                 <TableRow key={stock.id}>
-                                                    <TableCell className="font-medium">{stock.product.part_number}</TableCell>
-                                                    <TableCell>{stock.product.name}</TableCell>
-                                                    <TableCell>{stock.product.category.name}</TableCell>
-                                                    <TableCell>{stock.product.brand.name}</TableCell>
+                                                     <TableCell
+                                                        className="font-medium whitespace-nowrap max-w-[300px] truncate overflow-hidden"
+                                                        title={stock.product.part_number} // tooltip
+                                                    >
+                                                        {stock.product.part_number}
+                                                    </TableCell>
+
+                                                    <TableCell
+                                                        className="whitespace-nowrap max-w-[300px] truncate overflow-hidden"
+                                                        title={stock.product.name} // tooltip
+                                                    >
+                                                        {stock.product.name}
+                                                    </TableCell>
+                                                    <TableCell>{stock.product.category?.name ?? "Uncategorized"}</TableCell>
+                                                    <TableCell>{stock.product.brand?.name ?? "No Brand"}</TableCell>
                                                     <TableCell className="text-right">{stock.quantity}</TableCell>
                                                     <TableCell className="text-right">
                                                         <Button
@@ -315,7 +326,7 @@ export default function Edit({ purchaseOrder, purchaseOrderItems, stocks, catego
                             <CardTitle>Purchase Order Items</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <Table>
+                             <Table className="[&_*]:max-w-[200px] [&_*]:truncate [&_*]:overflow-hidden [&_*]:whitespace-nowrap">
                                 <TableHeader>
                                     <TableRow>
                                         <TableHead>Part No.</TableHead>
@@ -328,8 +339,14 @@ export default function Edit({ purchaseOrder, purchaseOrderItems, stocks, catego
                                     {data.items.length > 0 ? (
                                         data.items.map((item, index) => (
                                             <TableRow key={item.stock_id}>
-                                                <TableCell>{item.part_number}</TableCell>
-                                                <TableCell>{item.name}</TableCell>
+                                                <TableCell
+                                                    className="whitespace-nowrap max-w-[300px] truncate overflow-hidden"
+                                                    title={item.part_number} // tooltip
+                                                >{item.part_number}</TableCell>
+                                                <TableCell
+                                                    className="whitespace-nowrap max-w-[300px] truncate overflow-hidden"
+                                                    title={item.name} // tooltip
+                                                >{item.name}</TableCell>
                                                 <TableCell>
                                                     <Badge variant="secondary">{item.quantity}</Badge>
                                                 </TableCell>
