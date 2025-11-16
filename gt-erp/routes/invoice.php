@@ -1,22 +1,18 @@
 <?php
 
+use App\Http\Controllers\Invoice\InvoiceController;
 use Illuminate\Support\Facades\Route;
 
-Route::middleware(['auth', 'is_admin'])->group(function () {
+Route::middleware(['auth'])->group(function () {
     Route::prefix('dashboard/invoice')
         ->name('dashboard.invoice.')
         ->group(function () {
-
-            Route::get('/{any?}', function () {
-                return redirect()->route('dashboard');
-            })->where('any', '.*');
-
-
-            // Route::get('/', [InvoiceController::class, 'index'])->name('index');
-            // Route::get('/create', [InvoiceController::class, 'create'])->name('create');
-            // Route::post('/store', [InvoiceController::class, 'store'])->name('store');
-            // Route::get('/{invoice_id}/edit', [InvoiceController::class, 'edit'])->name('edit');
-            // Route::put('/{stock_id}/update', [InvoiceController::class, 'update'])->name('update');
-
+            Route::get('/', [InvoiceController::class, 'index'])->name('index');
+            Route::get('/create', [InvoiceController::class, 'create'])->name('create');
+            Route::post('/{jobCard}/store', [InvoiceController::class, 'store'])->name('store');
+            Route::get('/{invoice}', [InvoiceController::class, 'show'])->name('show');
+            Route::patch('/{invoice}/payment', [InvoiceController::class, 'updatePayment'])->name('payment');
+            Route::put('/{invoice}/status', [InvoiceController::class, 'updateStatus'])->name('update-status');
+            Route::patch('/{invoice}/cancel', [InvoiceController::class, 'cancel'])->name('cancel');
         });
 });

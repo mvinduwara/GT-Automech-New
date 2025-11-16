@@ -179,6 +179,7 @@ class VehicleController extends Controller
 
             $vehicles = Vehicle::with(['brand', 'model'])
                 ->where('vehicle_no', 'like', $searchTerm)
+                ->orderBy('id', 'desc')
                 ->take(10)
                 ->get();
 

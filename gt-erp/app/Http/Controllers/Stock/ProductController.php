@@ -38,7 +38,7 @@ class ProductController extends Controller
                 ->when($request->input('unit_of_measure_id'), function ($query, $uomId) {
                     $query->where('unit_of_measure_id', $uomId);
                 })
-                ->orderBy('name')
+                ->orderBy('id', 'desc')
                 ->paginate(10) // Paginate with 10 items per page
                 ->withQueryString(); // Keep existing query string parameters when paginating
 
@@ -117,7 +117,7 @@ class ProductController extends Controller
                     }),
                 ],
                 'brand_id' => [
-                    'required',
+                    'nullable',
                     'integer',
                     Rule::exists('brands', 'id')->where(function ($query) {
                         return $query->where('status', 'active');
@@ -195,7 +195,7 @@ class ProductController extends Controller
                     }),
                 ],
                 'brand_id' => [
-                    'required',
+                    'nullable',
                     'integer',
                     Rule::exists('brands', 'id')->where(function ($query) {
                         return $query->where('status', 'active');

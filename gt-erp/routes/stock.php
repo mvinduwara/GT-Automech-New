@@ -46,6 +46,7 @@ Route::middleware(['auth', 'is_admin_or_cashier'])->group(function () {
                     Route::post('/store', [StockController::class, 'store'])->name('store');
                     Route::get('/{stock}/edit', [StockController::class, 'edit'])->name('edit');
                     Route::put('/{stock}/update', [StockController::class, 'update'])->name('update');
+                    Route::delete('/{stock}', [StockController::class, 'destroy'])->name('destroy');
                     Route::get('/search-products', [StockController::class, 'searchProducts'])->name('search-products');
                 });
         });

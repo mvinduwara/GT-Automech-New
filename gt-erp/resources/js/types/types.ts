@@ -33,7 +33,7 @@ export interface pettyCash {
     requested_by_user_id: number;
     approved_by_user_id: number;
     description: string;
-    requested_by?: User; 
+    requested_by?: User;
     approved_by?: User;
     total_amount: number;
     status: string;
@@ -58,7 +58,7 @@ export type Product = {
     part_number: string;
     description: string;
     category: Category;
-    brand: Brand;
+    brand: Brand | null;
     unit_of_measure: UnitOfMeasure;
     status: 'active' | 'deactive';
     reorder_level: number;
@@ -120,6 +120,7 @@ export interface pettyCash {
 
 export interface Customer {
     id: number;
+    title?: string;
     name: string;
     mobile: string;
     email?: string;
@@ -127,12 +128,12 @@ export interface Customer {
     created_at: string;
 }
 
-export interface VehicleBrand  {
+export interface VehicleBrand {
     id: number;
     name: string;
 };
 
-export interface VehicleModel  {
+export interface VehicleModel {
     id: number;
     name: string;
     vehicle_brand_id: number;
@@ -215,4 +216,66 @@ export interface JobCardService {
     option_id?: number;
     price: number;
     ignored: boolean;
+}
+
+export interface InvoiceItem {
+    id: number;
+    invoice_id: number;
+    item_type: 'service' | 'product' | 'charge';
+    description: string;
+    quantity: number;
+    unit_price: string; // Is a decimal, so likely a string
+    line_total: string; // Is a decimal, so likely a string
+
+    // Foreign keys
+    job_card_vehicle_service_id: number | null;
+    job_card_product_id: number | null;
+    job_card_charge_id: number | null;
+}
+
+// Based on CustomerReview model
+export interface CustomerReview {
+    id: number;
+    invoice_id: number;
+    job_card_id: number;
+    rating: number; // 1-5
+    suggestions: string | null;
+    created_at: string;
+    updated_at: string;
+}
+// Main Invoice type
+// Based on Invoice.php and its migrations
+export interface Invoice {
+    id: number;
+    review_token: string | null; // For the review link
+    invoice_no: string;
+    job_card_id: number;
+    customer_id: number;
+    user_id: number;
+
+    // Financials are strings due to 'decimal:2' cast
+    services_total: string;
+    products_total: string;
+    charges_total: string;
+    subtotal: string;
+    advance_payment: string;
+    total: string;
+
+    status: 'draft' | 'unpaid' | 'partial' | 'paid' | 'cancelled';
+    invoice_date: string; // Cast to date, serializes to string
+    due_date: string | null; // Cast to date, serializes to string
+    remarks: string | null;
+    terms_conditions: string | null;
+    created_at: string;
+    updated_at: string;
+
+    // Appended attributes
+    remaining: number; // Accessor returns a float
+
+    // Optional loaded relationships
+    customer?: Customer;
+    job_card?: JobCard;
+    user?: User;
+    items?: InvoiceItem[];
+    review?: CustomerReview | null;
 }

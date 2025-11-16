@@ -2,11 +2,16 @@
 
 namespace App\Http\Controllers\PettyCash;
 
+use App\Actions\Finance\CreateLedgerEntries;
 use App\Http\Controllers\Controller;
+use App\Models\Account;
 use App\Models\PettyCashVoucher;
+use App\Models\PettyCashItem;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class PettyCashController extends Controller
 {
@@ -33,36 +38,158 @@ class PettyCashController extends Controller
         $validated = $request->validate([
             'voucher_number' => 'required|string|unique:petty_cash_vouchers,voucher_number',
             'date' => 'required|date',
-            'approved_by_user_id' => 'nullable|exists:users,id',
             'name' => 'required|string',
             'description' => 'nullable|string',
-            'total_amount' => 'required|numeric',
+            'items' => 'required|array|min:1',
+            'items.*.item_description' => 'required|string|max:255',
+            'items.*.quantity' => 'required|numeric|min:1',
+            'items.*.unit_price' => 'required|numeric|min:0',
+            'items.*.amount' => 'required|numeric|min:0',
         ]);
 
-        // Set values from backend logic
-        $validated['requested_by_user_id'] = auth()->id(); // Automatically set
-        $validated['status'] = 'pending'; // Always 'pending'
-        $validated['checked'] = false; // Always false
+        DB::beginTransaction();
 
-        PettyCashVoucher::create($validated);
+        try {
+            // Calculate total amount from items
+            $totalAmount = collect($validated['items'])->sum('amount');
 
-        return redirect()->route('dashboard.petty-cash.index')->with('success', 'Voucher created successfully!');
+            // Create the voucher
+            $voucher = PettyCashVoucher::create([
+                'voucher_number' => $validated['voucher_number'],
+                'date' => $validated['date'],
+                'requested_by_user_id' => auth()->id(),
+                'name' => $validated['name'],
+                'description' => $validated['description'] ?? null,
+                'total_amount' => $totalAmount,
+                'status' => 'pending',
+            ]);
+
+            // Create the items
+            foreach ($validated['items'] as $itemData) {
+                PettyCashItem::create([
+                    'petty_cash_voucher_id' => $voucher->id,
+                    'item_description' => $itemData['item_description'],
+                    'quantity' => $itemData['quantity'],
+                    'unit_price' => $itemData['unit_price'],
+                    'amount' => $itemData['amount'],
+                    'checked' => false,
+                ]);
+            }
+
+            DB::commit();
+
+            return redirect()->route('dashboard.petty-cash.index')->with('success', 'Voucher created successfully!');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->withErrors(['error' => 'Failed to create voucher: ' . $e->getMessage()])->withInput();
+        }
     }
 
     public function edit($voucher_number)
     {
-        $pettyCash = PettyCashVoucher::where('voucher_number', $voucher_number)->firstOrFail();
+        $pettyCash = PettyCashVoucher::with('items')
+            ->where('voucher_number', $voucher_number)
+            ->firstOrFail();
+
         return Inertia::render('petty-cash/edit', [
             'petty_cash' => $pettyCash,
         ]);
     }
 
+    public function update(Request $request, $voucher_number)
+    {
+        $validated = $request->validate([
+            'date' => 'required|date',
+            'name' => 'required|string',
+            'description' => 'nullable|string',
+            'items' => 'required|array|min:1',
+            'items.*.id' => 'nullable|exists:petty_cash_items,id',
+            'items.*.item_description' => 'required|string|max:255',
+            'items.*.quantity' => 'required|numeric|min:1',
+            'items.*.unit_price' => 'required|numeric|min:0',
+            'items.*.amount' => 'required|numeric|min:0',
+        ]);
+
+        DB::beginTransaction();
+
+        try {
+            $voucher = PettyCashVoucher::where('voucher_number', $voucher_number)->firstOrFail();
+
+            // Calculate total amount from items
+            $totalAmount = collect($validated['items'])->sum('amount');
+
+            // Update the voucher
+            $voucher->update([
+                'date' => $validated['date'],
+                'name' => $validated['name'],
+                'description' => $validated['description'] ?? null,
+                'total_amount' => $totalAmount,
+            ]);
+
+            // Get existing item IDs
+            $existingItemIds = collect($validated['items'])
+                ->pluck('id')
+                ->filter()
+                ->toArray();
+
+            // Delete items that are no longer in the list
+            PettyCashItem::where('petty_cash_voucher_id', $voucher->id)
+                ->whereNotIn('id', $existingItemIds)
+                ->delete();
+
+            // Update or create items
+            foreach ($validated['items'] as $itemData) {
+                if (isset($itemData['id'])) {
+                    // Update existing item
+                    PettyCashItem::where('id', $itemData['id'])
+                        ->update([
+                            'item_description' => $itemData['item_description'],
+                            'quantity' => $itemData['quantity'],
+                            'unit_price' => $itemData['unit_price'],
+                            'amount' => $itemData['amount'],
+                        ]);
+                } else {
+                    // Create new item
+                    PettyCashItem::create([
+                        'petty_cash_voucher_id' => $voucher->id,
+                        'item_description' => $itemData['item_description'],
+                        'quantity' => $itemData['quantity'],
+                        'unit_price' => $itemData['unit_price'],
+                        'amount' => $itemData['amount'],
+                        'checked' => false,
+                    ]);
+                }
+            }
+
+            DB::commit();
+
+            return redirect()->route('dashboard.petty-cash.index')->with('success', 'Voucher updated successfully!');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->withErrors(['error' => 'Failed to update voucher: ' . $e->getMessage()])->withInput();
+        }
+    }
+
     public function destroy($voucher_number)
     {
-        $pettyCash = PettyCashVoucher::where('voucher_number', $voucher_number)->firstOrFail();
-        $pettyCash->delete();
+        DB::beginTransaction();
 
-        return redirect()->route('dashboard.petty-cash.index')->with('success', 'Voucher deleted successfully!');
+        try {
+            $pettyCash = PettyCashVoucher::where('voucher_number', $voucher_number)->firstOrFail();
+
+            // Delete associated items first
+            PettyCashItem::where('petty_cash_voucher_id', $pettyCash->id)->delete();
+
+            // Delete the voucher
+            $pettyCash->delete();
+
+            DB::commit();
+
+            return redirect()->route('dashboard.petty-cash.index')->with('success', 'Voucher deleted successfully!');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->withErrors(['error' => 'Failed to delete voucher: ' . $e->getMessage()]);
+        }
     }
 
     // Admin methods for approve/reject
@@ -130,7 +257,7 @@ class PettyCashController extends Controller
         return back()->with('success', 'Voucher status changed to pending!');
     }
 
-    public function setPaid($voucher_number)
+    public function setPaidx($voucher_number)
     {
         // Check if user is service manager
         if (auth()->user()->role !== 'service-manager') {
@@ -146,6 +273,51 @@ class PettyCashController extends Controller
 
         $pettyCash->update(['status' => 'paid']);
 
+        // $voucher = PettyCashVoucher::where('voucher_number', $voucher_number)->firstOrFail();
+
         return back()->with('success', 'Voucher marked as paid!');
+    }
+
+    public function setPaid($voucher_number)
+    {
+        // Check if user is service manager or admin
+        $userRole = auth()->user()->role;
+        if (!in_array($userRole, ['service-manager', 'admin'])) {
+            return back()->withErrors(['error' => 'Unauthorized Access.']);
+        }
+
+        $voucher = PettyCashVoucher::where('voucher_number', $voucher_number)->firstOrFail();
+
+        // Only allow approved vouchers to be set to paid
+        if ($voucher->status !== 'approved') {
+            return back()->withErrors(['error' => 'Only approved vouchers can be set to paid.']);
+        }
+
+        try {
+            DB::transaction(function () use ($voucher) {
+                // 1. Update the Voucher status
+                $voucher->update(['status' => 'paid']);
+
+                // 2. Record the transaction in the financial ledger
+                $expenseAccount = Account::where('code', '5000')->firstOrFail(); // Petty Cash Expenses
+                $cashAccount = Account::where('code', '1000')->firstOrFail(); // Cash & Bank
+
+                CreateLedgerEntries::run(
+                    description: "Petty cash expense for Voucher #{$voucher->voucher_number} - {$voucher->name}",
+                    date: $voucher->date,
+                    amount: $voucher->total_amount,
+                    debitAccount: $expenseAccount, // Expense increases
+                    creditAccount: $cashAccount,    // Cash asset decreases
+                    transactionable: $voucher
+                );
+            });
+
+            Log::info('Petty cash voucher marked as paid and ledger created', ['voucher_id' => $voucher->id]);
+            return back()->with('success', 'Voucher marked as paid!');
+
+        } catch (\Exception $e) {
+            Log::error('Failed to mark voucher as paid', ['voucher_id' => $voucher->id, 'error' => $e->getMessage()]);
+            return back()->withErrors(['error' => 'Failed to process payment: ' . $e->getMessage()]);
+        }
     }
 }

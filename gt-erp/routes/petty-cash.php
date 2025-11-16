@@ -1,7 +1,7 @@
 <?php
 
 use App\Http\Controllers\PettyCash\PettyCashController;
-use App\Http\Controllers\PettyCashItemController;
+use App\Http\Controllers\PettyCash\PettyCashItemController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth'])->group(function () {
@@ -24,13 +24,14 @@ Route::middleware(['auth'])->group(function () {
         });
 });
 
-Route::middleware(['auth', 'is_cashier'])->group(function () {
+Route::middleware(['auth', 'is_admin_or_cashier'])->group(function () {
     Route::prefix('dashboard/petty-cash')
         ->name('dashboard.petty-cash.')
         ->group(function () {
             Route::get('/create', [PettyCashController::class, 'create'])->name('create');
             Route::get('/{voucher_number}/edit', [PettyCashController::class, 'edit'])->name('edit');
             Route::post('/', [PettyCashController::class, 'store'])->name('store');
+            Route::put('/{voucher_number}', [PettyCashController::class, 'update'])->name('update');
             Route::delete('/{voucher_number}', [PettyCashController::class, 'destroy'])->name('destroy');
         });
 });

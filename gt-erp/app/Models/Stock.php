@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Stock extends Model
 {
@@ -51,5 +52,47 @@ class Stock extends Model
     {
         return $this->belongsTo(Product::class, 'alternative_product_id');
     }
-}
 
+    public function purchaseOrderItems(): HasMany
+    {
+        return $this->hasMany(PurchaseOrderItem::class);
+    }
+
+    /**
+     * Get all GRN Items associated with this stock.
+     */
+    public function grnItems(): HasMany
+    {
+        return $this->hasMany(GrnItem::class);
+    }
+
+    /**
+     * Get all Job Card Products associated with this stock.
+     */
+    public function jobCardProducts(): HasMany
+    {
+        return $this->hasMany(JobCardProducts::class);
+    }
+
+    /**
+     * Get all stock items that list this as an alternative.
+     */
+    public function alternativeFor(): HasMany
+    {
+        return $this->hasMany(Stock::class, 'alternative_product_id');
+    }
+
+    /**
+     * Check if this stock item has any transaction history.
+     */
+    public function hasTransactions(): bool
+    {
+        // Load counts for all relationships
+        $this->loadCount(['purchaseOrderItems', 'grnItems', 'jobCardProducts', 'alternativeFor']);
+
+        return $this->purchase_order_items_count > 0 ||
+            $this->grn_items_count > 0 ||
+            $this->job_card_products_count > 0 ||
+            $this->alternative_for_count > 0;
+    }
+}

@@ -1,7 +1,9 @@
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, usePage } from '@inertiajs/react';
+import { FinancialSummaryCard } from '../dashboard';
+import { Package, Store } from 'lucide-react';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -15,6 +17,8 @@ interface InventoryStats {
     brands: { count: number; change: string; trend: 'up' | 'down' };
     products: { count: number; change: string; trend: 'up' | 'down' };
     stock: { count: number; change: string; trend: 'up' | 'down' };
+    totalStockBuyingValue: number;
+    totalStockSellingValue: number;
 }
 
 interface IndexProps {
@@ -91,6 +95,7 @@ const StatCard = ({ title, count, change, trend, href, color }: StatCardProps) =
 };
 
 export default function Index({ stats }: IndexProps) {
+    const { auth } = usePage().props;
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Inventory" />
@@ -133,7 +138,22 @@ export default function Index({ stats }: IndexProps) {
 
                 </div>
 
-                {/* Quick Actions */}
+                {auth?.user?.role === "admin" && (
+                    <div className="mt-8 flex justify-start gap-3 items-center">
+                        <FinancialSummaryCard
+                            title="Stock Buying Value"
+                            value={stats.totalStockBuyingValue}
+                            icon={Package}
+                            color="text-purple-500"
+                        />
+                        <FinancialSummaryCard
+                            title="Stock Selling Value (EST)"
+                            value={stats.totalStockSellingValue}
+                            icon={Store}
+                            color="text-pink-500"
+                        />
+                    </div>
+                )}
                 <div className="mt-8">
                     <h2 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h2>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -160,6 +180,6 @@ export default function Index({ stats }: IndexProps) {
                     </div>
                 </div>
             </div>
-        </AppLayout>
+        </AppLayout >
     );
 }

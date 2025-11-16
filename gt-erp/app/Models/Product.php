@@ -40,17 +40,36 @@ class Product extends Model
     /**
      * Get the category that owns the product.
      */
-    public function category(): BelongsTo
-    {
-        return $this->belongsTo(Category::class);
-    }
+    // public function category(): BelongsTo
+    // {
+    //     return $this->belongsTo(Category::class);
+    // }
 
     /**
      * Get the brand that owns the product.
      */
-    public function brand(): BelongsTo
+    // public function brand(): BelongsTo
+    // {
+    //     return $this->belongsTo(Brand::class);
+    // }
+
+    public function category()
     {
-        return $this->belongsTo(Brand::class);
+        return $this->belongsTo(Category::class)->withDefault([
+            'id'   => null,
+            'name' => 'Uncategorized' // Or 'N/A', 'No Category', etc.
+        ]);
+    }
+
+    /**
+     * Get the brand for the product.
+     */
+    public function brand()
+    {
+        return $this->belongsTo(Brand::class)->withDefault([
+            'id'   => null,
+            'name' => 'No Brand'
+        ]);
     }
 
     /**
@@ -67,6 +86,11 @@ class Product extends Model
     public function stocks(): HasMany
     {
         return $this->hasMany(Stock::class);
+    }
+
+    public function getPriceAttribute(): ?float
+    {
+        return $this->stocks()->latest()->first()->selling_price ?? null;
     }
 
     /**

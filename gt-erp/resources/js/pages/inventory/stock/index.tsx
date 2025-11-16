@@ -1,16 +1,4 @@
-import React, { useState, useEffect } from 'react';
-import AppLayout from '@/layouts/app-layout';
-import { type BreadcrumbItem } from '@/types';
-import { Head, Link, usePage, router } from '@inertiajs/react';
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from '@/components/ui/table';
-import { Input } from '@/components/ui/input';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -19,6 +7,8 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Pagination, PaginationContent, PaginationItem, PaginationLink } from '@/components/ui/pagination';
 import {
     Select,
     SelectContent,
@@ -27,14 +17,27 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from '@/components/ui/table';
+import {
     Tooltip,
     TooltipContent,
     TooltipProvider,
     TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { Toaster, toast } from 'sonner';
+import AppLayout from '@/layouts/app-layout';
+import { FinancialSummaryCard } from '@/pages/dashboard';
+import { type BreadcrumbItem } from '@/types';
 import { Category, Stock, UnitOfMeasure } from '@/types/types';
-import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
+import { Head, Link, router, usePage } from '@inertiajs/react';
+import { Package, Store, Trash2 } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Toaster, toast } from 'sonner';
 
 interface StocksPageProps {
     stocks: {
@@ -58,6 +61,8 @@ interface StocksPageProps {
     };
     categories: Category[];
     unitOfMeasures: UnitOfMeasure[];
+    totalStockBuyingValue: number;
+    totalStockSellingValue: number;
     success?: string;
     error?: string;
 }
@@ -74,9 +79,10 @@ const breadcrumbs: BreadcrumbItem[] = [
 ];
 
 export default function Index() {
-    const { stocks, filters, categories, unitOfMeasures, success, error } =
+    const { stocks, filters, categories, unitOfMeasures, success, error, totalStockBuyingValue, totalStockSellingValue } =
         usePage<StocksPageProps>().props;
 
+    const { auth } = usePage().props;
     const [search, setSearch] = useState(filters.search || '');
     const [categoryId, setCategoryId] = useState(filters.category_id || '');
     const [unitOfMeasureId, setUnitOfMeasureId] = useState(
@@ -99,6 +105,7 @@ export default function Index() {
 
     const [isSummaryDialogOpen, setIsSummaryDialogOpen] = useState(false);
     const [selectedStock, setSelectedStock] = useState<Stock | null>(null);
+    const [processing, setProcessing] = useState(false);
 
     useEffect(() => {
         if (success) {
@@ -128,6 +135,28 @@ export default function Index() {
                 replace: true,
             }
         );
+    };
+
+    const handleDelete = () => {
+        if (!selectedStock) return;
+
+        setProcessing(true);
+        router.delete(route('dashboard.stock.destroy', selectedStock.id), {
+            preserveScroll: true,
+            onSuccess: () => {
+                setIsSummaryDialogOpen(false);
+                setSelectedStock(null);
+                // The toast is already handled by the useEffect
+            },
+            onError: (errors) => {
+                toast.error(
+                    errors.error || 'Failed to delete stock item.'
+                );
+            },
+            onFinish: () => {
+                setProcessing(false);
+            },
+        });
     };
 
     const clearFilters = () => {
@@ -174,7 +203,22 @@ export default function Index() {
                         </Button>
                     </Link>
                 </div>
-
+                {auth?.user?.role === "admin" && (
+                    <div className="flex  gap-4 justify-start items-center">
+                        <FinancialSummaryCard
+                            title="Stock Buying Value"
+                            value={totalStockBuyingValue}
+                            icon={Package}
+                            color="text-purple-500"
+                        />
+                        <FinancialSummaryCard
+                            title="Stock Selling Value (EST)"
+                            value={totalStockSellingValue}
+                            icon={Store}
+                            color="text-pink-500"
+                        />
+                    </div>
+                )}
                 {/* Filter Section */}
                 <div className="rounded-lg border bg-white p-4 shadow-sm">
                     <h2 className="mb-4 text-lg font-semibold text-gray-700 ">
@@ -341,7 +385,7 @@ export default function Index() {
                                     <TableRow
                                         key={stock.id}
                                         onClick={() => handleRowClick(stock)}
-                                        className={`cursor-pointer transition-colors hover:bg-gray-100  ${stock.status === 'inactive'
+                                        className={`cursor-pointer transition-colors hover:bg-gray-100  ${stock.status == 'deactive'
                                             ? 'text-red-500 '
                                             : ''
                                             } ${stock.quantity <=
@@ -397,7 +441,7 @@ export default function Index() {
                                                 <TooltipProvider>
                                                     <Tooltip>
                                                         <TooltipTrigger>
-                                                             <p>
+                                                            <p>
                                                                 N/A
                                                             </p>
                                                         </TooltipTrigger>
@@ -540,7 +584,51 @@ export default function Index() {
                                 </p>
                             </div>
                         )}
-                        <div className="mt-6 flex justify-end">
+                        <div className="mt-6 flex justify-between">
+                            {/* Delete Button with Warning */}
+                            <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                    <Button
+                                        variant="destructive"
+                                        className="rounded-md px-4 py-2"
+                                        disabled={processing}
+                                    >
+                                        <Trash2 className="mr-2 h-4 w-4" />
+                                        Delete
+                                    </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                        <AlertDialogTitle>
+                                            Are you absolutely sure?
+                                        </AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                            This will either deactivate or
+                                            permanently delete the stock item.{' '}
+                                            <br />
+                                            If the item has history, it will be
+                                            deactivated. If it has no history, it
+                                            will be permanently deleted.
+                                        </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                        <AlertDialogCancel disabled={processing}>
+                                            Cancel
+                                        </AlertDialogCancel>
+                                        <AlertDialogAction
+                                            onClick={handleDelete}
+                                            disabled={processing}
+                                            className="bg-red-600 hover:bg-red-700"
+                                        >
+                                            {processing
+                                                ? 'Deleting...'
+                                                : 'Yes, delete it'}
+                                        </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
+
+                            {/* Edit Button */}
                             <Link
                                 href={
                                     selectedStock
