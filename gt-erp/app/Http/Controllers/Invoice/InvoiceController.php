@@ -237,11 +237,16 @@ class InvoiceController extends Controller
                 // $reviewUrl = route('review.show', $invoice->review_token);
                 $reviewUrl = 'https://gtdrive.lk/review/' . $invoice->review_token;
 
-                $message = "Dear $name,\n" .
-                    "Your invoice ($invoiceNo) for Rs. $totalAmount is ready. Amount due: Rs. $dueAmount.\n\n" .
-                    "We value your feedback! Please tell us about your service:\n" . // <-- Updated line
-                    "$reviewUrl\n\n" . // <-- Added review link
+                $message = "Dear $name,\n\n" .
+                    "Thank you for choosing GT Automech.\n" .
+                    "Your invoice ($invoiceNo) for Rs. $totalAmount is ready.\n" .
+                    "Amount due: Rs. $dueAmount.\n\n" .
+                    "We value your feedback!\n" .
+                    "Please tell us about your service below:\n$reviewUrl\n\n" .
+                    "We appreciate your trust in our services.\n\n" .
+                    "For inquiries: 077-409-8580\n\n" .
                     "- GT AutoMech";
+
 
                 Log::info('Attempting to send invoice creation SMS', ['invoice_id' => $invoice->id, 'phone' => $phone]);
                 $this->sendSms($phone, $message);
@@ -348,10 +353,31 @@ class InvoiceController extends Controller
                     $remainingStr = number_format($newRemaining, 2);
                     $invoiceNo = $invoice->invoice_no; //
 
-                    $message = "Dear $name,\n" .
-                        "We received your payment of Rs. $paymentStr for Invoice $invoiceNo.\n" .
+                    // $message = "Dear $name,\n" .
+                    //     "We received your payment of Rs. $paymentStr for Invoice $invoiceNo.\n" .
+                    //     "New Balance Due: Rs. $remainingStr\n" .
+                    //     "Thank you!\n" .
+                    //     "- GT AutoMech";
+
+                    if ($newRemaining > 0) {
+                        $paymentStatus = "Partially Paid – Remaining: Rs. $remainingStr";
+                    } elseif ($newRemaining == 0) {
+                        $paymentStatus = "Fully Paid";
+                    } else {
+                        // remove minus sign for display
+                        $absBalance = number_format(abs($newRemaining), 2);
+                        $paymentStatus = "Balance: Rs. $absBalance";
+                    }
+
+                    $message =
+                        "Dear $name,\n\n" .
+                        "Thank you for choosing GT Automech.\n\n" .
+                        "Invoice #: $invoiceNo\n" .
+                        "Payment Received: Rs. $paymentStr\n" .
                         "New Balance Due: Rs. $remainingStr\n" .
-                        "Thank you!\n" .
+                        "Payment Status: $paymentStatus\n\n" .
+                        "We appreciate your trust in our services.\n" .
+                        "For inquiries: 077-409-8580\n\n" .
                         "- GT AutoMech";
 
                     Log::info('Attempting to send payment confirmation SMS', ['invoice_id' => $invoice->id, 'phone' => $phone]);
