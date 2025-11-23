@@ -14,7 +14,7 @@ Route::get('/', function () {
 
 Route::middleware(['auth', 'verified'])->group(function () {
 
-    Route::get('/dashboard', [DashboardController::class,"index"])->name('dashboard');
+    Route::get('/dashboard', [DashboardController::class, "index"])->name('dashboard');
 
     Route::get('/dashboard/clear-cache', function () {
         Artisan::call('cache:clear');
@@ -39,6 +39,7 @@ Route::post('/review/{token}', [CustomerReviewController::class, 'store'])->name
 
 Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard/reviews', [AdminReviewController::class, 'index'])->name('dashboard.reviews.index');
+    Route::post('/dashboard/reviews/{invoice}/manual', [AdminReviewController::class, 'storeManual'])->name('dashboard.reviews.manual.store');
 });
 
 require __DIR__ . '/settings.php';

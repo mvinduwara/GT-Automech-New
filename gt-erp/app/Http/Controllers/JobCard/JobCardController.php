@@ -107,11 +107,21 @@ class JobCardController extends Controller
                 // Get vehicle number
                 $vehicleNo = $vehicle->vehicle_no ?? 'your vehicle';
 
-                $message = "Dear $name,\n" .
-                    "Your job card {$jobCard->job_card_no} for vehicle $vehicleNo has been created.\n" . //
-                    "Status: Pending Approval\n" .
-                    "We will notify you once confirmed.\n" .
-                    "- GT AutoMech";
+                // $message = "Dear $name,\n" .
+                //     "Your job card {$jobCard->job_card_no} for vehicle $vehicleNo has been created.\n" . //
+                //     "Status: Pending Approval\n" .
+                //     "We will notify you once confirmed.\n" .
+                //     "- GT AutoMech";
+
+                $message = "Dear Valued Customer,\n\n" .
+                    "Thank you for choosing GT Automech.\n\n" .
+                    "Job Card #: {$jobCard->job_card_no}\n" .
+                    "Date: {$jobCard->date}\n" .
+                    "Vehicle No: $vehicleNo\n" .
+                    "Vehicle Model: {$jobCard->vehicle->model->name}\n" .
+                    "Mileage: {$jobCard->mileage} km\n\n" .
+                    "Your vehicle is now in our care.\n\n" .
+                    "For inquiries: 077-409-8580";
 
                 // 3. This call now uses the Trait's sendSms method
                 $this->sendSMS($phone, $message);

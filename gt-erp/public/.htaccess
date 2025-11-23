@@ -24,6 +24,28 @@
     RewriteRule ^ index.php [L]
 </IfModule>
 
+<IfModule mod_headers.c>
+    # 1. Allow CORS for the Manifest file
+    <FilesMatch "\.webmanifest$">
+        Header set Access-Control-Allow-Origin "https://gtdrive.lk"
+        Header set Access-Control-Allow-Methods "GET"
+        Header set Content-Type "application/manifest+json"
+    </FilesMatch>
+
+    # 2. Allow CORS for Static Assets (Images, Fonts, JS)
+    <FilesMatch "\.(ttf|ttc|otf|eot|woff|woff2|css|js|png|jpg|jpeg|gif|svg)$">
+        Header set Access-Control-Allow-Origin "https://gtdrive.lk"
+        Header set Access-Control-Allow-Methods "GET"
+    </FilesMatch>
+    
+    # 3. Handle "Preflight" OPTIONS requests globally
+    # This helps if Laravel's CORS config is bypassed by server settings
+    Header always set Access-Control-Allow-Origin "https://gtdrive.lk"
+    Header always set Access-Control-Allow-Methods "POST, GET, OPTIONS, PUT, DELETE"
+    Header always set Access-Control-Allow-Headers "Content-Type, X-Auth-Token, Origin, Authorization, X-XSRF-TOKEN"
+    Header always set Access-Control-Allow-Credentials "true"
+</IfModule>
+
 # php -- BEGIN cPanel-generated handler, do not edit
 # Set the “ea-php81” package as the default “PHP” programming language.
 <IfModule mime_module>
