@@ -25,10 +25,13 @@ class Invoice extends Model
         'advance_payment',
         'total',
         'status',
+        'payment_method',
         'invoice_date',
         'due_date',
         'remarks',
         'terms_conditions',
+        'manual_rating',
+        'manual_feedback',
     ];
 
     protected $casts = [
@@ -58,10 +61,10 @@ class Invoice extends Model
         static::saving(function ($invoice) {
             // Calculate subtotal from all line items
             $invoice->subtotal = $invoice->services_total + $invoice->products_total + $invoice->charges_total;
-            
+
             // Total is subtotal (discounts already applied in job card items)
             $invoice->total = $invoice->subtotal;
-            
+
             // Update status based on payment
             $invoice->updatePaymentStatus();
         });

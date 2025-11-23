@@ -15,6 +15,7 @@ class CustomerReview extends Model
         'job_card_id',
         'rating',
         'suggestions',
+        
     ];
 
     public function invoice(): BelongsTo

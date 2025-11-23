@@ -20,6 +20,8 @@ import {
 import { format } from 'date-fns';
 import AppLayout from '@/layouts/app-layout';
 import { BreadcrumbItem } from '@/types';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Banknote, CreditCard, Globe, ScrollText, Wallet } from 'lucide-react';
 
 interface Invoice {
     id: number;
@@ -28,8 +30,17 @@ interface Invoice {
     job_card: { job_card_no: string } | null;
     total: number;
     status: string;
+    payment_method: string;
     invoice_date: string;
     due_date: string | null;
+}
+
+interface DailyStats {
+    total: number;
+    cash: number;
+    card: number;
+    online: number;
+    cheque: number;
 }
 
 interface PaginationLink {
@@ -60,6 +71,7 @@ interface Props {
         date_to?: string;
     };
     statusOptions?: FilterOption[];
+    dailyStats: DailyStats;
 }
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -79,7 +91,7 @@ const defaultStatusOptions: FilterOption[] = [
     { value: 'cancelled', label: 'Cancelled' },
 ];
 
-export default function Index({ invoices, filters = {}, statusOptions }: Props) {
+export default function Index({ invoices, filters = {}, statusOptions,dailyStats }: Props) {
     const [search, setSearch] = useState(filters.search || '');
     const [status, setStatus] = useState(filters.status || '');
     const [dateFrom, setDateFrom] = useState(filters.date_from || '');
@@ -136,12 +148,93 @@ export default function Index({ invoices, filters = {}, statusOptions }: Props) 
         }
     };
 
+    const getPaymentMethodBadgeClass = (paymentMethod: string) => {
+        const paymentMethodLower = paymentMethod.toLowerCase();
+        switch (paymentMethodLower) {
+            case 'cash':
+                return 'bg-gray-50 text-gray-800';
+            case 'card':
+                return 'bg-purple-50 text-purple-800';
+            case 'online':
+                return 'bg-blue-50 text-blue-800';
+            case 'cheque':
+                return 'bg-yellow-50 text-yellow-800';
+            default:
+                return 'bg-gray-50 text-gray-800';
+        }
+    };
+    const formatCurrency = (amount: number) => {
+        return `Rs. ${Number(amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    };
+
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Invoices" />
             <div className="flex h-full flex-1 flex-col gap-6 p-6">
                 <div className="flex items-center justify-between">
                     <h1 className="text-2xl font-bold">All Invoices</h1>
+                </div>
+
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+                    <Card className="bg-primary text-primary-foreground">
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">
+                                Total Collected
+                            </CardTitle>
+                            <Wallet className="h-4 w-4 text-primary-foreground/70" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold">{formatCurrency(dailyStats.total)}</div>
+                        </CardContent>
+                    </Card>
+
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium text-gray-600">
+                                Cash
+                            </CardTitle>
+                            <Banknote className="h-4 w-4 text-green-600" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold text-gray-900">{formatCurrency(dailyStats.cash)}</div>
+                        </CardContent>
+                    </Card>
+
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium text-gray-600">
+                                Card
+                            </CardTitle>
+                            <CreditCard className="h-4 w-4 text-purple-600" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold text-gray-900">{formatCurrency(dailyStats.card)}</div>
+                        </CardContent>
+                    </Card>
+
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium text-gray-600">
+                                Online
+                            </CardTitle>
+                            <Globe className="h-4 w-4 text-blue-600" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold text-gray-900">{formatCurrency(dailyStats.online)}</div>
+                        </CardContent>
+                    </Card>
+
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium text-gray-600">
+                                Cheque
+                            </CardTitle>
+                            <ScrollText className="h-4 w-4 text-orange-600" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold text-gray-900">{formatCurrency(dailyStats.cheque)}</div>
+                        </CardContent>
+                    </Card>
                 </div>
 
                 {/* Filters Section */}
@@ -206,6 +299,7 @@ export default function Index({ invoices, filters = {}, statusOptions }: Props) 
                                 <TableHead>Job Card</TableHead>
                                 <TableHead>Amount</TableHead>
                                 <TableHead>Status</TableHead>
+                                <TableHead>Method</TableHead>
                                 <TableHead>Invoice Date</TableHead>
                                 <TableHead>Due Date</TableHead>
                             </TableRow>
@@ -229,6 +323,13 @@ export default function Index({ invoices, filters = {}, statusOptions }: Props) 
                                                 className={`rounded px-2 py-1 text-xs ${getStatusBadgeClass(invoice.status)}`}
                                             >
                                                 {invoice.status.charAt(0).toUpperCase() + invoice.status.slice(1)}
+                                            </span>
+                                        </TableCell>
+                                        <TableCell className=''>
+                                            <span
+                                                className={`rounded mx-auto px-2 py-1 text-xs ${getPaymentMethodBadgeClass(invoice.payment_method)}`}
+                                            >
+                                                {invoice.payment_method.charAt(0).toUpperCase() + invoice.payment_method.slice(1)}
                                             </span>
                                         </TableCell>
                                         <TableCell>

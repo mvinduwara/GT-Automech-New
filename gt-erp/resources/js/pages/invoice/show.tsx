@@ -3,12 +3,14 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Head, router } from "@inertiajs/react";
 import { format } from "date-fns";
-import { Printer, ArrowLeft } from "lucide-react";
+import { Printer, ArrowLeft, CreditCard, Globe, ScrollText, Banknote } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import PaymentUpdateForm from "./PaymentUpdateForm";
 import InvoiceStatusForm from "./InvoiceStatusForm";
+import PaymentMethodForm from "./PaymentMethodForm";
 
 type InvoiceStatus = "draft" | "unpaid" | "partial" | "paid" | "cancelled";
+type PaymentMethod = 'cash' | 'card' | 'online' | 'cheque';
 
 interface Customer {
     id: number;
@@ -69,6 +71,7 @@ interface Invoice {
     advance_payment: number;
     total: number;
     status: InvoiceStatus;
+    payment_method: PaymentMethod;
     remarks: string | null;
     terms_conditions: string | null;
     customer: Customer;
@@ -142,6 +145,24 @@ export default function Show({ invoice }: Props) {
         window.close();
     };
 
+    const formatPaymentMethod = (method: PaymentMethod) => {
+        const labels: Record<PaymentMethod, string> = {
+            cash: 'Cash',
+            card: 'Card',
+            online: 'Online Transfer',
+            cheque: 'Cheque'
+        };
+        return labels[method] || method;
+    };
+
+    const getPaymentIcon = (method: PaymentMethod) => {
+        switch (method) {
+            case 'card': return <CreditCard className="h-3 w-3 mr-1" />;
+            case 'online': return <Globe className="h-3 w-3 mr-1" />;
+            case 'cheque': return <ScrollText className="h-3 w-3 mr-1" />;
+            default: return <Banknote className="h-3 w-3 mr-1" />;
+        }
+    };
 
     const serviceItems = invoice.items.filter(item => item.item_type === 'service');
     const productItems = invoice.items.filter(item => item.item_type === 'product');
@@ -160,6 +181,12 @@ export default function Show({ invoice }: Props) {
                             Back
                         </Button>
                         <div className="flex gap-2">
+                            <PaymentMethodForm
+                                invoiceId={invoice.id}
+                                currentPaymentMethod={invoice.payment_method}
+                                invoiceNo={invoice.invoice_no}
+                                disabled={invoice.status === 'cancelled'}
+                            />
                             <InvoiceStatusForm
                                 invoiceId={invoice.id}
                                 currentStatus={invoice.status}
@@ -386,6 +413,13 @@ export default function Show({ invoice }: Props) {
                                     </div>
                                     <Separator />
                                     <div className="flex justify-between py-2">
+                                        <span className="text-gray-600">Payment Method:</span>
+                                        <Badge variant="outline" className="capitalize font-medium flex items-center">
+                                            {getPaymentIcon(invoice.payment_method)}
+                                            {formatPaymentMethod(invoice.payment_method)}
+                                        </Badge>
+                                    </div>
+                                    <div className="flex justify-between py-2">
                                         <span className="font-semibold text-gray-900">Subtotal:</span>
                                         <span className="font-semibold">Rs. {Number(invoice.subtotal).toLocaleString()}</span>
                                     </div>
@@ -519,6 +553,10 @@ export default function Show({ invoice }: Props) {
 
                 {/* Totals */}
                 <div className="totals-section">
+                    <div className="totals-row">
+                        <span>Payment Method</span>
+                        <span className="capitalize">{formatPaymentMethod(invoice.payment_method)}</span>
+                    </div>
                     <div className="totals-row">
                         <span>Subtotal</span>
                         <span>{Number(invoice.subtotal).toLocaleString()}</span>

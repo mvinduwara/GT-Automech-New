@@ -9,6 +9,7 @@ use App\Models\Invoice;
 use App\Models\JobCard;
 use App\Models\InvoiceItem;
 use App\Traits\SendsSms; // 1. Import the Trait
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -24,6 +25,41 @@ class InvoiceController extends Controller
      */
     public function index(Request $request)
     {
+
+        // 1. Determine Date Range for Stats
+        $dateFrom = $request->input('date_from');
+        $dateTo = $request->input('date_to');
+
+        // Base query for stats
+        $statsQuery = Invoice::query();
+
+        if ($dateFrom || $dateTo) {
+            // If filters are applied, use the filter range
+            if ($dateFrom) {
+                $statsQuery->whereDate('invoice_date', '>=', $dateFrom);
+            }
+            if ($dateTo) {
+                $statsQuery->whereDate('invoice_date', '<=', $dateTo);
+            }
+        } else {
+            // Default to Today if no date filters are set
+            $statsQuery->whereDate('invoice_date', Carbon::today());
+        }
+
+        // Clone the query for different payment methods so we don't pile up conditions
+        // Note: We get() the collection first to avoid running 5 separate database queries 
+        // if the dataset isn't huge. If it is huge, run separate sums on the query builder.
+        // For typical invoicing apps, getting the collection for a day/month is fine.
+        $periodInvoices = $statsQuery->get();
+
+        $dailyStats = [
+            'total' => $periodInvoices->sum('advance_payment'),
+            'cash' => $periodInvoices->where('payment_method', 'cash')->sum('advance_payment'),
+            'card' => $periodInvoices->where('payment_method', 'card')->sum('advance_payment'),
+            'online' => $periodInvoices->where('payment_method', 'online')->sum('advance_payment'),
+            'cheque' => $periodInvoices->where('payment_method', 'cheque')->sum('advance_payment'),
+        ];
+
         $query = Invoice::with(['customer', 'jobCard', 'user'])
             ->orderBy('id', 'desc');
 
@@ -57,6 +93,7 @@ class InvoiceController extends Controller
         return Inertia::render('invoice/index', [
             'invoices' => $invoices,
             'filters' => $request->only(['search', 'status']),
+            'dailyStats' => $dailyStats,
         ]);
     }
 
@@ -476,6 +513,45 @@ class InvoiceController extends Controller
                 ->with('success', 'Invoice status updated successfully');
         } catch (\Exception $e) {
             Log::error('Failed to update invoice status', [
+                'invoice_id' => $invoice->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return redirect()
+                ->back()
+                ->with('error', $e->getMessage());
+        }
+    }
+
+    public function updatePaymentMethod(Request $request, Invoice $invoice)
+    {
+        $validated = $request->validate([
+            'payment_method' => 'required|in:cash,card,online,cheque',
+        ]);
+
+        try {
+            DB::transaction(function () use ($invoice, $validated) {
+                $oldPaymentMethod = $invoice->payment_method;
+                $newPaymentMethod = $validated['payment_method'];
+
+                // Update payment_method
+                $invoice->update(['payment_method' => $newPaymentMethod]);
+
+                Log::info('Invoice payment method updated', [
+                    'invoice_id' => $invoice->id,
+                    'invoice_no' => $invoice->invoice_no,
+                    'old_payment_method' => $oldPaymentMethod,
+                    'new_payment_method' => $newPaymentMethod,
+                    'user_id' => auth()->id(),
+                ]);
+            });
+
+            return redirect()
+                ->back()
+                ->with('success', 'Invoice payment method updated successfully');
+        } catch (\Exception $e) {
+            Log::error('Failed to update invoice payment method', [
                 'invoice_id' => $invoice->id,
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
