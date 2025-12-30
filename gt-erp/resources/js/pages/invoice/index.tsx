@@ -21,7 +21,7 @@ import { format } from 'date-fns';
 import AppLayout from '@/layouts/app-layout';
 import { BreadcrumbItem } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Banknote, CreditCard, Globe, ScrollText, Wallet } from 'lucide-react';
+import { Banknote, CreditCard, Globe, ScrollText, TriangleAlert, Wallet } from 'lucide-react';
 
 interface Invoice {
     id: number;
@@ -41,6 +41,7 @@ interface DailyStats {
     card: number;
     online: number;
     cheque: number;
+    credit: number;
 }
 
 interface PaginationLink {
@@ -159,6 +160,8 @@ export default function Index({ invoices, filters = {}, statusOptions,dailyStats
                 return 'bg-blue-50 text-blue-800';
             case 'cheque':
                 return 'bg-yellow-50 text-yellow-800';
+            case 'credit':
+                return 'bg-red-50 text-red-800';
             default:
                 return 'bg-gray-50 text-gray-800';
         }
@@ -175,7 +178,7 @@ export default function Index({ invoices, filters = {}, statusOptions,dailyStats
                     <h1 className="text-2xl font-bold">All Invoices</h1>
                 </div>
 
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+                <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-3">
                     <Card className="bg-primary text-primary-foreground">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                             <CardTitle className="text-sm font-medium">
@@ -221,6 +224,18 @@ export default function Index({ invoices, filters = {}, statusOptions,dailyStats
                         </CardHeader>
                         <CardContent>
                             <div className="text-2xl font-bold text-gray-900">{formatCurrency(dailyStats.online)}</div>
+                        </CardContent>
+                    </Card>
+
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium text-red-600">
+                                Credit
+                            </CardTitle>
+                            <TriangleAlert className="h-4 w-4 text-red-600" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold text-gray-900">{formatCurrency(dailyStats.credit)}</div>
                         </CardContent>
                     </Card>
 

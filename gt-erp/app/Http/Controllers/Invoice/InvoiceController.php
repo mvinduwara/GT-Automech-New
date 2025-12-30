@@ -58,6 +58,7 @@ class InvoiceController extends Controller
             'card' => $periodInvoices->where('payment_method', 'card')->sum('advance_payment'),
             'online' => $periodInvoices->where('payment_method', 'online')->sum('advance_payment'),
             'cheque' => $periodInvoices->where('payment_method', 'cheque')->sum('advance_payment'),
+            'credit' => $periodInvoices->where('payment_method', 'credit')->sum('advance_payment'),
         ];
 
         $query = Invoice::with(['customer', 'jobCard', 'user'])
@@ -527,7 +528,7 @@ class InvoiceController extends Controller
     public function updatePaymentMethod(Request $request, Invoice $invoice)
     {
         $validated = $request->validate([
-            'payment_method' => 'required|in:cash,card,online,cheque',
+            'payment_method' => 'required|in:cash,card,online,cheque,credit',
         ]);
 
         try {

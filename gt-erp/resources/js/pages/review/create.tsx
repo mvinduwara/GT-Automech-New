@@ -31,9 +31,17 @@ export default function Create({ invoice }: { invoice: ReviewInvoice }) {
 
     const [hoverRating, setHoverRating] = useState(0);
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        post(route('review.store', invoice.review_token), {
+
+        // 1. Get Laravel CSRF cookie
+        await fetch('https://portal.gtdrive.lk/sanctum/csrf-cookie', {
+            method: 'GET',
+            credentials: 'include',
+        });
+
+        // 2. Submit the form using Inertia
+        post(`/review/${invoice.review_token}`, {
             preserveScroll: true,
         });
     };
@@ -66,9 +74,9 @@ export default function Create({ invoice }: { invoice: ReviewInvoice }) {
                                             key={ratingValue}
                                             type="button"
                                             className={`transform transition-transform duration-200 ${ratingValue <=
-                                                    (hoverRating || data.rating)
-                                                    ? 'scale-110'
-                                                    : 'scale-90 opacity-60'
+                                                (hoverRating || data.rating)
+                                                ? 'scale-110'
+                                                : 'scale-90 opacity-60'
                                                 }`}
                                             onClick={() =>
                                                 setData('rating', ratingValue)
@@ -82,16 +90,16 @@ export default function Create({ invoice }: { invoice: ReviewInvoice }) {
                                         >
                                             <span
                                                 className={`block text-5xl ${ratingValue === data.rating
-                                                        ? face.color
-                                                        : 'text-gray-400'
+                                                    ? face.color
+                                                    : 'text-gray-400'
                                                     }`}
                                             >
                                                 {face.emoji}
                                             </span>
                                             <span
                                                 className={`mt-1 text-xs font-medium ${ratingValue === data.rating
-                                                        ? face.color
-                                                        : 'text-gray-500'
+                                                    ? face.color
+                                                    : 'text-gray-500'
                                                     }`}
                                             >
                                                 {face.label}

@@ -42,7 +42,7 @@
     # This helps if Laravel's CORS config is bypassed by server settings
     Header always set Access-Control-Allow-Origin "https://gtdrive.lk"
     Header always set Access-Control-Allow-Methods "POST, GET, OPTIONS, PUT, DELETE"
-    Header always set Access-Control-Allow-Headers "Content-Type, X-Auth-Token, Origin, Authorization, X-XSRF-TOKEN"
+    Header always set Access-Control-Allow-Headers "Content-Type, X-Requested-With, X-Auth-Token, Origin, Authorization, X-XSRF-TOKEN, X-Inertia, X-Inertia-Version, Accept"
     Header always set Access-Control-Allow-Credentials "true"
 </IfModule>
 
