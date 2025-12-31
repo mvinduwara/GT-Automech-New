@@ -27,4 +27,12 @@ class VehicleModel extends Model
     {
         return $this->belongsTo(VehicleBrand::class, 'vehicle_brand_id');
     }
+
+    /**
+     * The products that belong to the vehicle model.
+     */
+    public function products()
+    {
+        return $this->belongsToMany(Product::class, 'product_vehicle_model');
+    }
 }

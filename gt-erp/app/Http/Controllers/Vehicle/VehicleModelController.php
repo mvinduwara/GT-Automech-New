@@ -10,6 +10,17 @@ use Inertia\Inertia;
 
 class VehicleModelController extends Controller
 {
+    public function search(Request $request)
+    {
+        $query = $request->get('query');
+        
+        $models = VehicleModel::where('name', 'like', "%{$query}%")
+            ->limit(20)
+            ->get(['id', 'name']);
+            
+        return response()->json($models);
+    }
+
     public function index()
     {
         $models = VehicleModel::with('brand')

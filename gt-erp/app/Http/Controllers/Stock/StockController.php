@@ -7,6 +7,7 @@ use App\Models\Stock;
 use App\Models\Product;
 use App\Models\Category;
 use App\Models\UnitOfMeasure;
+use App\Models\VehicleModel;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
@@ -29,12 +30,15 @@ class StockController extends Controller
             ]);
 
             // Search by part number (main product or alternative product)
+            // Search by part number (main product or alternative product)
             if ($request->has('search') && $request->input('search')) {
                 $searchTerm = $request->input('search');
-                $query->whereHas('product', function ($q) use ($searchTerm) {
-                    $q->where('part_number', 'like', '%' . $searchTerm . '%');
-                })->orWhereHas('alternativeProduct', function ($q) use ($searchTerm) {
-                    $q->where('part_number', 'like', '%' . $searchTerm . '%');
+                $query->where(function ($q) use ($searchTerm) {
+                    $q->whereHas('product', function ($messageQuery) use ($searchTerm) {
+                        $messageQuery->where('part_number', 'like', '%' . $searchTerm . '%');
+                    })->orWhereHas('alternativeProduct', function ($messageQuery) use ($searchTerm) {
+                        $messageQuery->where('part_number', 'like', '%' . $searchTerm . '%');
+                    });
                 });
             }
 
@@ -50,6 +54,24 @@ class StockController extends Controller
                 $query->whereHas('product', function ($q) use ($request) {
                     $q->where('unit_of_measure_id', $request->input('unit_of_measure_id'));
                 });
+            }
+
+            // Filter by vehicle model
+            $selectedVehicleModels = [];
+            if ($request->has('vehicle_model_id') && $request->input('vehicle_model_id')) {
+                $ids = is_array($request->input('vehicle_model_id')) 
+                    ? $request->input('vehicle_model_id') 
+                    : [$request->input('vehicle_model_id')];
+
+                $query->whereHas('product', function ($q) use ($ids) {
+                    $q->whereHas('vehicleModels', function ($bq) use ($ids) {
+                        $bq->whereIn('vehicle_models.id', $ids);
+                    });
+                    Log::info('has Selected vehicle models ');
+                });
+
+                $selectedVehicleModels = VehicleModel::whereIn('vehicle_models.id', $ids)->get(['id', 'name']);
+                Log::info('Selected vehicle models: ' . $selectedVehicleModels);
             }
 
             // Filter by quantity range
@@ -92,11 +114,12 @@ class StockController extends Controller
 
             return Inertia::render('inventory/stock/index', [
                 'stocks' => $stocks,
-                'filters' => $request->only(['search', 'category_id', 'unit_of_measure_id', 'min_qty', 'max_qty', 'min_buying_price', 'max_buying_price', 'min_selling_price', 'max_selling_price']),
+                'filters' => $request->only(['search', 'category_id', 'unit_of_measure_id', 'min_qty', 'max_qty', 'min_buying_price', 'max_buying_price', 'min_selling_price', 'max_selling_price', 'vehicle_model_id']),
                 'categories' => $categories,
                 'unitOfMeasures' => $unitOfMeasures,
                 'totalStockBuyingValue' => (float) $totalStockBuyingValue,
                 'totalStockSellingValue' => (float) $totalStockSellingValue,
+                'selectedVehicleModels' => $selectedVehicleModels,
             ]);
         } catch (\Exception $e) {
             Log::error('Error fetching stock index data: ' . $e->getMessage());

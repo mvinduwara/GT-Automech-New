@@ -6,6 +6,7 @@ use App\Http\Controllers\Vehicle\VehicleModelController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/api/vehicles/search', [VehicleController::class, 'search'])->name('api.vehicles.search');
+Route::get('/api/vehicle-models/search', [VehicleModelController::class, 'search'])->name('api.vehicle-models.search');
 
 Route::middleware(['auth', 'is_admin_or_cashier'])->group(function () {
 

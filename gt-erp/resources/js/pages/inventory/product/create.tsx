@@ -37,6 +37,12 @@ type CreateProductProps = {
     unitOfMeasures: UnitOfMeasure[];
 };
 
+import VehicleModelSelector from '@/components/VehicleModelSelector';
+
+// ... (rest of imports)
+
+// ...
+
 export default function Create({
     categories,
     brands,
@@ -51,6 +57,7 @@ export default function Create({
         unit_of_measure_id: '',
         reorder_level: '',
         status: 'active', // Default status
+        vehicle_model_ids: [] as number[],
     });
 
     const submit = (e: FormEvent) => {
@@ -252,6 +259,15 @@ export default function Create({
                                 {errors.status}
                             </p>
                         )}
+                    </div>
+
+                    <div>
+                        <Label>Vehicle Models</Label>
+                        <VehicleModelSelector
+                            value={data.vehicle_model_ids}
+                            onChange={(ids) => setData('vehicle_model_ids', ids)}
+                            error={errors.vehicle_model_ids as string} // Casting as likely undefined in types but possible from backend
+                        />
                     </div>
 
                     <div className="flex justify-end">

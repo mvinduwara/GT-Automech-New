@@ -33,11 +33,12 @@ import {
 import AppLayout from '@/layouts/app-layout';
 import { FinancialSummaryCard } from '@/pages/dashboard';
 import { type BreadcrumbItem } from '@/types';
+import VehicleModelSelector, { VehicleModel } from '@/components/VehicleModelSelector';
 import { Category, Stock, UnitOfMeasure } from '@/types/types';
 import { Head, Link, router, usePage } from '@inertiajs/react';
-import { Package, Store, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { Toaster, toast } from 'sonner';
+import { toast, Toaster } from 'sonner';
+import { Package, Store, Trash2 } from 'lucide-react';
 
 interface StocksPageProps {
     stocks: {
@@ -58,13 +59,16 @@ interface StocksPageProps {
         max_buying_price?: string;
         min_selling_price?: string;
         max_selling_price?: string;
+        vehicle_model_id?: number[] | number;
     };
+    selectedVehicleModels?: VehicleModel[];
     categories: Category[];
     unitOfMeasures: UnitOfMeasure[];
     totalStockBuyingValue: number;
     totalStockSellingValue: number;
     success?: string;
     error?: string;
+    [key: string]: unknown;
 }
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -79,7 +83,7 @@ const breadcrumbs: BreadcrumbItem[] = [
 ];
 
 export default function Index() {
-    const { stocks, filters, categories, unitOfMeasures, success, error, totalStockBuyingValue, totalStockSellingValue } =
+    const { stocks, filters, categories, unitOfMeasures, success, error, totalStockBuyingValue, totalStockSellingValue, selectedVehicleModels } =
         usePage<StocksPageProps>().props;
 
     const { auth } = usePage().props;
@@ -102,6 +106,13 @@ export default function Index() {
     const [maxSellingPrice, setMaxSellingPrice] = useState(
         filters.max_selling_price || ''
     );
+    // vehicle_model_id from filters can be simple id or array.
+    const initialVehicleModelIds = Array.isArray(filters.vehicle_model_id)
+        ? filters.vehicle_model_id.map(Number)
+        : filters.vehicle_model_id
+            ? [Number(filters.vehicle_model_id)]
+            : [];
+    const [selectedVehicleModelIds, setSelectedVehicleModelIds] = useState<number[]>(initialVehicleModelIds);
 
     const [isSummaryDialogOpen, setIsSummaryDialogOpen] = useState(false);
     const [selectedStock, setSelectedStock] = useState<Stock | null>(null);
@@ -129,6 +140,7 @@ export default function Index() {
                 max_buying_price: maxBuyingPrice,
                 min_selling_price: minSellingPrice,
                 max_selling_price: maxSellingPrice,
+                vehicle_model_id: selectedVehicleModelIds,
             },
             {
                 preserveState: true,
@@ -169,6 +181,7 @@ export default function Index() {
         setMaxBuyingPrice('');
         setMinSellingPrice('');
         setMaxSellingPrice('');
+        setSelectedVehicleModelIds([]);
         router.get(
             route('dashboard.stock.index'),
             {},
@@ -269,6 +282,17 @@ export default function Index() {
                                 ))}
                             </SelectContent>
                         </Select>
+
+                        {/* Vehicle Model Filter */}
+                        <div className="">
+                            {/* Reusing existing style slightly adjusted for custom component */}
+                            <VehicleModelSelector
+                                value={selectedVehicleModelIds}
+                                onChange={setSelectedVehicleModelIds}
+                                initialSelectedModels={selectedVehicleModels}
+                            />
+                        </div>
+
                         <div className="flex gap-2">
                             <Input
                                 type="number"
@@ -371,7 +395,7 @@ export default function Index() {
                             </TableRow>
                         </TableHeader>
                         <TableBody className="divide-y divide-gray-200 ">
-                            {stocks.data.length === 0 ? (
+                            {stocks.data?.length === 0 ? (
                                 <TableRow>
                                     <TableCell
                                         colSpan={7}
@@ -381,7 +405,7 @@ export default function Index() {
                                     </TableCell>
                                 </TableRow>
                             ) : (
-                                stocks.data.map((stock) => (
+                                stocks.data?.map((stock) => (
                                     <TableRow
                                         key={stock.id}
                                         onClick={() => handleRowClick(stock)}
