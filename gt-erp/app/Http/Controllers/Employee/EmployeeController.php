@@ -86,6 +86,7 @@ class EmployeeController extends Controller
                 'hire_date' => 'required|date',
                 'job_title' => 'required|string|max:255',
                 'department_id' => 'nullable|exists:departments,id',
+                'attendance_machine_id' => 'nullable|string|unique:employees,attendance_machine_id',
                 'status' => 'required|string|in:active,deactive,pending,terminated',
             ]);
 
@@ -143,6 +144,7 @@ class EmployeeController extends Controller
                 'hire_date' => 'required|date',
                 'job_title' => 'required|string|max:255',
                 'department_id' => 'nullable|exists:departments,id',
+                'attendance_machine_id' => 'nullable|string|unique:employees,attendance_machine_id,' . $employee->id,
                 'status' => 'required|string|in:active,deactive,pending,terminated',
             ]);
 

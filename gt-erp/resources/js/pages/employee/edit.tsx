@@ -36,6 +36,7 @@ export default function Edit({ employee, departments, success, error }: any) {
         hire_date: employee.hire_date || '', // Ensure this is a string in YYYY-MM-DD format
         job_title: employee.job_title || '',
         department_id: employee.department_id ? String(employee.department_id) : '',
+        attendance_machine_id: employee.attendance_machine_id || '',
         status: employee.status || '',
         _method: 'PUT', // Important for Laravel PUT requests
     });
@@ -202,6 +203,17 @@ export default function Edit({ employee, departments, success, error }: any) {
                                 </SelectContent>
                             </Select>
                             {errors.department_id && <p className="text-sm text-red-600">{errors.department_id}</p>}
+                        </div>
+                        <div className="mb-6 w-full px-3 md:w-1/2">
+                            <Label htmlFor="attendance_machine_id" className="block text-sm font-medium text-gray-700">Attendance Machine ID</Label>
+                            <Input
+                                id="attendance_machine_id"
+                                value={data.attendance_machine_id}
+                                placeholder="Enter Machine ID"
+                                className="mt-1 block w-full"
+                                onChange={(e) => setData('attendance_machine_id', e.target.value)}
+                            />
+                            {errors.attendance_machine_id && <p className="text-sm text-red-600">{errors.attendance_machine_id}</p>}
                         </div>
                     </div>
 

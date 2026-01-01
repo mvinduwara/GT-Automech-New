@@ -3,7 +3,7 @@ import { NavUser } from '@/components/nav-user';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { type NavItem } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
-import { File, Cog, Car, FileText, HandCoins, Home, IdCard, LayoutGrid, NotepadText, StickyNote, TicketCheck, Trash, UserPlus, UserRound, UserRoundCheck, Users, Star } from 'lucide-react';
+import { File, Cog, Car, FileText, HandCoins, Home, IdCard, LayoutGrid, NotepadText, StickyNote, TicketCheck, Trash, UserPlus, UserRound, UserRoundCheck, Users, Star, Calendar } from 'lucide-react';
 import { useMemo } from 'react';
 import AppLogo from './app-logo';
 
@@ -22,7 +22,7 @@ const mainNavItems: (NavItem & { roles?: string[] })[] = [
         icon: Home,
         roles: [USER_ROLES.CASHIER, USER_ROLES.ADMIN, USER_ROLES.SERVICEMANAGER],
     },
-    
+
     // Core Business Operations
     {
         title: 'Jobcard',
@@ -42,7 +42,7 @@ const mainNavItems: (NavItem & { roles?: string[] })[] = [
         icon: FileText,
         roles: [USER_ROLES.CASHIER, USER_ROLES.ADMIN, USER_ROLES.SERVICEMANAGER],
     },
-    
+
     // Inventory & Procurement
     {
         title: 'Inventory',
@@ -62,7 +62,7 @@ const mainNavItems: (NavItem & { roles?: string[] })[] = [
         icon: NotepadText,
         roles: [USER_ROLES.CASHIER, USER_ROLES.ADMIN, USER_ROLES.SERVICEMANAGER],
     },
-    
+
     // Financial Management
     {
         title: 'Petty Cash',
@@ -70,7 +70,7 @@ const mainNavItems: (NavItem & { roles?: string[] })[] = [
         icon: HandCoins,
         roles: [USER_ROLES.CASHIER, USER_ROLES.ADMIN, USER_ROLES.SERVICEMANAGER],
     },
-    
+
     // Master Data Management
     {
         title: 'Customer',
@@ -90,7 +90,7 @@ const mainNavItems: (NavItem & { roles?: string[] })[] = [
         icon: UserPlus,
         roles: [USER_ROLES.CASHIER, USER_ROLES.ADMIN],
     },
-    
+
     // User Management (Admin Only)
     {
         title: 'User',
@@ -104,7 +104,13 @@ const mainNavItems: (NavItem & { roles?: string[] })[] = [
         icon: UserRoundCheck,
         roles: [USER_ROLES.ADMIN],
     },
-    
+    {
+        title: 'Attendance',
+        href: '/dashboard/attendance',
+        icon: Calendar,
+        roles: [USER_ROLES.ADMIN],
+    },
+
     // Reports & System
     {
         title: 'Reports',
