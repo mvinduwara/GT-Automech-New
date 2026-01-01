@@ -10,7 +10,7 @@ import InvoiceStatusForm from "./InvoiceStatusForm";
 import PaymentMethodForm from "./PaymentMethodForm";
 
 type InvoiceStatus = "draft" | "unpaid" | "partial" | "paid" | "cancelled";
-type PaymentMethod = 'cash' | 'card' | 'online' | 'cheque';
+type PaymentMethod = 'cash' | 'card' | 'online' | 'cheque'|'credit';
 
 interface Customer {
     id: number;
@@ -150,7 +150,8 @@ export default function Show({ invoice }: Props) {
             cash: 'Cash',
             card: 'Card',
             online: 'Online Transfer',
-            cheque: 'Cheque'
+            cheque: 'Cheque',
+            credit: 'Credit'
         };
         return labels[method] || method;
     };

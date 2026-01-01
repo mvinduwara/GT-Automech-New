@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { FormEvent, useEffect } from 'react';
+import VehicleModelSelector, { VehicleModel } from '@/components/VehicleModelSelector';
 import { Brand, Category, UnitOfMeasure } from '@/types/types';
 
 type Product = {
@@ -26,7 +27,10 @@ type Product = {
     unit_of_measure_id: UnitOfMeasure;
     reorder_level: number;
     status: string;
+    vehicle_models?: VehicleModel[];
 };
+
+// ...
 
 type EditProductProps = {
     product: Product;
@@ -35,36 +39,35 @@ type EditProductProps = {
     unitOfMeasures: UnitOfMeasure[];
 };
 
+const breadcrumbs: BreadcrumbItem[] = [
+    {
+        title: 'Inventory',
+        href: '/dashboard/inventory',
+    },
+    {
+        title: 'Product',
+        href: '/dashboard/product',
+    },
+];
+
 export default function Edit({
     product,
     categories,
     brands,
     unitOfMeasures,
 }: EditProductProps) {
-    const breadcrumbs: BreadcrumbItem[] = [
-        {
-            title: 'Inventory',
-            href: '/dashboard/inventory',
-        },
-        {
-            title: 'Product',
-            href: '/dashboard/product',
-        },
-        {
-            title: product.name,
-            href: '',
-        },
-    ];
+    // ...
 
     const { data, setData, post, processing, errors } = useForm({
         name: product.name,
         part_number: product.part_number,
         description: product.description,
-        category_id: String(product.category_id),
-        brand_id: String(product.brand_id),
-        unit_of_measure_id: String(product.unit_of_measure_id),
+        category_id: product.category_id ? String(product.category_id) : '',
+        brand_id: product.brand_id ? String(product.brand_id) : '',
+        unit_of_measure_id: product.unit_of_measure_id ? String(product.unit_of_measure_id) : '',
         reorder_level: String(product.reorder_level),
         status: product.status,
+        vehicle_model_ids: product.vehicle_models ? product.vehicle_models.map((m: VehicleModel) => m.id) : [] as number[],
         _method: 'POST', // Inertia handles PUT/PATCH via _method spoofing for POST requests
     });
 
@@ -75,11 +78,12 @@ export default function Edit({
             name: product.name,
             part_number: product.part_number,
             description: product.description,
-            category_id: String(product.category_id),
-            brand_id: String(product.brand_id),
-            unit_of_measure_id: String(product.unit_of_measure_id),
+            category_id: product.category_id ? String(product.category_id) : '',
+            brand_id: product.brand_id ? String(product.brand_id) : '',
+            unit_of_measure_id: product.unit_of_measure_id ? String(product.unit_of_measure_id) : '',
             reorder_level: String(product.reorder_level),
             status: product.status,
+            vehicle_model_ids: product.vehicle_models ? product.vehicle_models.map((m: VehicleModel) => m.id) : [] as number[],
             _method: 'POST',
         });
     }, [product]);
@@ -172,7 +176,7 @@ export default function Edit({
                                 <SelectValue placeholder="Select a category" />
                             </SelectTrigger>
                             <SelectContent>
-                                {categories.map((category) => (
+                                {categories.map((category: Category) => (
                                     <SelectItem
                                         key={category.id}
                                         value={String(category.id)}
@@ -199,7 +203,7 @@ export default function Edit({
                                 <SelectValue placeholder="Select a brand" />
                             </SelectTrigger>
                             <SelectContent>
-                                {brands.map((brand) => (
+                                {brands.map((brand: Brand) => (
                                     <SelectItem
                                         key={brand.id}
                                         value={String(brand.id)}
@@ -230,7 +234,7 @@ export default function Edit({
                                 <SelectValue placeholder="Select a unit of measure" />
                             </SelectTrigger>
                             <SelectContent>
-                                {unitOfMeasures.map((uom) => (
+                                {unitOfMeasures.map((uom: UnitOfMeasure) => (
                                     <SelectItem
                                         key={uom.id}
                                         value={String(uom.id)}
@@ -284,6 +288,16 @@ export default function Edit({
                                 {errors.status}
                             </p>
                         )}
+                    </div>
+
+                    <div>
+                        <Label>Vehicle Models</Label>
+                        <VehicleModelSelector
+                            value={data.vehicle_model_ids}
+                            onChange={(ids) => setData('vehicle_model_ids', ids)}
+                            error={errors.vehicle_model_ids as string}
+                            initialSelectedModels={product.vehicle_models}
+                        />
                     </div>
 
                     <div className="flex justify-end">

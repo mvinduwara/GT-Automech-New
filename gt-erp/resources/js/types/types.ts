@@ -62,6 +62,7 @@ export type Product = {
     unit_of_measure: UnitOfMeasure;
     status: 'active' | 'deactive';
     reorder_level: number;
+    vehicle_models?: VehicleModel[];
 };
 
 export type Category = {
@@ -102,7 +103,7 @@ export interface Stock {
 
 // Add this to your existing pettyCash interface
 export interface pettyCash {
-    voucher_number: string;
+    voucher_number: number;
     date: string;
     total_amount: number;
     status: string;

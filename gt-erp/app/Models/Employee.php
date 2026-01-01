@@ -18,6 +18,7 @@ class Employee extends Model
         'job_title',
         'department_id',
         'status',
+        'attendance_machine_id',
     ];
 
     protected function casts(): array
@@ -31,5 +32,10 @@ class Employee extends Model
     public function department(): BelongsTo
     {
         return $this->belongsTo(Department::class);
+    }
+
+    public function attendances()
+    {
+        return $this->hasMany(Attendance::class);
     }
 }

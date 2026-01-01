@@ -38,6 +38,15 @@ class ProductController extends Controller
                 ->when($request->input('unit_of_measure_id'), function ($query, $uomId) {
                     $query->where('unit_of_measure_id', $uomId);
                 })
+                ->when($request->input('vehicle_model_id'), function ($query, $vehicleModelIds) {
+                    // Handle both single ID or array of IDs (if specific format passed)
+                    // But usually form get param is one string or array.
+                    // If we use array in url like ?vehicle_model_id[]=1&vehicle_model_id[]=2
+                    $ids = is_array($vehicleModelIds) ? $vehicleModelIds : [$vehicleModelIds];
+                    $query->whereHas('vehicleModels', function ($q) use ($ids) {
+                        $q->whereIn('vehicle_models.id', $ids);
+                    });
+                })
                 ->orderBy('id', 'desc')
                 ->paginate(10) // Paginate with 10 items per page
                 ->withQueryString(); // Keep existing query string parameters when paginating
@@ -45,6 +54,15 @@ class ProductController extends Controller
             $categories = Category::select('id', 'name')->where('status', 'active')->get();
             $brands = Brand::select('id', 'name')->where('status', 'active')->get();
             $unitOfMeasures = UnitOfMeasure::select('id', 'name')->where('status', 'active')->get();
+
+            $selectedVehicleModels = [];
+            if ($request->input('vehicle_model_id')) {
+                 // Handle both single ID or array
+                $ids = is_array($request->input('vehicle_model_id')) 
+                    ? $request->input('vehicle_model_id') 
+                    : [$request->input('vehicle_model_id')];
+                $selectedVehicleModels = \App\Models\VehicleModel::whereIn('id', $ids)->get(['id', 'name']);
+            }
 
             Log::info('Product index page accessed successfully.', [
                 'filters' => $request->all(),
@@ -56,7 +74,8 @@ class ProductController extends Controller
                 'categories' => $categories,
                 'brands' => $brands,
                 'unitOfMeasures' => $unitOfMeasures,
-                'filters' => $request->only(['search', 'category_id', 'brand_id', 'status', 'unit_of_measure_id']),
+                'filters' => $request->only(['search', 'category_id', 'brand_id', 'status', 'unit_of_measure_id', 'vehicle_model_id']),
+                'selectedVehicleModels' => $selectedVehicleModels,
             ]);
         } catch (\Exception $e) {
             Log::error('Error fetching products for index page: ' . $e->getMessage(), ['exception' => $e]);
@@ -105,7 +124,7 @@ class ProductController extends Controller
     public function store(Request $request)
     {
         try {
-            $validatedData = $request->validate([
+            $validated = $request->validate([
                 'name' => 'required|string|max:255',
                 'part_number' => 'required|string|max:255|unique:products,part_number',
                 'description' => 'nullable|string',
@@ -118,7 +137,7 @@ class ProductController extends Controller
                 ],
                 'brand_id' => [
                     'nullable',
-                    'integer',
+                    // 'integer',
                     Rule::exists('brands', 'id')->where(function ($query) {
                         return $query->where('status', 'active');
                     }),
@@ -132,9 +151,18 @@ class ProductController extends Controller
                 ],
                 'reorder_level' => 'required|integer|min:0',
                 'status' => ['required', 'string', Rule::in(['active', 'deactive'])],
+                'vehicle_model_ids' => 'nullable|array',
+                'vehicle_model_ids.*' => 'exists:vehicle_models,id',
             ]);
 
-            $product = Product::create($validatedData);
+            // Create product without vehicle_model_ids first
+            $productData = collect($validated)->except('vehicle_model_ids')->toArray();
+            $product = Product::create($productData);
+
+            // Sync vehicle models if present
+            if (isset($validated['vehicle_model_ids'])) {
+                $product->vehicleModels()->sync($validated['vehicle_model_ids']);
+            }
 
             Log::info('Product created successfully.', ['product_id' => $product->id, 'product_name' => $product->name]);
 
@@ -146,6 +174,14 @@ class ProductController extends Controller
             Log::error('Error creating product: ' . $e->getMessage(), ['exception' => $e, 'request' => $request->all()]);
             return redirect()->back()->with('error', 'Failed to create product. Please try again later.')->withInput();
         }
+    }
+
+    /**
+     * Display the specified product.
+     */
+    public function show(Product $product)
+    {
+        //
     }
 
     /**
@@ -161,7 +197,7 @@ class ProductController extends Controller
             Log::info('Product edit page accessed successfully.', ['product_id' => $product->id, 'product_name' => $product->name]);
 
             return Inertia::render('inventory/product/edit', [
-                'product' => $product->load(['category', 'brand', 'unitOfMeasure']), // Eager load relationships for display
+                'product' => $product->load(['category', 'brand', 'unitOfMeasure', 'vehicleModels']), // Eager load relationships for display
                 'categories' => $categories,
                 'brands' => $brands,
                 'unitOfMeasures' => $unitOfMeasures,
@@ -210,9 +246,27 @@ class ProductController extends Controller
                 ],
                 'reorder_level' => 'required|integer|min:0',
                 'status' => ['required', 'string', Rule::in(['active', 'deactive'])],
+                'vehicle_model_ids' => 'nullable|array',
+                'vehicle_model_ids.*' => 'exists:vehicle_models,id',
             ]);
 
-            $product->update($validatedData);
+            $productData = collect($validatedData)->except('vehicle_model_ids')->toArray();
+            $product->update($productData);
+
+            // Sync vehicle models
+            if (isset($validatedData['vehicle_model_ids'])) {
+                $product->vehicleModels()->sync($validatedData['vehicle_model_ids']);
+            } else {
+                 // If not provided (or empty array sent as null?), strictly speaking if field is missing we might not want to detach all. 
+                 // But in the edit form, we send empty array if no models. 
+                 // If the field is not in request at all, we might skip. 
+                 // Based on frontend implementation: vehicle_model_ids: [] as number[],
+                 // So it should be present.
+                 // However, Inertia/Axios might send null or empty array.
+                 if ($request->has('vehicle_model_ids')) {
+                     $product->vehicleModels()->sync([]);
+                 }
+            }
 
             Log::info('Product updated successfully.', ['product_id' => $product->id, 'product_name' => $product->name]);
 

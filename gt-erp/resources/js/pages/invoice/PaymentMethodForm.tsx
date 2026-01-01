@@ -28,10 +28,11 @@ import {
     ScrollText, 
     Settings,
     AlertTriangle,
-    Wallet
+    Wallet,
+    TriangleAlert
 } from "lucide-react";
 
-type PaymentMethod = 'cash' | 'card' | 'online' | 'cheque';
+type PaymentMethod = 'cash' | 'card' | 'online' | 'cheque'|'credit';
 
 type PaymentMethodFormProps = {
     invoiceId: number;
@@ -81,6 +82,13 @@ function PaymentMethodForm({
             icon: ScrollText,
             color: 'bg-orange-100 text-orange-800 border-orange-200',
             description: 'Bank cheque payment'
+        },
+        {
+            value: 'credit' as PaymentMethod,
+            label: 'Credit',
+            icon: TriangleAlert,
+            color: 'bg-red-100 text-red-800 border-red-200',
+            description: 'Credit payment to be settled later'
         }
     ];
 

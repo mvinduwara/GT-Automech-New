@@ -37,7 +37,7 @@
                 console[methods[i]] = function() {};
             }
         })();
-    </script>
+    </script> 
     @viteReactRefresh
     @vite(['resources/js/app.tsx', "resources/js/pages/{$page['component']}.tsx"])
     @inertiaHead

@@ -37,6 +37,7 @@ export default function Create({ departments, success, error }: any) {
         hire_date: '', // This will store the date string in YYYY-MM-DD format
         job_title: '',
         department_id: '',
+        attendance_machine_id: '',
         status: '',
     });
 
@@ -204,6 +205,18 @@ export default function Create({ departments, success, error }: any) {
                             </Select>
                             {errors.department_id && <p className="text-sm text-red-600">{errors.department_id}</p>}
                         </div>
+                        <div className="mb-6 w-full px-3 md:w-1/2">
+                            <Label htmlFor="attendance_machine_id" className="block text-sm font-medium text-gray-700">Attendance Machine ID</Label>
+                            <Input
+                                id="attendance_machine_id"
+                                value={data.attendance_machine_id}
+                                placeholder="Enter Machine ID"
+                                className="mt-1 block w-full"
+                                onChange={(e) => setData('attendance_machine_id', e.target.value)}
+                            />
+                            {errors.attendance_machine_id && <p className="text-sm text-red-600">{errors.attendance_machine_id}</p>}
+                        </div>
+
                     </div>
 
                     <div className="flex w-full justify-center">

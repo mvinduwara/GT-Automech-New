@@ -108,4 +108,12 @@ class Product extends Model
     {
         return $this->total_stock <= $this->reorder_level;
     }
+
+    /**
+     * The vehicle models that belong to the product.
+     */
+    public function vehicleModels()
+    {
+        return $this->belongsToMany(VehicleModel::class, 'product_vehicle_model');
+    }
 }

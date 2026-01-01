@@ -59,3 +59,4 @@ require __DIR__ . '/reports.php';
 require __DIR__ . '/vehicle-services.php';
 require __DIR__ . '/job-card-charges.php';
 require __DIR__ . '/insurance.php';
+require __DIR__ . '/attendance.php';

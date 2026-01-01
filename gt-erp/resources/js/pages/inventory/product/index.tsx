@@ -31,6 +31,7 @@ import {
     PaginationPrevious,
     PaginationEllipsis,
 } from '@/components/ui/pagination';
+import VehicleModelSelector, { VehicleModel } from '@/components/VehicleModelSelector';
 import { Brand, Category, Product } from '@/types/types';
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -75,7 +76,9 @@ type IndexProps = {
         brand_id?: string;
         status?: string;
         unit_of_measure_id?: string;
+        vehicle_model_id?: number[] | number;
     };
+    selectedVehicleModels?: VehicleModel[];
 };
 
 export default function Index({
@@ -84,6 +87,7 @@ export default function Index({
     brands,
     unitOfMeasures,
     filters,
+    selectedVehicleModels = [],
 }: IndexProps) {
     const [search, setSearch] = useState(filters.search || '');
     const [selectedCategory, setSelectedCategory] = useState(
@@ -94,6 +98,14 @@ export default function Index({
     const [selectedUOM, setSelectedUOM] = useState(
         filters.unit_of_measure_id || '',
     );
+    // vehicle_model_id from filters can be number or number[]. Selector expects number[].
+    const initialVehicleModelIds = Array.isArray(filters.vehicle_model_id)
+        ? filters.vehicle_model_id
+        : filters.vehicle_model_id
+            ? [Number(filters.vehicle_model_id)]
+            : [];
+
+    const [selectedVehicleModelIds, setSelectedVehicleModelIds] = useState<number[]>(initialVehicleModelIds);
 
     const applyFilters = () => {
         router.get(
@@ -104,6 +116,7 @@ export default function Index({
                 brand_id: selectedBrand,
                 status: selectedStatus,
                 unit_of_measure_id: selectedUOM,
+                vehicle_model_id: selectedVehicleModelIds,
             },
             {
                 preserveState: true,
@@ -124,6 +137,7 @@ export default function Index({
         setSelectedBrand('');
         setSelectedStatus('');
         setSelectedUOM('');
+        setSelectedVehicleModelIds([]);
         router.get(
             '/dashboard/product',
             {},
@@ -244,6 +258,14 @@ export default function Index({
                             </SelectContent>
                         </Select>
                     </div>
+                    <div>
+                        <Label>Vehicle Models</Label>
+                        <VehicleModelSelector
+                            value={selectedVehicleModelIds}
+                            onChange={setSelectedVehicleModelIds}
+                            initialSelectedModels={selectedVehicleModels}
+                        />
+                    </div>
                     <div className="col-span-full flex justify-end gap-2">
                         <Button onClick={applyFilters}>Apply Filters</Button>
                         <Button variant="outline" onClick={clearFilters}>
@@ -268,7 +290,7 @@ export default function Index({
                         <TableBody>
                             {products.data.length > 0 ? (
                                 products.data.map((product) => (
-                                    <TableRow key={product.id} className={product.status=='deactive'?"bg-red-100":""}>
+                                    <TableRow key={product.id} className={product.status == 'deactive' ? "bg-red-100" : ""}>
                                         <TableCell>{product.name}</TableCell>
                                         <TableCell>{product.part_number}</TableCell>
                                         <TableCell>{product.category?.name ?? 'Uncategorized'}</TableCell>
