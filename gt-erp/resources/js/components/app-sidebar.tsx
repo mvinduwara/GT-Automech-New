@@ -119,6 +119,12 @@ const mainNavItems: (NavItem & { roles?: string[] })[] = [
         roles: [USER_ROLES.CASHIER, USER_ROLES.ADMIN, USER_ROLES.SERVICEMANAGER],
     },
     {
+        title: 'Product Analysis',
+        href: '/dashboard/reports/product-vehicle-analysis',
+        icon: FileText,
+        roles: [USER_ROLES.CASHIER, USER_ROLES.ADMIN, USER_ROLES.SERVICEMANAGER],
+    },
+    {
         title: 'Reviews',
         href: '/dashboard/reviews',
         icon: Star,
@@ -133,7 +139,7 @@ const mainNavItems: (NavItem & { roles?: string[] })[] = [
 ];
 
 export function AppSidebar() {
-    const { auth } = usePage().props;
+    const { auth } = usePage<any>().props;
     const userRole = auth?.user?.role || USER_ROLES.DEFAULT;
     const filteredMainNavItems = useMemo(() => {
         return mainNavItems.filter((item) => !item.roles || item.roles.includes(userRole));

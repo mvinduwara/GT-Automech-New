@@ -45,5 +45,9 @@ Route::middleware(['auth', 'is_admin_or_cashier'])->group(function () {
         Route::get('/supplier/download', [SupplierReportController::class, 'download'])->name('supplier.download');
 
         Route::get('/profit-loss', [FinancialReportController::class, 'profitAndLoss'])->name('reports.profit-loss');
+        // Product-Vehicle Analysis Routes
+        Route::get('/product-vehicle-analysis', [App\Http\Controllers\Reports\ProductVehicleAnalysisController::class, 'index'])->name('product_vehicle_analysis');
+        Route::get('/product-vehicle-analysis/download-excel', [App\Http\Controllers\Reports\ProductVehicleAnalysisController::class, 'exportExcel'])->name('product_vehicle_analysis.excel');
+        Route::get('/product-vehicle-analysis/download-pdf', [App\Http\Controllers\Reports\ProductVehicleAnalysisController::class, 'exportPdf'])->name('product_vehicle_analysis.pdf');
     });
 });
