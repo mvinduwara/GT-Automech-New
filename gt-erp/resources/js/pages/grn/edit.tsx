@@ -18,7 +18,7 @@ interface Props {
 export default function Edit({ grn }: Props) {
     const { data, setData, put, processing, errors } = useForm({
         grn_no: grn.grn_no,
-        supplier_id: '',
+        supplier_id: grn.supplier_id,
         supplier: grn.supplier,
         purchase_order_id: grn.purchase_order_id,
         date: grn.date,
@@ -137,10 +137,10 @@ export default function Edit({ grn }: Props) {
                         const product =
                             grn.purchase_order.purchase_order_items.find(
                                 (i: any) => i.id === item.purchase_order_item_id
-                            )?.stock?.product  ?? '';
+                            )?.stock?.product ?? '';
                         return (
                             <div key={idx} className="border p-4 rounded space-y-2">
-                                <p className="font-semibold">{product?.name+" ("+product?.part_number+")"}</p>
+                                <p className="font-semibold">{product?.name + " (" + product?.part_number + ")"}</p>
                                 <div className="grid grid-cols-3 gap-2">
                                     <div>
                                         <label className='text-xs' htmlFor="">Quantity</label>

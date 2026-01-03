@@ -122,15 +122,19 @@ class GrnController extends Controller
 
                 $stockId = $poItem->stock_id;
 
-                // 2. Find the stock record
-                $stock = Stock::findOrFail($stockId); //
+                // 3. Create a NEW Stock record (Batch)
+                $templateStock = Stock::findOrFail($stockId);
 
-                // 3. Update the stock record
-                $stock->increment('quantity', $item['quantity']); //
-                $stock->update([
-                    'buying_price' => $item['unit_price'], // Update to the latest buying price
-                    'status' => 'active' // Set to active as we've just received stock
+                $newStock = Stock::create([
+                    'product_id'             => $templateStock->product_id,
+                    'alternative_product_id' => $templateStock->alternative_product_id,
+                    'quantity'               => $item['quantity'],
+                    'buying_price'           => $item['unit_price'],
+                    'selling_price'          => $templateStock->selling_price, // Copy selling price or take from input if available
+                    'status'                 => 'active',
                 ]);
+                
+                $stockId = $newStock->id; // Use the new stock ID for the GRN Item
 
                 // === END: STOCK UPDATE LOGIC ===
 
@@ -253,13 +257,59 @@ class GrnController extends Controller
                 }
                 $stockId = $poItem->stock_id;
 
+
                 // 2. Find and apply new stock quantity
-                $stock = Stock::findOrFail($stockId);
-                $stock->increment('quantity', $item['quantity']);
-                $stock->update([
-                    'buying_price' => $item['unit_price'],
-                    'status' => 'active'
-                ]);
+                $existingGrnItem = null;
+
+                // Try to find by ID if provided
+                if (isset($item['id'])) {
+                    $existingGrnItem = GrnItem::find($item['id']);
+                }
+
+                // If not found by ID (or ID not provided), try to find by PO Item ID within this GRN
+                if (!$existingGrnItem) {
+                    $existingGrnItem = GrnItem::where('grn_id', $grn->id)
+                        ->where('purchase_order_item_id', $item['purchase_order_item_id'])
+                        ->first();
+                }
+
+                if ($existingGrnItem) {
+                     // Existing item: Update its specific stock
+                     if ($existingGrnItem->stock_id) {
+                         $stock = Stock::findOrFail($existingGrnItem->stock_id);
+                         $stock->increment('quantity', $item['quantity']);
+                         $stock->update([
+                             'buying_price' => $item['unit_price'],
+                             'status'       => 'active'
+                         ]);
+                         $stockId = $stock->id;
+                     } else {
+                         // Fallback if existing item had no stock_id (shouldn't happen)
+                         // Treat as new stock creation
+                         $templateStock = Stock::findOrFail($stockId); // $stockId from PO Item
+                         $newStock = Stock::create([
+                             'product_id'             => $templateStock->product_id,
+                             'alternative_product_id' => $templateStock->alternative_product_id,
+                             'quantity'               => $item['quantity'],
+                             'buying_price'           => $item['unit_price'],
+                             'selling_price'          => $templateStock->selling_price,
+                             'status'                 => 'active',
+                         ]);
+                         $stockId = $newStock->id;
+                     }
+                } else {
+                    // New Item: Create new stock
+                    $templateStock = Stock::findOrFail($stockId); // $stockId from PO Item
+                    $newStock = Stock::create([
+                        'product_id'             => $templateStock->product_id,
+                        'alternative_product_id' => $templateStock->alternative_product_id,
+                        'quantity'               => $item['quantity'],
+                        'buying_price'           => $item['unit_price'],
+                        'selling_price'          => $templateStock->selling_price,
+                        'status'                 => 'active',
+                    ]);
+                    $stockId = $newStock->id;
+                }
                 // === END: STOCK APPLICATION LOGIC ===
 
                 GrnItem::updateOrCreate(
