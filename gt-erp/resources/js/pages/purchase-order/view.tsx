@@ -21,9 +21,9 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import AppLayout from '@/layouts/app-layout';
-import { type BreadcrumbItem, PageProps } from '@/types';
+import { type BreadcrumbItem } from '@/types';
 import { Head, router, useForm, usePage } from '@inertiajs/react';
-import { Link } from "lucide-react";
+import { Link, Printer } from "lucide-react";
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -51,8 +51,8 @@ type PurchaseOrder = {
     purchase_order_items: PurchaseOrderItem[];
 };
 
-export default function View({ purchaseOrder }: PageProps<{ purchaseOrder: PurchaseOrder }>) {
-    const { auth } = usePage().props;
+export default function View({ purchaseOrder }: { purchaseOrder: PurchaseOrder }) {
+    const { auth } = usePage().props as any;
     const userRole = auth?.user?.role;
     const breadcrumbs: BreadcrumbItem[] = [
         {
@@ -66,7 +66,7 @@ export default function View({ purchaseOrder }: PageProps<{ purchaseOrder: Purch
     ];
 
     const { data, setData, put, processing } = useForm({
-        items: purchaseOrder.purchase_order_items.map(item => ({
+        items: purchaseOrder.purchase_order_items.map((item: PurchaseOrderItem) => ({
             id: item.id,
             is_approved: item.is_approved,
         })),
@@ -162,6 +162,13 @@ export default function View({ purchaseOrder }: PageProps<{ purchaseOrder: Purch
                                         </AlertDialogFooter>
                                     </AlertDialogContent>
                                 </AlertDialog>)}
+
+                            <a href={`/dashboard/purchase-order/${purchaseOrder.id}/print`} target="_blank" rel="noopener noreferrer">
+                                <Button variant="outline" className="gap-2 ml-2">
+                                    <Printer className="h-4 w-4" />
+                                    Print
+                                </Button>
+                            </a>
                         </div>
                     </CardHeader>
                     <CardContent>
@@ -179,9 +186,9 @@ export default function View({ purchaseOrder }: PageProps<{ purchaseOrder: Purch
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {data.items.map(item => {
+                                    {data.items.map((item: any) => {
                                         const originalItem = purchaseOrder.purchase_order_items.find(
-                                            original => original.id === item.id
+                                            (original: PurchaseOrderItem) => original.id === item.id
                                         );
                                         return (
                                             <TableRow key={item.id}>
@@ -190,7 +197,7 @@ export default function View({ purchaseOrder }: PageProps<{ purchaseOrder: Purch
                                                 <TableCell>{originalItem?.quantity}</TableCell>
                                                 <TableCell className="text-center">
                                                     <Switch
-                                                        disabled={processing || purchaseOrder.status === 'checked' }
+                                                        disabled={processing || purchaseOrder.status === 'checked'}
                                                         checked={!!item.is_approved}
                                                         onCheckedChange={(checked) => handleApprovalChange(item.id, checked)}
                                                     />

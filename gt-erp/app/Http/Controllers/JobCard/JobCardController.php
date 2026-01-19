@@ -9,9 +9,11 @@ use App\Models\Vehicle;
 use App\Models\VehicleService;
 use App\Traits\SendsSms;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon; // Import Carbon
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Inertia\Inertia;
 use Illuminate\Support\Str;
+use Inertia\Inertia;
 
 class JobCardController extends Controller
 {
@@ -54,6 +56,64 @@ class JobCardController extends Controller
             'jobCards' => $jobCards,
             'pendingJobCards' => $pendingJobCards,
             'filters' => $request->only(['search', 'status', 'type']),
+        ]);
+    }
+
+    /**
+     * Show job card statistics
+     */
+    public function stats(Request $request)
+    {
+        $startDate = $request->input('start_date')
+            ? Carbon::parse($request->input('start_date'))
+            : now()->startOfMonth();
+
+        $endDate = $request->input('end_date')
+            ? Carbon::parse($request->input('end_date'))
+            : now()->endOfMonth();
+
+        // 1. Total Counts by Type (Filtered by Date)
+        $stats = [
+            'total' => JobCard::whereBetween('date', [$startDate, $endDate])->count(),
+            'general' => JobCard::where('type', 'general')->whereBetween('date', [$startDate, $endDate])->count(),
+            'service' => JobCard::where('type', 'service')->whereBetween('date', [$startDate, $endDate])->count(),
+            'insurance' => JobCard::where('type', 'insurance')->whereBetween('date', [$startDate, $endDate])->count(),
+        ];
+
+        // 2. Daily Stats Chart Data
+        $chartData = [];
+        $currentDate = $startDate->copy();
+
+        while ($currentDate <= $endDate) {
+            $dayStart = $currentDate->copy()->startOfDay();
+            $dayEnd = $currentDate->copy()->endOfDay();
+
+            // Count job cards for this day
+            $dailyCounts = JobCard::whereBetween('date', [$dayStart, $dayEnd])
+                ->select('type', DB::raw('count(*) as count'))
+                ->groupBy('type')
+                ->pluck('count', 'type')
+                ->toArray();
+
+            $chartData[] = [
+                'date' => $dayStart->format('Y-m-d'),
+                'displayDate' => $dayStart->format('d M'),
+                'general' => $dailyCounts['general'] ?? 0,
+                'service' => $dailyCounts['service'] ?? 0,
+                'insurance' => $dailyCounts['insurance'] ?? 0,
+                'total' => array_sum($dailyCounts),
+            ];
+
+            $currentDate->addDay();
+        }
+
+        return Inertia::render('job-card/stats', [
+            'stats' => $stats,
+            'chartData' => $chartData,
+            'filters' => [
+                'start_date' => $startDate->toDateString(),
+                'end_date' => $endDate->toDateString(),
+            ],
         ]);
     }
 
@@ -165,9 +225,11 @@ class JobCardController extends Controller
                 'user_id' => auth()->id(),
             ]);
 
-            $vehicleServices = VehicleService::with(['options' => function ($query) {
-                $query->where('status', 'active');
-            }])
+            $vehicleServices = VehicleService::with([
+                'options' => function ($query) {
+                    $query->where('status', 'active');
+                }
+            ])
                 ->where('status', 'active')
                 ->get();
 

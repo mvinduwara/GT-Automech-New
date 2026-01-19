@@ -69,7 +69,15 @@ class GrnController extends Controller
         $po = PurchaseOrder::with('purchaseOrderItems.stock.product')
             ->findOrFail($purchaseOrderId);
 
-        return Inertia::render('grn/create', ['purchaseOrder' => $po]);
+        // Generate next GRN Number: GRN-YYYY-SEQUENCE
+        $year = now()->year;
+        $count = Grn::whereYear('created_at', $year)->count() + 1;
+        $nextGrnNumber = 'GRN-' . $year . '-' . str_pad($count, 6, '0', STR_PAD_LEFT);
+
+        return Inertia::render('grn/create', [
+            'purchaseOrder' => $po,
+            'nextGrnNumber' => $nextGrnNumber,
+        ]);
     }
 
     /* ---------- STORE ---------- */
@@ -77,33 +85,34 @@ class GrnController extends Controller
     {
         Log::info('GRN store attempt', $request->all());
         $validated = $request->validate([
-            'grn_no'             => 'required|string|unique:grns,grn_no',
-            'supplier_id'        => 'required|exists:suppliers,id',
-            'purchase_order_id'  => 'required|exists:purchase_orders,id',
-            'date'               => 'required|date',
-            'remarks'            => 'nullable|string|max:1000',
-            'items'              => 'required|array|min:1',
+            'grn_no' => 'required|string|unique:grns,grn_no',
+            'supplier_id' => 'required|exists:suppliers,id',
+            'purchase_order_id' => 'required|exists:purchase_orders,id',
+            'date' => 'required|date',
+            'remarks' => 'nullable|string|max:1000',
+            'items' => 'required|array|min:1',
             'items.*.purchase_order_item_id' => 'required|exists:purchase_order_items,id',
-            'items.*.quantity'   => 'required|numeric|min:0.01',
+            'items.*.quantity' => 'required|numeric|min:0.01',
             'items.*.unit_price' => 'required|numeric|min:0.01',
-            'items.*.remarks'    => 'nullable|string|max:255',
+            'items.*.selling_price' => 'required|numeric|min:0.01',
+            'items.*.remarks' => 'nullable|string|max:255',
         ], [
-            'grn_no.unique'      => 'GRN number already exists.',
-            'items.min'          => 'At least one item is required.',
-            'items.*.quantity'   => 'Each item must have a valid quantity.',
+            'grn_no.unique' => 'GRN number already exists.',
+            'items.min' => 'At least one item is required.',
+            'items.*.quantity' => 'Each item must have a valid quantity.',
             'items.*.unit_price' => 'Each item must have a valid unit price.',
         ]);
 
         DB::beginTransaction();
         try {
             $grn = Grn::create([
-                'grn_no'            => $validated['grn_no'],
-                'supplier_id'       => $validated['supplier_id'],
+                'grn_no' => $validated['grn_no'],
+                'supplier_id' => $validated['supplier_id'],
                 'purchase_order_id' => $validated['purchase_order_id'],
-                'user_id'           => auth()->id(),
-                'date'              => $validated['date'],
-                'remarks'           => $validated['remarks'] ?? null,
-                'status'            => 'pending',
+                'user_id' => auth()->id(),
+                'date' => $validated['date'],
+                'remarks' => $validated['remarks'] ?? null,
+                'status' => 'pending',
             ]);
 
             $total = 0;
@@ -126,33 +135,33 @@ class GrnController extends Controller
                 $templateStock = Stock::findOrFail($stockId);
 
                 $newStock = Stock::create([
-                    'product_id'             => $templateStock->product_id,
+                    'product_id' => $templateStock->product_id,
                     'alternative_product_id' => $templateStock->alternative_product_id,
-                    'quantity'               => $item['quantity'],
-                    'buying_price'           => $item['unit_price'],
-                    'selling_price'          => $templateStock->selling_price, // Copy selling price or take from input if available
-                    'status'                 => 'active',
+                    'quantity' => $item['quantity'],
+                    'buying_price' => $item['unit_price'],
+                    'selling_price' => $item['selling_price'], // Use input selling price
+                    'status' => 'active',
                 ]);
-                
+
                 $stockId = $newStock->id; // Use the new stock ID for the GRN Item
 
                 // === END: STOCK UPDATE LOGIC ===
 
                 GrnItem::create([
-                    'grn_id'                 => $grn->id,
+                    'grn_id' => $grn->id,
                     'purchase_order_item_id' => $item['purchase_order_item_id'],
-                    'quantity'               => $item['quantity'],
-                    'unit_price'             => $item['unit_price'],
-                    'total_price'            => $lineTotal,
-                    'remarks'                => $item['remarks'] ?? null,
+                    'quantity' => $item['quantity'],
+                    'unit_price' => $item['unit_price'],
+                    'total_price' => $lineTotal,
+                    'remarks' => $item['remarks'] ?? null,
                 ]);
                 $total += $lineTotal;
             }
 
             GrnLedger::create([
                 'grn_id' => $grn->id,
-                'date'   => $grn->date,
-                'debit'  => 0,
+                'date' => $grn->date,
+                'debit' => 0,
                 'credit' => $total,
                 'amount' => $total,
                 'remarks' => 'GRN entry',
@@ -188,10 +197,20 @@ class GrnController extends Controller
     public function edit($grnId)
     {
         Log::info('GRN edit page opened', ['grn_id' => $grnId]);
-        $grn = Grn::with(['grnItems', 'supplier', 'purchaseOrder.purchaseOrderItems', 'purchaseOrder.purchaseOrderItems.stock.product'])
+        $grn = Grn::with(['grnItems.stock', 'supplier', 'purchaseOrder.purchaseOrderItems', 'purchaseOrder.purchaseOrderItems.stock.product'])
             ->findOrFail($grnId);
 
         return Inertia::render('grn/edit', ['grn' => $grn]);
+    }
+
+    /* ---------- SHOW ---------- */
+    public function show($grnId)
+    {
+        Log::info('GRN show page opened', ['grn_id' => $grnId]);
+        $grn = Grn::with(['grnItems.purchaseOrderItem.stock.product', 'supplier', 'purchaseOrder'])
+            ->findOrFail($grnId);
+
+        return Inertia::render('grn/view', ['grn' => $grn]);
     }
 
     /* ---------- UPDATE ---------- */
@@ -201,18 +220,19 @@ class GrnController extends Controller
         Log::info('GRN update attempt', ['grn_id' => $grnId, 'payload' => $request->all()]);
 
         $validated = $request->validate([
-            'grn_no'            => 'required|string|unique:grns,grn_no,' . $grn->id,
-            'supplier_id'       => 'required|exists:suppliers,id',
+            'grn_no' => 'required|string|unique:grns,grn_no,' . $grn->id,
+            'supplier_id' => 'required|exists:suppliers,id',
             'purchase_order_id' => 'required|exists:purchase_orders,id',
-            'date'              => 'required|date',
-            'remarks'           => 'nullable|string|max:1000',
-            'status'            => 'required|in:pending,complete',
-            'items'             => 'required|array|min:1',
-            'items.*.id'        => 'sometimes|exists:grn_items,id',
+            'date' => 'required|date',
+            'remarks' => 'nullable|string|max:1000',
+            'status' => 'required|in:pending,complete',
+            'items' => 'required|array|min:1',
+            'items.*.id' => 'sometimes|exists:grn_items,id',
             'items.*.purchase_order_item_id' => 'required|exists:purchase_order_items,id',
-            'items.*.quantity'  => 'required|numeric|min:0.01',
+            'items.*.quantity' => 'required|numeric|min:0.01',
             'items.*.unit_price' => 'required|numeric|min:0.01',
-            'items.*.remarks'   => 'nullable|string|max:255',
+            'items.*.selling_price' => 'required|numeric|min:0.01', // Added validation for selling price
+            'items.*.remarks' => 'nullable|string|max:255',
         ]);
 
         DB::beginTransaction();
@@ -233,12 +253,12 @@ class GrnController extends Controller
             // === END: STOCK REVERSAL LOGIC ===
 
             $grn->update([
-                'grn_no'            => $validated['grn_no'],
-                'supplier_id'       => $validated['supplier_id'],
+                'grn_no' => $validated['grn_no'],
+                'supplier_id' => $validated['supplier_id'],
                 'purchase_order_id' => $validated['purchase_order_id'],
-                'date'              => $validated['date'],
-                'remarks'           => $validated['remarks'] ?? null,
-                'status'            => $validated['status'],
+                'date' => $validated['date'],
+                'remarks' => $validated['remarks'] ?? null,
+                'status' => $validated['status'],
             ]);
 
             $incomingIds = collect($validated['items'])->pluck('id')->filter()->toArray();
@@ -274,39 +294,40 @@ class GrnController extends Controller
                 }
 
                 if ($existingGrnItem) {
-                     // Existing item: Update its specific stock
-                     if ($existingGrnItem->stock_id) {
-                         $stock = Stock::findOrFail($existingGrnItem->stock_id);
-                         $stock->increment('quantity', $item['quantity']);
-                         $stock->update([
-                             'buying_price' => $item['unit_price'],
-                             'status'       => 'active'
-                         ]);
-                         $stockId = $stock->id;
-                     } else {
-                         // Fallback if existing item had no stock_id (shouldn't happen)
-                         // Treat as new stock creation
-                         $templateStock = Stock::findOrFail($stockId); // $stockId from PO Item
-                         $newStock = Stock::create([
-                             'product_id'             => $templateStock->product_id,
-                             'alternative_product_id' => $templateStock->alternative_product_id,
-                             'quantity'               => $item['quantity'],
-                             'buying_price'           => $item['unit_price'],
-                             'selling_price'          => $templateStock->selling_price,
-                             'status'                 => 'active',
-                         ]);
-                         $stockId = $newStock->id;
-                     }
+                    // Existing item: Update its specific stock
+                    if ($existingGrnItem->stock_id) {
+                        $stock = Stock::findOrFail($existingGrnItem->stock_id);
+                        $stock->increment('quantity', $item['quantity']);
+                        $stock->update([
+                            'buying_price' => $item['unit_price'],
+                            'selling_price' => $item['selling_price'], // Update selling price
+                            'status' => 'active'
+                        ]);
+                        $stockId = $stock->id;
+                    } else {
+                        // Fallback if existing item had no stock_id (shouldn't happen)
+                        // Treat as new stock creation
+                        $templateStock = Stock::findOrFail($stockId); // $stockId from PO Item
+                        $newStock = Stock::create([
+                            'product_id' => $templateStock->product_id,
+                            'alternative_product_id' => $templateStock->alternative_product_id,
+                            'quantity' => $item['quantity'],
+                            'buying_price' => $item['unit_price'],
+                            'selling_price' => $item['selling_price'], // Use input
+                            'status' => 'active',
+                        ]);
+                        $stockId = $newStock->id;
+                    }
                 } else {
                     // New Item: Create new stock
                     $templateStock = Stock::findOrFail($stockId); // $stockId from PO Item
                     $newStock = Stock::create([
-                        'product_id'             => $templateStock->product_id,
+                        'product_id' => $templateStock->product_id,
                         'alternative_product_id' => $templateStock->alternative_product_id,
-                        'quantity'               => $item['quantity'],
-                        'buying_price'           => $item['unit_price'],
-                        'selling_price'          => $templateStock->selling_price,
-                        'status'                 => 'active',
+                        'quantity' => $item['quantity'],
+                        'buying_price' => $item['unit_price'],
+                        'selling_price' => $item['selling_price'], // Use input
+                        'status' => 'active',
                     ]);
                     $stockId = $newStock->id;
                 }
@@ -315,13 +336,13 @@ class GrnController extends Controller
                 GrnItem::updateOrCreate(
                     ['id' => $item['id'] ?? null],
                     [
-                        'grn_id'                 => $grn->id,
+                        'grn_id' => $grn->id,
                         'purchase_order_item_id' => $item['purchase_order_item_id'],
-                        'stock_id'               => $stockId, // <-- Save stock_id
-                        'quantity'               => $item['quantity'],
-                        'unit_price'             => $item['unit_price'],
-                        'total_price'            => $lineTotal,
-                        'remarks'                => $item['remarks'] ?? null,
+                        'stock_id' => $stockId, // <-- Save stock_id
+                        'quantity' => $item['quantity'],
+                        'unit_price' => $item['unit_price'],
+                        'total_price' => $lineTotal,
+                        'remarks' => $item['remarks'] ?? null,
                     ]
                 );
                 $total += $lineTotal;
@@ -387,12 +408,20 @@ class GrnController extends Controller
         $term = $request->query('q', '');
         $suppliers = Supplier::select('id', 'name', 'mobile', 'email')
             ->where(function ($q) use ($term) {
-                $q->where('name',   'like', "%{$term}%")
+                $q->where('name', 'like', "%{$term}%")
                     ->orWhere('mobile', 'like', "%{$term}%")
-                    ->orWhere('email',  'like', "%{$term}%");
+                    ->orWhere('email', 'like', "%{$term}%");
             })
             ->limit(10)
             ->get();
         return response()->json($suppliers);
+    }
+
+    public function print($id)
+    {
+        $grn = Grn::with(['grnItems.purchaseOrderItem.stock.product', 'supplier', 'purchaseOrder'])
+            ->findOrFail($id);
+
+        return view('grn.print', compact('grn'));
     }
 }

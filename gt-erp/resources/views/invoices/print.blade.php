@@ -232,7 +232,7 @@
         </div>
 
         <div class="footer">
-            Thank you for choosing <strong>GT Automech</strong>. For inquiries, contact us at +94 77 000 0000
+            Thank you for choosing <strong>GT Automech</strong>. For inquiries, contact us at +94 77 409 8580
         </div>
     </div>
 </body>

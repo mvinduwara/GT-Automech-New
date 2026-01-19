@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GT Automech • Purchase Order {{ $po->name }}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #fff;
+            color: #000;
+            font-size: 12px;
+        }
+
+        .invoice {
+            width: 210mm;
+            margin: auto;
+            padding: 15mm;
+            box-sizing: border-box;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 2px solid #000;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+
+        .brand {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .brand img {
+            width: 60px;
+            height: auto;
+        }
+
+        .brand h1 {
+            margin: 0;
+            font-size: 20px;
+        }
+
+        .brand p {
+            margin: 2px 0;
+            font-size: 10px;
+        }
+
+        .meta {
+            text-align: right;
+        }
+
+        .meta h2 {
+            margin: 0;
+            font-size: 20px;
+        }
+
+        .meta .badge {
+            font-weight: bold;
+        }
+
+        .section {
+            margin-bottom: 15px;
+        }
+
+        .section h3 {
+            margin-bottom: 4px;
+            font-size: 12px;
+            border-bottom: 1px solid #000;
+            padding-bottom: 2px;
+        }
+
+        .kv {
+            display: grid;
+            grid-template-columns: 100px 1fr;
+            row-gap: 2px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 15px;
+        }
+
+        table thead th {
+            border-bottom: 2px solid #000;
+            text-align: left;
+            padding: 4px;
+            font-size: 10px;
+            text-transform: uppercase;
+        }
+
+        table tbody td {
+            padding: 4px;
+            border-bottom: 1px solid #ccc;
+        }
+
+        .right {
+            text-align: right;
+        }
+
+        .footer {
+            border-top: 1px solid #000;
+            padding-top: 8px;
+            font-size: 10px;
+            margin-top: 30px;
+            text-align: center;
+        }
+
+        @media print {
+            @page {
+                margin: 0;
+                size: auto;
+            }
+            body {
+                margin: 0;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="invoice">
+        <div class="header">
+            <div class="brand">
+                <img src="{{ asset('/gt-nav.png') }}" alt="GT Logo">
+                <div>
+                    <h1>GT Automech</h1>
+                    <p>186/2, Raigama Junction, Kothalawala, Bandaragama</p>
+                    <p>www.gtdrive.lk • info@gtdrive.lk • +94 77 409 8580</p>
+                </div>
+            </div>
+            <div class="meta">
+                <h2>PURCHASE ORDER</h2>
+                <div class="badge">#{{ $po->name }}</div>
+                <div>Date: {{ \Carbon\Carbon::parse($po->date)->format('d M Y') }}</div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h3>Supplier</h3>
+            <div class="kv">
+                <!-- Assuming supplier relation exists on PO or through Items logic if PO has no direct supplier field -->
+                <!-- Since PO Logic often involves creating PO for general stock or multiple suppliers, we check the data structure -->
+                <!-- The current PO creation doesn't explicitly link a Supplier to the PO header, but items come from stocks.
+                     However, usually a PO is sent to a SUPPLIER. The current create design allows picking any product.
+                     If there is no single supplier, we might skip this or just show 'Internal / Various'.
+                     But looking at GRN, it requires a Supplier.
+                     Let's check if the PO model has a supplier_id or if we can infer it.
+                     The Controller 'print' method loads 'supplier' but the 'create' method didn't enforce it.
+                     Let's check the Model briefly. If no supplier, we leave it blank or Generic. -->
+                 
+                 {{-- If your PO has a supplier_id --}}
+                 @if($po->supplier)
+                    <span>Name</span><span>{{ $po->supplier->name }}</span>
+                    <span>Phone</span><span>{{ $po->supplier->phone ?? $po->supplier->mobile ?? 'N/A' }}</span>
+                    <span>Email</span><span>{{ $po->supplier->email ?? 'N/A' }}</span>
+                 @else
+                    <span>Note</span><span>Open Purchase Order</span>
+                 @endif
+            </div>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Part No.</th>
+                    <th>Product Name</th>
+                    <th class="right">Quantity</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach ($po->purchaseOrderItems as $item)
+                    <tr>
+                        <td>{{ $item->stock->product->part_number ?? 'N/A' }}</td>
+                        <td>{{ $item->stock->product->name ?? 'N/A' }}</td>
+                        <td class="right">{{ $item->quantity }}</td>
+                    </tr>
+                @endforeach
+            </tbody>
+        </table>
+
+        <div class="footer">
+            Generated by {{ $po->user->name ?? 'System' }} on {{ now()->format('d M Y H:i') }}
+        </div>
+    </div>
+</body>
+
+    <script>
+        window.onload = function() {
+            window.print();
+        }
+    </script>
+</html>

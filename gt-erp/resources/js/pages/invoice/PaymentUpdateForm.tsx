@@ -142,15 +142,15 @@ export default function PaymentUpdateForm({
                                 <div className="space-y-1 text-sm">
                                     <div className="flex justify-between">
                                         <span>Total Amount:</span>
-                                        <span className="font-medium">Rs. {totalAmount}</span>
+                                        <span className="font-medium">Rs. {Number(totalAmount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                                     </div>
                                     <div className="flex justify-between">
                                         <span>Already Paid:</span>
-                                        <span className="font-medium">Rs. {currentAdvancePayment}</span>
+                                        <span className="font-medium">Rs. {Number(currentAdvancePayment).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                                     </div>
                                     <div className="flex justify-between border-t pt-1">
                                         <span className="font-semibold">Remaining:</span>
-                                        <span className="font-bold text-red-600">Rs. {remaining}</span>
+                                        <span className="font-bold text-red-600">Rs. {Number(remaining).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                                     </div>
                                 </div>
                             </AlertDescription>
@@ -172,7 +172,7 @@ export default function PaymentUpdateForm({
                                 required
                             />
                             <p className="text-xs text-gray-500">
-                                Maximum: Rs. {remaining}
+                                Maximum: Rs. {Number(remaining).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </p>
                         </div>
                     </div>

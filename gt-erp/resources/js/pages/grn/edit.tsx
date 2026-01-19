@@ -24,7 +24,19 @@ export default function Edit({ grn }: Props) {
         date: grn.date,
         remarks: grn.remarks,
         status: grn.status,
-        items: grn.grn_items,
+        items: grn.grn_items.map((item: any) => ({
+            ...item,
+            // Try to find the associated stock to get the current selling price
+            // The item has 'stock_id' if it was already created.
+            // But we don't have the full stock object joined in 'grn_items' directly in the 'create' view,
+            // but here in 'edit' the Controller loads: 'grnItems' (no relations?), 'purchaseOrder.purchaseOrderItems.stock.product'.
+            // Wait, the controller does: Grn::with(['grnItems', ...]).
+            // We need to ensure we can get the selling price.
+            // Ideally, we should preload stock with grnItems.
+            // For now, let's assume if it's not present, default to 0. 
+            // NOTE: The controller logic needs 'grnItems.stock' to display current selling price.
+            selling_price: item.stock?.selling_price ? parseFloat(item.stock.selling_price) : 0,
+        })),
     });
 
     console.log("grn", grn)
@@ -55,7 +67,7 @@ export default function Edit({ grn }: Props) {
     };
 
     return (
-        <AppLayout breadcrumbs={[{ title: 'GRN', href: '/dashboard/grn' }, { title: 'Edit' }]}>
+        <AppLayout breadcrumbs={[{ title: 'GRN', href: '/dashboard/grn' }, { title: 'Edit', href: '#' }]}>
             <Head title="Edit GRN" />
             <form onSubmit={submit} className="space-y-6 p-6">
                 <h1 className="text-2xl font-bold">Edit GRN</h1>
@@ -138,10 +150,20 @@ export default function Edit({ grn }: Props) {
                             grn.purchase_order.purchase_order_items.find(
                                 (i: any) => i.id === item.purchase_order_item_id
                             )?.stock?.product ?? '';
+
+                        // Load initial selling price if not set, from stock if possible, otherwise keep as is
+                        // We rely on backend to have passed stock info. In 'edit', we load 'grnItems'.
+                        // However, grnItems store 'purchase_order_item_id' and 'stock_id'. 
+                        // The controller 'create' logic updates stock selling price from 'selling_price' input.
+                        // But current GRN Item model logic in controller doesn't seem to store 'selling_price' in GRN_ITEM table, only in STOCK table.
+                        // So we need to show the STOCK's selling price or allow editing it.
+                        // The Controller update logic uses $item['selling_price'] to update stock.
+                        // So we must provide it.
+
                         return (
                             <div key={idx} className="border p-4 rounded space-y-2">
                                 <p className="font-semibold">{product?.name + " (" + product?.part_number + ")"}</p>
-                                <div className="grid grid-cols-3 gap-2">
+                                <div className="grid grid-cols-4 gap-2">
                                     <div>
                                         <label className='text-xs' htmlFor="">Quantity</label>
                                         <Input
@@ -166,7 +188,21 @@ export default function Edit({ grn }: Props) {
                                                 v[idx].unit_price = parseFloat(e.target.value) || 0;
                                                 setData('items', v);
                                             }}
-                                        /></div>
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className='text-xs' htmlFor="">Selling Price (LKR)</label>
+                                        <Input
+                                            type="number"
+                                            placeholder="Selling Price"
+                                            value={item.selling_price ?? 0}
+                                            onChange={(e) => {
+                                                const v = [...data.items];
+                                                v[idx].selling_price = parseFloat(e.target.value) || 0;
+                                                setData('items', v);
+                                            }}
+                                        />
+                                    </div>
                                     <div>
                                         <label className='text-xs' htmlFor="">Total</label>
                                         <Input

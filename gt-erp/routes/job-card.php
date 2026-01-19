@@ -13,6 +13,7 @@ Route::middleware(['auth'])->group(function () {
 
             // List and create routes
             Route::get('/', [JobCardController::class, 'index'])->name('index');
+            Route::get('/stats', [JobCardController::class, 'stats'])->name('stats');
             Route::get('/open', [JobCardController::class, 'open'])->name('open');
             Route::post('/store', [JobCardController::class, 'store'])->name('store');
 

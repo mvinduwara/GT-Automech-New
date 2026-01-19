@@ -22,6 +22,7 @@ class PurchaseOrder extends Model
         'name',
         'date',
         'status',
+        'user_id', // Added user_id
     ];
 
     /**
@@ -32,13 +33,13 @@ class PurchaseOrder extends Model
     protected static function booted(): void
     {
         // Automatically generate the purchase order name before creation.
-        static::creating(function (PurchaseOrder $purchaseOrder) {
-            $year = Carbon::now()->format('y');
-            $month = Carbon::now()->format('m');
-            $day = Carbon::now()->format('d');
-            $randomString = Str::random(5);
-            $purchaseOrder->name = "PO/{$year}/{$month}/{$day}/{$randomString}";
-        });
+        // static::creating(function (PurchaseOrder $purchaseOrder) {
+        //     $year = Carbon::now()->format('y');
+        //     $month = Carbon::now()->format('m');
+        //     $day = Carbon::now()->format('d');
+        //     $randomString = Str::random(5);
+        //     $purchaseOrder->name = "PO/{$year}/{$month}/{$day}/{$randomString}";
+        // });
     }
 
     /**
@@ -49,5 +50,10 @@ class PurchaseOrder extends Model
     public function purchaseOrderItems(): HasMany
     {
         return $this->hasMany(PurchaseOrderItem::class);
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
     }
 }

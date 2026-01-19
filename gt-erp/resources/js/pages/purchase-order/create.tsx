@@ -56,6 +56,7 @@ interface Props {
     stocks: Stock[];
     categories: Category[];
     brands: Brand[];
+    generatedPoNumber: string; // Renamed prop
 }
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -69,7 +70,7 @@ const breadcrumbs: BreadcrumbItem[] = [
     },
 ];
 
-export default function Create({ stocks, categories, brands }: Props) {
+export default function Create({ stocks, categories, brands, generatedPoNumber }: Props) {
     const [filteredStocks, setFilteredStocks] = useState<Stock[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
@@ -78,13 +79,24 @@ export default function Create({ stocks, categories, brands }: Props) {
     const [quantityToAdd, setQuantityToAdd] = useState(1);
     const [selectedStock, setSelectedStock] = useState<Stock | null>(null);
 
-    const { data, setData, post, processing, errors, reset } = useForm({
-        name: '',
+    // Debug log
+    console.log("Create Component Rendered. generatedPoNumber:", generatedPoNumber);
+
+    interface Form {
+        name: string;
+        date: string;
+        items: PurchaseOrderItem[];
+        [key: string]: any; // Fix for FormDataType constraint
+    }
+
+    const { data, setData, post, processing, errors, reset } = useForm<Form>({
+        name: generatedPoNumber || '', // Use generatedPoNumber as default
         date: new Date().toISOString().split('T')[0],
-        items: [] as PurchaseOrderItem[],
+        items: [],
     });
 
-    // Update filtered stocks whenever the original stocks, search query, category, or brand changes.
+    // ...
+
     useEffect(() => {
         const lowercasedQuery = searchQuery.toLowerCase();
         const filtered = stocks.filter((stock) => {
@@ -102,6 +114,14 @@ export default function Create({ stocks, categories, brands }: Props) {
         }
     }, [errors]);
 
+    useEffect(() => {
+        // Force sync if init failed or prop changed
+        if (generatedPoNumber && data.name !== generatedPoNumber) {
+            console.log("Syncing name with generatedPoNumber:", generatedPoNumber);
+            setData('name', generatedPoNumber);
+        }
+    }, [generatedPoNumber]);
+    console.log("generatedPoNumber", generatedPoNumber)
     // Handle opening the modal for a specific product
     const handleAddProductClick = (stock: Stock) => {
         setSelectedStock(stock);

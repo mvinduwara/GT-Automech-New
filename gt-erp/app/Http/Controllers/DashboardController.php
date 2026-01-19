@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Account;
 use App\Models\LedgerEntry;
+use App\Models\JobCard; // Import JobCard model
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -46,6 +47,14 @@ class DashboardController extends Controller
         // 6. Get income by category
         $incomeByCategory = $this->getIncomeByCategory($startDate, $endDate);
 
+        // --- Job Card Stats Logic ---
+        $jobCardStats = [
+            'total' => JobCard::whereBetween('date', [$startDate, $endDate])->count(),
+            'general' => JobCard::where('type', 'general')->whereBetween('date', [$startDate, $endDate])->count(),
+            'service' => JobCard::where('type', 'service')->whereBetween('date', [$startDate, $endDate])->count(),
+            'insurance' => JobCard::where('type', 'insurance')->whereBetween('date', [$startDate, $endDate])->count(),
+        ];
+
         $financialSummary = [
             'totalIncome' => (float) $totalIncome,
             'totalExpenses' => (float) $totalExpenses,
@@ -57,6 +66,7 @@ class DashboardController extends Controller
             'chartData' => $chartData,
             'expensesByCategory' => $expensesByCategory,
             'incomeByCategory' => $incomeByCategory,
+            'jobCardStats' => $jobCardStats, // Pass stats to frontend
         ];
 
         return Inertia::render('dashboard', [

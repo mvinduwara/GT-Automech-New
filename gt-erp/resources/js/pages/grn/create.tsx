@@ -13,11 +13,12 @@ import { Combobox } from '@headlessui/react';
 
 interface Props {
     purchaseOrder: any;
+    nextGrnNumber: string;
 }
 
-export default function Create({ purchaseOrder }: Props) {
+export default function Create({ purchaseOrder, nextGrnNumber }: Props) {
     const { data, setData, post, processing, errors, reset } = useForm({
-        grn_no: '',
+        grn_no: nextGrnNumber,
         supplier_id: '',
         purchase_order_id: purchaseOrder.id,
         date: new Date().toISOString().substr(0, 10),
@@ -25,7 +26,8 @@ export default function Create({ purchaseOrder }: Props) {
         items: purchaseOrder.purchase_order_items.map((i: any) => ({
             purchase_order_item_id: i.id,
             quantity: i.quantity,
-            unit_price: 0,
+            unit_price: i.stock?.buying_price || 0,
+            selling_price: i.stock?.selling_price || 0,
             remarks: '',
         })),
     });
@@ -135,7 +137,7 @@ export default function Create({ purchaseOrder }: Props) {
                                 <p className="font-semibold">
                                     {purchaseOrder.purchase_order_items[idx].stock.product.name + " (" + purchaseOrder.purchase_order_items[idx].stock.product.part_number + ")"}
                                 </p>
-                                <div className="grid grid-cols-3 gap-2">
+                                <div className="grid grid-cols-4 gap-2">
                                     <div>
                                         <label className='text-xs' htmlFor="">Quantity</label>
                                         <Input
@@ -160,7 +162,21 @@ export default function Create({ purchaseOrder }: Props) {
                                                 v[idx].unit_price = parseFloat(e.target.value) || 0;
                                                 setData('items', v);
                                             }}
-                                        /></div>
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className='text-xs' htmlFor="">Selling Price (LKR)</label>
+                                        <Input
+                                            type="number"
+                                            placeholder="Selling Price (LKR)"
+                                            value={item.selling_price}
+                                            onChange={(e) => {
+                                                const v = [...data.items];
+                                                v[idx].selling_price = parseFloat(e.target.value) || 0;
+                                                setData('items', v);
+                                            }}
+                                        />
+                                    </div>
                                     <div>
                                         <label className='text-xs' htmlFor="">Total</label>
                                         <Input

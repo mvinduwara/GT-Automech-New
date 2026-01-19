@@ -1,6 +1,6 @@
 import AppLayout from '@/layouts/app-layout';
 import { Head, router, usePage } from '@inertiajs/react';
-import { Calendar, Clock, DollarSign, Package, Store, TrendingDown, TrendingUp, type LucideIcon } from 'lucide-react';
+import { Calendar, Clock, DollarSign, Package, Store, TrendingDown, TrendingUp, Car, Wrench, Shield, type LucideIcon } from 'lucide-react';
 import { useState, type FC, type ReactNode } from 'react';
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
@@ -28,6 +28,12 @@ interface FinancialSummary {
     chartData: ChartData[];
     expensesByCategory: CategoryData[];
     incomeByCategory: CategoryData[];
+    jobCardStats: {
+        total: number;
+        general: number;
+        service: number;
+        insurance: number;
+    };
 }
 
 interface PageProps {
@@ -68,18 +74,17 @@ const EXPENSE_COLOR = '#ef4444';
 const PROFIT_COLOR = '#3b82f6';
 
 // --- Sub-Components ---
-export const FinancialSummaryCard: FC<{ title: string; value: number; icon: LucideIcon; color: string; children?: ReactNode }> =
-    ({ title, value, icon: Icon, color }) => (
-        <div className="flex flex-col rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
-            <div className="flex items-center justify-between">
-                <h3 className="text-base font-semibold text-gray-600">{title}</h3>
-                <Icon className={`h-6 w-6 ${color}`} />
-            </div>
-            <p className="mt-4 text-3xl font-bold tracking-tight text-gray-900">
-                {formatCurrency(value)}
-            </p>
+export const FinancialSummaryCard: FC<{ title: string; value: number | string; icon: LucideIcon; color: string }> = ({ title, value, icon: Icon, color }) => (
+    <div className="flex flex-col rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
+        <div className="flex items-center justify-between">
+            <h3 className="text-base font-semibold text-gray-600">{title}</h3>
+            <Icon className={`h-6 w-6 ${color}`} />
         </div>
-    );
+        <p className="mt-4 text-3xl font-bold tracking-tight text-gray-900">
+            {typeof value === 'number' && (title.includes("Income") || title.includes("Expenses") || title.includes("Profit")) ? formatCurrency(value) : value}
+        </p>
+    </div>
+);
 
 const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
@@ -238,11 +243,43 @@ export default function Dashboard() {
                                 color="text-red-500"
                             />
                             <FinancialSummaryCard
-                                title="Net Profit / (Loss)"
+                                title="Net Profit"
                                 value={financialSummary.netProfit}
                                 icon={TrendingUp}
                                 color={financialSummary.netProfit >= 0 ? "text-blue-500" : "text-amber-500"}
                             />
+                        </div>
+
+                        {/* Job Card Statistics */}
+                        <div className="space-y-4">
+                            <h2 className="text-xl font-semibold text-gray-800">Job Card Statistics (Period Verified)</h2>
+                            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+                                <FinancialSummaryCard
+                                    title="Total Job Cards"
+                                    value={financialSummary.jobCardStats.total}
+                                    icon={Car}
+                                    color="text-indigo-500"
+                                // Override helper to show integer not currency
+                                />
+                                <FinancialSummaryCard
+                                    title="General"
+                                    value={financialSummary.jobCardStats.general}
+                                    icon={Package}
+                                    color="text-blue-500"
+                                />
+                                <FinancialSummaryCard
+                                    title="Service"
+                                    value={financialSummary.jobCardStats.service}
+                                    icon={Wrench}
+                                    color="text-green-500"
+                                />
+                                <FinancialSummaryCard
+                                    title="Insurance"
+                                    value={financialSummary.jobCardStats.insurance}
+                                    icon={Shield}
+                                    color="text-purple-500"
+                                />
+                            </div>
                         </div>
 
                         {/* Charts Section */}

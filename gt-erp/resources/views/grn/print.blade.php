@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GT Automech • GRN {{ $grn->grn_no }}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #fff;
+            color: #000;
+            font-size: 12px;
+        }
+
+        .invoice {
+            width: 210mm;
+            margin: auto;
+            padding: 15mm;
+            box-sizing: border-box;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 2px solid #000;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+
+        .brand {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .brand img {
+            width: 60px;
+            height: auto;
+        }
+
+        .brand h1 {
+            margin: 0;
+            font-size: 20px;
+        }
+
+        .brand p {
+            margin: 2px 0;
+            font-size: 10px;
+        }
+
+        .meta {
+            text-align: right;
+        }
+
+        .meta h2 {
+            margin: 0;
+            font-size: 20px;
+        }
+
+        .meta .badge {
+            font-weight: bold;
+        }
+
+        .section {
+            margin-bottom: 15px;
+        }
+
+        .section h3 {
+            margin-bottom: 4px;
+            font-size: 12px;
+            border-bottom: 1px solid #000;
+            padding-bottom: 2px;
+        }
+
+        .kv {
+            display: grid;
+            grid-template-columns: 100px 1fr;
+            row-gap: 2px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 15px;
+        }
+
+        table thead th {
+            border-bottom: 2px solid #000;
+            text-align: left;
+            padding: 4px;
+            font-size: 10px;
+            text-transform: uppercase;
+        }
+
+        table tbody td {
+            padding: 4px;
+            border-bottom: 1px solid #ccc;
+        }
+
+        .right {
+            text-align: right;
+        }
+
+        .footer {
+            border-top: 1px solid #000;
+            padding-top: 8px;
+            font-size: 10px;
+            margin-top: 30px;
+            text-align: center;
+        }
+
+        @media print {
+            @page {
+                margin: 0;
+                size: auto;
+            }
+            body {
+                margin: 0;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="invoice">
+        <div class="header">
+            <div class="brand">
+                <img src="{{ asset('/gt-nav.png') }}" alt="GT Logo">
+                <div>
+                    <h1>GT Automech</h1>
+                    <p>186/2, Raigama Junction, Kothalawala, Bandaragama</p>
+                    <p>www.gtdrive.lk • info@gtdrive.lk • +94 77 409 8580</p>
+                </div>
+            </div>
+            <div class="meta">
+                <h2>GOODS RECEIVED NOTE</h2>
+                <div class="badge">#{{ $grn->grn_no }}</div>
+                <div>Date: {{ \Carbon\Carbon::parse($grn->date)->format('d M Y') }}</div>
+                <div>PO Ref: {{ $grn->purchaseOrder->name ?? 'N/A' }}</div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h3>Supplier</h3>
+            <div class="kv">
+                <span>Name</span><span>{{ $grn->supplier->name }}</span>
+                <span>Phone</span><span>{{ $grn->supplier->mobile ?? 'N/A' }}</span>
+                <span>Email</span><span>{{ $grn->supplier->email ?? 'N/A' }}</span>
+            </div>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Part No.</th>
+                    <th>Product Name</th>
+                    <th class="right">Quantity</th>
+                    <th class="right">Cost Price</th>
+                    <th class="right">Total Cost</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach ($grn->grnItems as $item)
+                    <tr>
+                        <td>{{ $item->purchaseOrderItem->stock->product->part_number ?? 'N/A' }}</td>
+                        <td>{{ $item->purchaseOrderItem->stock->product->name ?? 'N/A' }}</td>
+                        <td class="right">{{ $item->quantity }}</td>
+                        <td class="right">{{ number_format($item->unit_price, 2) }}</td>
+                        <td class="right">{{ number_format($item->total_price, 2) }}</td>
+                    </tr>
+                @endforeach
+            </tbody>
+        </table>
+
+        <div class="section">
+            <div class="kv">
+                <span>Total Value</span><span>LKR {{ number_format($grn->grnItems->sum('total_price'), 2) }}</span>
+            </div>
+        </div>
+
+        <div class="footer">
+            Generated by {{ auth()->user()->name ?? 'System' }} on {{ now()->format('d M Y H:i') }}
+        </div>
+    </div>
+</body>
+
+    <script>
+        window.onload = function() {
+            window.print();
+        }
+    </script>
+</html>

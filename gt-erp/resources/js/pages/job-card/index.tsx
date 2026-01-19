@@ -48,6 +48,9 @@ export default function Index() {
                 <div className="flex items-center justify-between">
                     <h1 className="h1 font-bold">All Job Cards</h1>
                     <div className="flex items-center justify-end gap-2">
+                        <Link href={route('dashboard.job-card.stats')}>
+                            <Button variant="secondary">View Stats</Button>
+                        </Link>
                         <a target='_blank' href={'/dashboard/job-card/open'}>
                             <Button >Open New Job Card</Button>
                         </a>
@@ -60,7 +63,7 @@ export default function Index() {
                         <h2 className="mb-2 text-lg font-semibold">Pending Job Cards</h2>
                         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                             {pendingJobCards.map((card) => (
-                                <div key={card.id}  className="rounded-xl border bg-white hover:bg-sky-50 p-4 shadow duration-500">
+                                <div key={card.id} className="rounded-xl border bg-white hover:bg-sky-50 p-4 shadow duration-500">
                                     <a target="_blank" href={`/dashboard/job-card/${card.id}/form`}>
                                         <h3 className="font-bold">{card.job_card_no}</h3>
                                         <p>Customer: {card.customer?.name}</p>
