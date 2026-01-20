@@ -14,7 +14,7 @@ use Carbon\Carbon;
 
 class AdminPurchaseOrderController extends Controller
 {
-   
+
     /**
      * Display the specified purchase order with its items.
      *
@@ -25,11 +25,11 @@ class AdminPurchaseOrderController extends Controller
     public function view(Request $request, $purchaseOrder_id)
     {
         try {
-            $purchaseOrder = PurchaseOrder::with(['purchaseOrderItems.stock.product'])
+            $purchaseOrder = PurchaseOrder::with(['purchaseOrderItems.product', 'purchaseOrderItems.stock.product', 'user', 'supplier'])
                 ->where('id', $purchaseOrder_id)
                 ->firstOrFail();
 
-            Log::info("Successfully retrieved purchase order {$purchaseOrder_id} for viewing.", ['purchase_order' => $purchaseOrder]);
+            Log::info("Successfully retrieved purchase order {$purchaseOrder_id} for viewing.", ['purchase_order' => $purchaseOrder->toArray()]);
 
             return Inertia::render('purchase-order/view', [
                 'purchaseOrder' => $purchaseOrder,
@@ -97,7 +97,7 @@ class AdminPurchaseOrderController extends Controller
             return redirect()->back()->with('error', 'An error occurred while updating the purchase order.');
         }
     }
-    
+
     public function requested(Request $request, $purchaseOrder_id)
     {
         try {
