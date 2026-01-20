@@ -2,7 +2,7 @@ import AppLayout from '@/layouts/app-layout';
 import { Head, router, usePage } from '@inertiajs/react';
 import { Calendar, Car, Package, Shield, Wrench, ArrowLeft } from 'lucide-react';
 import { useState } from 'react';
-import { BarChart, Bar, CartonGrid, Tooltip, Legend, ResponsiveContainer, CartesianGrid, XAxis, YAxis, PieChart, Pie, Cell } from 'recharts';
+import { BarChart, Bar, Tooltip, Legend, ResponsiveContainer, CartesianGrid, XAxis, YAxis, PieChart, Pie, Cell } from 'recharts';
 import { Button } from "@/components/ui/button";
 
 interface ChartData {
@@ -20,6 +20,11 @@ interface StatsProps {
         general: number;
         service: number;
         insurance: number;
+        full_service: number;
+        body_wash: number;
+        ac_repairs: number;
+        paint_work: number;
+        mechanical_repair: number;
     };
     chartData: ChartData[];
     filters: {
@@ -105,6 +110,18 @@ export default function JobCardStats() {
                     <StatCard title="General" value={stats.general} icon={Package} color="text-blue-500" />
                     <StatCard title="Service" value={stats.service} icon={Wrench} color="text-green-500" />
                     <StatCard title="Insurance" value={stats.insurance} icon={Shield} color="text-purple-500" />
+                </div>
+
+                {/* Service Types Breakdown */}
+                <div>
+                    <h2 className="text-lg font-semibold text-gray-800 mb-4">Service Breakdown</h2>
+                    <div className="grid grid-cols-1 gap-6 md:grid-cols-3 lg:grid-cols-5">
+                        <StatCard title="Full Service" value={stats.full_service} icon={Wrench} color="text-indigo-600" />
+                        <StatCard title="Body Wash" value={stats.body_wash} icon={Package} color="text-blue-600" />
+                        <StatCard title="AC Repairs" value={stats.ac_repairs} icon={Wrench} color="text-cyan-600" />
+                        <StatCard title="Paint Work" value={stats.paint_work} icon={Package} color="text-pink-600" />
+                        <StatCard title="Mechanical" value={stats.mechanical_repair} icon={Wrench} color="text-orange-600" />
+                    </div>
                 </div>
 
                 {/* Charts */}

@@ -11,6 +11,7 @@ import {
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import {
     Select,
@@ -27,10 +28,19 @@ import {
     FileText,
     Shield,
     Settings,
-    AlertTriangle
+    AlertTriangle,
+    Check
 } from "lucide-react";
 
 type JobCardType = 'general' | 'service' | 'insurance';
+
+const SERVICE_SUB_TYPES = [
+    'Full service',
+    'Body wash and QD',
+    'AC repairs',
+    'Paint work',
+    'Mechanical repair'
+];
 
 type JobCardTypeFormProps = {
     id: number;
@@ -39,6 +49,7 @@ type JobCardTypeFormProps = {
     disabled?: boolean;
     hasInvoice?: boolean;
     hasInsurance?: boolean;
+    currentServiceTypes?: string[];
 };
 
 function JobCardTypeForm({
@@ -47,12 +58,20 @@ function JobCardTypeForm({
     jobCardNo,
     disabled = false,
     hasInvoice = false,
-    hasInsurance = false
+    hasInsurance = false,
+    currentServiceTypes = []
 }: JobCardTypeFormProps) {
     const [isOpen, setIsOpen] = useState(false);
 
-    const { data, setData, put, processing, errors, reset } = useForm({
+    interface FormData {
+        type: JobCardType;
+        service_types: string[];
+        [key: string]: any;
+    }
+
+    const { data, setData, put, processing, errors, reset } = useForm<FormData>({
         type: currentType,
+        service_types: currentServiceTypes || [],
     });
 
     const typeOptions = [
@@ -123,8 +142,19 @@ function JobCardTypeForm({
     const handleOpenChange = (open: boolean) => {
         setIsOpen(open);
         if (open) {
-            setData('type', currentType);
+            setData({
+                type: currentType,
+                service_types: currentServiceTypes || []
+            });
         }
+    };
+
+    const toggleServiceType = (type: string) => {
+        const current = data.service_types;
+        const updated = current.includes(type)
+            ? current.filter((t: string) => t !== type)
+            : [...current, type];
+        setData('service_types', updated);
     };
 
     const isTypeChanged = data.type !== currentType;
@@ -222,6 +252,35 @@ function JobCardTypeForm({
                                 </p>
                             )}
                         </div>
+
+                        {/* Service Sub Types Selection */}
+                        {data.type === 'service' && (
+                            <div className="space-y-3 pt-2 border-t">
+                                <Label>Service Types</Label>
+                                <div className="grid grid-cols-1 gap-2">
+                                    {SERVICE_SUB_TYPES.map((subType) => (
+                                        <div key={subType} className="flex items-center space-x-2 border p-2 rounded-md hover:bg-gray-50 transition-colors">
+                                            <Checkbox
+                                                id={`service-type-${subType}`}
+                                                checked={data.service_types.includes(subType)}
+                                                onCheckedChange={() => toggleServiceType(subType)}
+                                            />
+                                            <Label
+                                                htmlFor={`service-type-${subType}`}
+                                                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer flex-1"
+                                            >
+                                                {subType}
+                                            </Label>
+                                        </div>
+                                    ))}
+                                </div>
+                                {data.service_types.length === 0 && (
+                                    <p className="text-xs text-amber-600">
+                                        Please select at least one service type.
+                                    </p>
+                                )}
+                            </div>
+                        )}
 
                         {/* Type Change Preview */}
                         {isTypeChanged && (

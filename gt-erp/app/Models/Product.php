@@ -25,6 +25,7 @@ class Product extends Model
         'unit_of_measure_id',
         'reorder_level',
         'status',
+        'deleted',
     ];
 
     /**
@@ -35,7 +36,18 @@ class Product extends Model
     protected $casts = [
         'reorder_level' => 'integer',
         'status' => 'string',
+        'deleted' => 'boolean',
     ];
+
+    /**
+     * The "booted" method of the model.
+     */
+    protected static function booted(): void
+    {
+        static::addGlobalScope('not_deleted', function ($builder) {
+            $builder->where('deleted', false);
+        });
+    }
 
     /**
      * Get the category that owns the product.
@@ -56,7 +68,7 @@ class Product extends Model
     public function category()
     {
         return $this->belongsTo(Category::class)->withDefault([
-            'id'   => null,
+            'id' => null,
             'name' => 'Uncategorized' // Or 'N/A', 'No Category', etc.
         ]);
     }
@@ -67,7 +79,7 @@ class Product extends Model
     public function brand()
     {
         return $this->belongsTo(Brand::class)->withDefault([
-            'id'   => null,
+            'id' => null,
             'name' => 'No Brand'
         ]);
     }

@@ -3,6 +3,7 @@ import { type BreadcrumbItem } from '@/types';
 import { Head, router } from '@inertiajs/react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Trash2 } from 'lucide-react'; // Import Trash2 icon
 import {
     Select,
     SelectContent,
@@ -152,6 +153,21 @@ export default function Index({
                 },
             },
         );
+    };
+
+    const handleDelete = (product: Product) => {
+        if (confirm(`Are you sure you want to delete "${product.name}"? This action cannot be undone.`)) {
+            router.delete(route('dashboard.product.destroy', product.id), {
+                preserveState: true,
+                preserveScroll: true,
+                onSuccess: () => {
+                    toast.success('Product deleted successfully.');
+                },
+                onError: () => {
+                    toast.error('Failed to delete product.');
+                },
+            });
+        }
     };
 
     return (
@@ -304,6 +320,14 @@ export default function Index({
                                                 <Link href={`/dashboard/product/${product.id}/edit`}>
                                                     Edit
                                                 </Link>
+                                            </Button>
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                                                onClick={() => handleDelete(product)}
+                                            >
+                                                <Trash2 className="h-4 w-4" />
                                             </Button>
                                         </TableCell>
                                     </TableRow>

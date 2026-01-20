@@ -24,7 +24,7 @@ class ProductController extends Controller
                 ->with(['category', 'brand', 'unitOfMeasure'])
                 ->when($request->input('search'), function ($query, $search) {
                     $query->where('name', 'like', "%{$search}%")
-                          ->orWhere('part_number', 'like', "%{$search}%");
+                        ->orWhere('part_number', 'like', "%{$search}%");
                 })
                 ->when($request->input('category_id'), function ($query, $categoryId) {
                     $query->where('category_id', $categoryId);
@@ -57,9 +57,9 @@ class ProductController extends Controller
 
             $selectedVehicleModels = [];
             if ($request->input('vehicle_model_id')) {
-                 // Handle both single ID or array
-                $ids = is_array($request->input('vehicle_model_id')) 
-                    ? $request->input('vehicle_model_id') 
+                // Handle both single ID or array
+                $ids = is_array($request->input('vehicle_model_id'))
+                    ? $request->input('vehicle_model_id')
                     : [$request->input('vehicle_model_id')];
                 $selectedVehicleModels = \App\Models\VehicleModel::whereIn('id', $ids)->get(['id', 'name']);
             }
@@ -80,7 +80,7 @@ class ProductController extends Controller
         } catch (\Exception $e) {
             Log::error('Error fetching products for index page: ' . $e->getMessage(), ['exception' => $e]);
             return Inertia::render('inventory/product/index', [
-                'products' => (object)['data' => [], 'links' => [], 'current_page' => 1, 'last_page' => 1, 'total' => 0], // Provide empty pagination structure
+                'products' => (object) ['data' => [], 'links' => [], 'current_page' => 1, 'last_page' => 1, 'total' => 0], // Provide empty pagination structure
                 'categories' => [],
                 'brands' => [],
                 'unitOfMeasures' => [],
@@ -257,15 +257,15 @@ class ProductController extends Controller
             if (isset($validatedData['vehicle_model_ids'])) {
                 $product->vehicleModels()->sync($validatedData['vehicle_model_ids']);
             } else {
-                 // If not provided (or empty array sent as null?), strictly speaking if field is missing we might not want to detach all. 
-                 // But in the edit form, we send empty array if no models. 
-                 // If the field is not in request at all, we might skip. 
-                 // Based on frontend implementation: vehicle_model_ids: [] as number[],
-                 // So it should be present.
-                 // However, Inertia/Axios might send null or empty array.
-                 if ($request->has('vehicle_model_ids')) {
-                     $product->vehicleModels()->sync([]);
-                 }
+                // If not provided (or empty array sent as null?), strictly speaking if field is missing we might not want to detach all. 
+                // But in the edit form, we send empty array if no models. 
+                // If the field is not in request at all, we might skip. 
+                // Based on frontend implementation: vehicle_model_ids: [] as number[],
+                // So it should be present.
+                // However, Inertia/Axios might send null or empty array.
+                if ($request->has('vehicle_model_ids')) {
+                    $product->vehicleModels()->sync([]);
+                }
             }
 
             Log::info('Product updated successfully.', ['product_id' => $product->id, 'product_name' => $product->name]);
@@ -277,6 +277,30 @@ class ProductController extends Controller
         } catch (\Exception $e) {
             Log::error('Error updating product: ' . $e->getMessage(), ['exception' => $e, 'product_id' => $product->id, 'request' => $request->all()]);
             return redirect()->back()->with('error', 'Failed to update product. Please try again later.')->withInput();
+        }
+    }
+
+    /**
+     * Remove the specified product from storage (Soft Delete).
+     */
+    public function destroy(Product $product)
+    {
+        try {
+            $product->update(['deleted' => true]);
+
+            Log::info('Product soft deleted successfully.', [
+                'product_id' => $product->id,
+                'product_name' => $product->name
+            ]);
+
+            return redirect()->back()->with('success', 'Product deleted successfully.');
+        } catch (\Exception $e) {
+            Log::error('Error deleting product', [
+                'product_id' => $product->id,
+                'error' => $e->getMessage()
+            ]);
+
+            return redirect()->back()->with('error', 'Failed to delete product.');
         }
     }
 }

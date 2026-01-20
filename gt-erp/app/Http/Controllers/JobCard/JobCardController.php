@@ -78,6 +78,11 @@ class JobCardController extends Controller
             'general' => JobCard::where('type', 'general')->whereBetween('date', [$startDate, $endDate])->count(),
             'service' => JobCard::where('type', 'service')->whereBetween('date', [$startDate, $endDate])->count(),
             'insurance' => JobCard::where('type', 'insurance')->whereBetween('date', [$startDate, $endDate])->count(),
+            'full_service' => JobCard::whereJsonContains('service_types', 'Full service')->whereBetween('date', [$startDate, $endDate])->count(),
+            'body_wash' => JobCard::whereJsonContains('service_types', 'Body wash and QD')->whereBetween('date', [$startDate, $endDate])->count(),
+            'ac_repairs' => JobCard::whereJsonContains('service_types', 'AC repairs')->whereBetween('date', [$startDate, $endDate])->count(),
+            'paint_work' => JobCard::whereJsonContains('service_types', 'Paint work')->whereBetween('date', [$startDate, $endDate])->count(),
+            'mechanical_repair' => JobCard::whereJsonContains('service_types', 'Mechanical repair')->whereBetween('date', [$startDate, $endDate])->count(),
         ];
 
         // 2. Daily Stats Chart Data
@@ -102,6 +107,11 @@ class JobCardController extends Controller
                 'service' => $dailyCounts['service'] ?? 0,
                 'insurance' => $dailyCounts['insurance'] ?? 0,
                 'total' => array_sum($dailyCounts),
+                'full_service' => JobCard::whereJsonContains('service_types', 'Full service')->whereBetween('date', [$dayStart, $dayEnd])->count(),
+                'body_wash' => JobCard::whereJsonContains('service_types', 'Body wash and QD')->whereBetween('date', [$dayStart, $dayEnd])->count(),
+                'ac_repairs' => JobCard::whereJsonContains('service_types', 'AC repairs')->whereBetween('date', [$dayStart, $dayEnd])->count(),
+                'paint_work' => JobCard::whereJsonContains('service_types', 'Paint work')->whereBetween('date', [$dayStart, $dayEnd])->count(),
+                'mechanical_repair' => JobCard::whereJsonContains('service_types', 'Mechanical repair')->whereBetween('date', [$dayStart, $dayEnd])->count(),
             ];
 
             $currentDate->addDay();
@@ -281,6 +291,8 @@ class JobCardController extends Controller
     {
         $validated = $request->validate([
             'type' => 'required|in:general,service,insurance',
+            'service_types' => 'nullable|array',
+            'service_types.*' => 'string',
         ]);
 
         try {
@@ -288,6 +300,7 @@ class JobCardController extends Controller
 
             $jobCard->update([
                 'type' => $validated['type'],
+                'service_types' => $validated['type'] === 'service' ? ($validated['service_types'] ?? []) : null,
             ]);
 
             Log::info('Job card type updated', [

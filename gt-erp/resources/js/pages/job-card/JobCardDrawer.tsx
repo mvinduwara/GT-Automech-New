@@ -10,6 +10,17 @@ import {
     DrawerTrigger,
 } from "@/components/ui/drawer"
 
+interface JobCard {
+    id: number;
+    type: string;
+    service_types?: string[];
+    customer: any;
+    vehicle: any;
+    user: any;
+    remarks?: string;
+    mileage: number;
+}
+
 interface Props {
     jobCard: JobCard
 }
@@ -86,6 +97,30 @@ export function JobCardDrawer({ jobCard }: Props) {
                             </div>
                         </div>
                     </section>
+
+                    {/* Service Details (if applicable) */}
+                    {jobCard.type === 'service' && jobCard.service_types && jobCard.service_types.length > 0 && (
+                        <section className="border-t pt-6">
+                            <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">
+                                Service Details
+                            </h3>
+                            <div className="space-y-2">
+                                <div className="flex flex-col gap-2">
+                                    <span className="text-sm text-gray-600">Service Types:</span>
+                                    <div className="flex flex-wrap gap-2">
+                                        {jobCard.service_types?.map((type: string, index: number) => (
+                                            <span
+                                                key={index}
+                                                className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800"
+                                            >
+                                                {type}
+                                            </span>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+                    )}
 
                     {/* Additional Info */}
                     <section className="border-t pt-6">
