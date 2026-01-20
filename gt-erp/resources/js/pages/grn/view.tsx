@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/table';
 import AppLayout from '@/layouts/app-layout';
 import { BreadcrumbItem } from '@/types';
-import { Head, Link } from '@inertiajs/react';
+import { Head } from '@inertiajs/react';
 import { Printer } from 'lucide-react';
 
 interface GrnItem {
@@ -21,11 +21,15 @@ interface GrnItem {
     total_price: number;
     remarks: string | null;
     purchase_order_item: {
-        stock: {
+        stock?: {
             product: {
                 name: string;
                 part_number: string;
             };
+        };
+        product: {
+            name: string;
+            part_number: string;
         };
     };
 }
@@ -127,15 +131,21 @@ export default function View({ grn }: Props) {
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {grn.grn_items.map((item) => (
-                                        <TableRow key={item.id}>
-                                            <TableCell>{item.purchase_order_item?.stock?.product?.name || 'Unknown'}</TableCell>
-                                            <TableCell>{item.purchase_order_item?.stock?.product?.part_number || 'N/A'}</TableCell>
-                                            <TableCell className="text-right">{item.quantity}</TableCell>
-                                            <TableCell className="text-right">{item.unit_price.toFixed(2)}</TableCell>
-                                            <TableCell className="text-right">{item.total_price.toFixed(2)}</TableCell>
-                                        </TableRow>
-                                    ))}
+                                    {grn.grn_items.map((item) => {
+                                        // Fallback to stock.product if purchase_order_item.product is undefined (though controller now loads both)
+                                        // NOTE: The controller logic was updated to load `purchaseOrderItem.product`
+                                        // AND `purchaseOrderItem.stock.product`.
+                                        const product = item.purchase_order_item?.product || item.purchase_order_item?.stock?.product;
+                                        return (
+                                            <TableRow key={item.id}>
+                                                <TableCell>{product?.name || 'Unknown'}</TableCell>
+                                                <TableCell>{product?.part_number || 'N/A'}</TableCell>
+                                                <TableCell className="text-right">{item.quantity}</TableCell>
+                                                <TableCell className="text-right">{item.unit_price.toFixed(2)}</TableCell>
+                                                <TableCell className="text-right">{item.total_price.toFixed(2)}</TableCell>
+                                            </TableRow>
+                                        );
+                                    })}
                                     <TableRow>
                                         <TableCell colSpan={4} className="text-right font-bold">Total Amount</TableCell>
                                         <TableCell className="text-right font-bold">LKR {totalAmount.toFixed(2)}</TableCell>

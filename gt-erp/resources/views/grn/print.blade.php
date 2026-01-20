@@ -165,8 +165,8 @@
             <tbody>
                 @foreach ($grn->grnItems as $item)
                     <tr>
-                        <td>{{ $item->purchaseOrderItem->stock->product->part_number ?? 'N/A' }}</td>
-                        <td>{{ $item->purchaseOrderItem->stock->product->name ?? 'N/A' }}</td>
+                        <td>{{ $item->purchaseOrderItem->product->part_number ?? $item->purchaseOrderItem->stock->product->part_number ?? 'N/A' }}</td>
+                        <td>{{ $item->purchaseOrderItem->product->name ?? $item->purchaseOrderItem->stock->product->name ?? 'N/A' }}</td>
                         <td class="right">{{ $item->quantity }}</td>
                         <td class="right">{{ number_format($item->unit_price, 2) }}</td>
                         <td class="right">{{ number_format($item->total_price, 2) }}</td>

@@ -22,7 +22,9 @@ class PurchaseOrder extends Model
         'name',
         'date',
         'status',
-        'user_id', // Added user_id
+        'user_id',
+        'supplier_id',
+        'notes',
     ];
 
     /**
@@ -55,5 +57,10 @@ class PurchaseOrder extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function supplier()
+    {
+        return $this->belongsTo(Supplier::class);
     }
 }

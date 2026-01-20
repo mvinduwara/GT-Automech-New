@@ -5,7 +5,7 @@ import { Head, useForm, router } from '@inertiajs/react';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
-import { Search, PlusCircle, Trash2, X, Save, Edit } from 'lucide-react';
+import { Search, PlusCircle, Trash2, X, Save, Edit, Check, ChevronsUpDown } from 'lucide-react';
 import {
     Dialog,
     DialogContent,
@@ -18,6 +18,22 @@ import { Toaster, toast } from 'sonner';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import {
+    Command,
+    CommandEmpty,
+    CommandGroup,
+    CommandInput,
+    CommandItem,
+    CommandList,
+} from "@/components/ui/command"
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from "@/components/ui/popover"
+import { cn } from '@/lib/utils';
+import { Separator } from '@/components/ui/separator';
 
 // Define the types for the data passed from the backend
 interface Brand {
@@ -34,29 +50,28 @@ interface Product {
     id: number;
     name: string;
     part_number: string;
-    category: Category;
-    brand: Brand;
-    total_stock: number;
+    category?: Category;
+    brand?: Brand;
 }
 
-interface Stock {
+interface Supplier {
     id: number;
-    product: Product;
-    quantity: number;
+    name: string;
+    mobile: string;
+    email: string;
 }
 
 interface PurchaseOrderItem {
-    stock_id: number;
+    product_id: number;
     name: string;
     part_number: string;
     quantity: number;
 }
 
 interface Props {
-    stocks: Stock[];
     categories: Category[];
     brands: Brand[];
-    generatedPoNumber: string; // Renamed prop
+    generatedPoNumber: string;
 }
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -70,75 +85,126 @@ const breadcrumbs: BreadcrumbItem[] = [
     },
 ];
 
-export default function Create({ stocks, categories, brands, generatedPoNumber }: Props) {
-    const [filteredStocks, setFilteredStocks] = useState<Stock[]>([]);
+export default function Create({ categories, brands, generatedPoNumber }: Props) {
     const [searchQuery, setSearchQuery] = useState('');
-    const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-    const [selectedBrand, setSelectedBrand] = useState<string | null>(null);
+    const [selectedCategory, setSelectedCategory] = useState<string | null>('all');
+    const [selectedBrand, setSelectedBrand] = useState<string | null>('all');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [quantityToAdd, setQuantityToAdd] = useState(1);
-    const [selectedStock, setSelectedStock] = useState<Stock | null>(null);
 
-    // Debug log
-    console.log("Create Component Rendered. generatedPoNumber:", generatedPoNumber);
+    // Product Search State
+    const [searchResults, setSearchResults] = useState<Product[]>([]);
+    const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+    const [isSearchingProducts, setIsSearchingProducts] = useState(false);
+
+    // Supplier Search State
+    const [openSupplier, setOpenSupplier] = useState(false);
+    const [supplierQuery, setSupplierQuery] = useState('');
+    const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+    const [selectedSupplier, setSelectedSupplier] = useState<Supplier | null>(null);
 
     interface Form {
         name: string;
         date: string;
+        supplier_id: number | null;
+        notes: string;
         items: PurchaseOrderItem[];
-        [key: string]: any; // Fix for FormDataType constraint
+        [key: string]: any;
     }
 
     const { data, setData, post, processing, errors, reset } = useForm<Form>({
-        name: generatedPoNumber || '', // Use generatedPoNumber as default
+        name: generatedPoNumber || '',
         date: new Date().toISOString().split('T')[0],
+        supplier_id: null,
+        notes: '',
         items: [],
     });
 
-    // ...
-
     useEffect(() => {
-        const lowercasedQuery = searchQuery.toLowerCase();
-        const filtered = stocks.filter((stock) => {
-            const matchesSearch = stock.product.part_number.toLowerCase().includes(lowercasedQuery);
-            const matchesCategory = selectedCategory ? stock.product.category.id === parseInt(selectedCategory) : true;
-            const matchesBrand = selectedBrand ? stock.product.brand.id === parseInt(selectedBrand) : true;
-            return matchesSearch && matchesCategory && matchesBrand;
-        });
-        setFilteredStocks(filtered);
-    }, [stocks, searchQuery, selectedCategory, selectedBrand]);
-
-    useEffect(() => {
-        if (errors.items) {
-            toast.error(errors.items);
-        }
-    }, [errors]);
-
-    useEffect(() => {
-        // Force sync if init failed or prop changed
         if (generatedPoNumber && data.name !== generatedPoNumber) {
-            console.log("Syncing name with generatedPoNumber:", generatedPoNumber);
             setData('name', generatedPoNumber);
         }
     }, [generatedPoNumber]);
-    console.log("generatedPoNumber", generatedPoNumber)
-    // Handle opening the modal for a specific product
-    const handleAddProductClick = (stock: Stock) => {
-        setSelectedStock(stock);
-        setQuantityToAdd(1); // Reset quantity each time
+
+    // Product Search Effect
+    useEffect(() => {
+        const fetchProducts = async () => {
+            setIsSearchingProducts(true);
+            try {
+                const params = new URLSearchParams();
+                if (searchQuery) params.append('q', searchQuery);
+                if (selectedCategory && selectedCategory !== 'all') params.append('category_id', selectedCategory);
+                if (selectedBrand && selectedBrand !== 'all') params.append('brand_id', selectedBrand);
+
+                const url = route('dashboard.purchase-order.products.search') + `?${params.toString()}`;
+
+                const response = await fetch(url);
+
+                if (!response.ok) {
+                    const text = await response.text();
+                    console.error('Product search failed:', text);
+                    throw new Error(`Search failed: ${response.status}`);
+                }
+
+                const data = await response.json();
+                setSearchResults(data);
+            } catch (error) {
+                console.error("Failed to fetch products", error);
+            } finally {
+                setIsSearchingProducts(false);
+            }
+        };
+
+        const timeoutId = setTimeout(() => {
+            fetchProducts();
+        }, 300); // Debounce
+
+        return () => clearTimeout(timeoutId);
+    }, [searchQuery, selectedCategory, selectedBrand]);
+
+    // Supplier Search Effect
+    useEffect(() => {
+        const fetchSuppliers = async () => {
+            try {
+                const url = route('dashboard.purchase-order.suppliers.search') + `?q=${supplierQuery}`;
+
+                const response = await fetch(url);
+
+                if (!response.ok) {
+                    const text = await response.text();
+                    console.error('Supplier search failed:', text);
+                    throw new Error(`Search failed: ${response.status}`);
+                }
+
+                const data = await response.json();
+                setSuppliers(data);
+            } catch (error) {
+                console.error("Failed to fetch suppliers", error);
+            }
+        };
+
+        const timeoutId = setTimeout(() => {
+            fetchSuppliers();
+        }, 300);
+
+        return () => clearTimeout(timeoutId);
+    }, [supplierQuery]);
+
+
+    const handleAddProductClick = (product: Product) => {
+        setSelectedProduct(product);
+        setQuantityToAdd(1);
         setIsModalOpen(true);
     };
 
     const handleConfirmAdd = () => {
-        if (selectedStock) {
-
-            // Check if the item is already in the list
+        if (selectedProduct) {
+            // Check if item exists
             const existingItemIndex = data.items.findIndex(
-                (item) => item.stock_id === selectedStock.id
+                (item) => item.product_id === selectedProduct.id
             );
 
             if (existingItemIndex !== -1) {
-                // If it exists, update the quantity
                 setData((prevData) => {
                     const newItems = [...prevData.items];
                     newItems[existingItemIndex].quantity += quantityToAdd;
@@ -146,15 +212,14 @@ export default function Create({ stocks, categories, brands, generatedPoNumber }
                 });
                 toast.success('Quantity updated successfully!');
             } else {
-                // Otherwise, add a new item
                 setData((prevData) => ({
                     ...prevData,
                     items: [
                         ...prevData.items,
                         {
-                            stock_id: selectedStock.id,
-                            name: selectedStock.product.name,
-                            part_number: selectedStock.product.part_number,
+                            product_id: selectedProduct.id,
+                            name: selectedProduct.name,
+                            part_number: selectedProduct.part_number,
                             quantity: quantityToAdd,
                         },
                     ],
@@ -162,7 +227,7 @@ export default function Create({ stocks, categories, brands, generatedPoNumber }
                 toast.success('Product added to purchase order!');
             }
             setIsModalOpen(false);
-            setSelectedStock(null);
+            setSelectedProduct(null);
         }
     };
 
@@ -177,16 +242,19 @@ export default function Create({ stocks, categories, brands, generatedPoNumber }
             toast.error('Please add at least one item to the purchase order.');
             return;
         }
+        if (!data.supplier_id) {
+            toast.error('Please select a supplier.');
+            return;
+        }
+
         post(route('dashboard.purchase-order.store'), {
             onSuccess: () => {
                 toast.success('Purchase order created successfully!');
                 reset();
+                setSelectedSupplier(null);
             },
             onError: (errors) => {
-                if (errors.name) toast.error(errors.name);
-                if (errors.date) toast.error(errors.date);
-                if (errors.items) toast.error(errors.items);
-                console.error(errors);
+                Object.values(errors).forEach(e => toast.error(e));
             },
         });
     };
@@ -195,7 +263,8 @@ export default function Create({ stocks, categories, brands, generatedPoNumber }
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Create Purchase Order" />
             <Toaster position="bottom-right" richColors />
-            <div className="mx-auto p-4 sm:p-6 lg:p-8">
+            <div className="flex h-full flex-1 flex-col gap-6 overflow-x-auto rounded-xl p-6">
+
                 <form onSubmit={handleSubmit} className="space-y-6">
                     <Card>
                         <CardHeader>
@@ -228,6 +297,71 @@ export default function Create({ stocks, categories, brands, generatedPoNumber }
                                     />
                                     {errors.date && <p className="text-red-500 text-sm">{errors.date}</p>}
                                 </div>
+                                <div className="space-y-2 flex flex-col">
+                                    <Label>Supplier</Label>
+                                    <Popover open={openSupplier} onOpenChange={setOpenSupplier}>
+                                        <PopoverTrigger asChild>
+                                            <Button
+                                                variant="outline"
+                                                role="combobox"
+                                                aria-expanded={openSupplier}
+                                                className="w-full justify-between"
+                                            >
+                                                {selectedSupplier ? selectedSupplier.name : "Select supplier..."}
+                                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                            </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-[400px] p-0">
+                                            <Command shouldFilter={false}>
+                                                <CommandInput
+                                                    placeholder="Search supplier..."
+                                                    onValueChange={setSupplierQuery}
+                                                />
+                                                <CommandList>
+                                                    <CommandEmpty>No supplier found.</CommandEmpty>
+                                                    <CommandGroup>
+                                                        {suppliers.map((supplier) => (
+                                                            <CommandItem
+                                                                key={supplier.id}
+                                                                value={String(supplier.id)}
+                                                                onSelect={() => {
+                                                                    setSelectedSupplier(supplier);
+                                                                    setData('supplier_id', supplier.id);
+                                                                    setOpenSupplier(false);
+                                                                }}
+                                                            >
+                                                                <Check
+                                                                    className={cn(
+                                                                        "mr-2 h-4 w-4",
+                                                                        selectedSupplier?.id === supplier.id ? "opacity-100" : "opacity-0"
+                                                                    )}
+                                                                />
+                                                                <div className="flex flex-col">
+                                                                    <span>{supplier.name}</span>
+                                                                    <span className="text-xs text-muted-foreground">{supplier.mobile} - {supplier.email}</span>
+                                                                </div>
+                                                            </CommandItem>
+                                                        ))}
+                                                    </CommandGroup>
+                                                </CommandList>
+                                            </Command>
+                                        </PopoverContent>
+                                    </Popover>
+                                    {errors.supplier_id && <p className="text-red-500 text-sm">{errors.supplier_id}</p>}
+                                </div>
+                                <div className="space-y-2">
+                                    {/* Placeholder to align grid if needed, or just notes full width below */}
+                                </div>
+                            </div>
+                            <div className="mt-4 space-y-2">
+                                <Label htmlFor="notes">Notes</Label>
+                                <Textarea
+                                    id="notes"
+                                    value={data.notes}
+                                    onChange={(e) => setData('notes', e.target.value)}
+                                    placeholder="Add any additional notes here..."
+                                />
+                                {errors.notes && <p className="text-red-500 text-sm">{errors.notes}</p>}
                             </div>
                         </CardContent>
                     </Card>
@@ -236,20 +370,20 @@ export default function Create({ stocks, categories, brands, generatedPoNumber }
                     <Card >
                         <CardHeader>
                             <CardTitle>Products</CardTitle>
-                            <CardDescription>Select products to add to the purchase order.</CardDescription>
+                            <CardDescription>Search and select products to add to the purchase order.</CardDescription>
                         </CardHeader>
                         <CardContent>
                             <div className="flex flex-col overflow-y-auto overflow-x-auto sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4 mb-4">
                                 <Input
                                     type="text"
-                                    placeholder="Search by Part Number..."
+                                    placeholder="Search by Part Number or Name..."
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
                                     className="flex-1"
                                 />
-                                <Select onValueChange={setSelectedCategory} value={selectedCategory || ''}>
+                                <Select onValueChange={setSelectedCategory} value={selectedCategory || 'all'}>
                                     <SelectTrigger className="w-[180px]">
-                                        <SelectValue placeholder="Filter by Category" />
+                                        <SelectValue placeholder="Category" />
                                     </SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="all">All Categories</SelectItem>
@@ -260,9 +394,9 @@ export default function Create({ stocks, categories, brands, generatedPoNumber }
                                         ))}
                                     </SelectContent>
                                 </Select>
-                                <Select onValueChange={setSelectedBrand} value={selectedBrand || ''}>
+                                <Select onValueChange={setSelectedBrand} value={selectedBrand || 'all'}>
                                     <SelectTrigger className="w-[180px]">
-                                        <SelectValue placeholder="Filter by Brand" />
+                                        <SelectValue placeholder="Brand" />
                                     </SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="all">All Brands</SelectItem>
@@ -274,41 +408,32 @@ export default function Create({ stocks, categories, brands, generatedPoNumber }
                                     </SelectContent>
                                 </Select>
                             </div>
+
                             <div className="max-h-96 overflow-y-auto overflow-x-auto border rounded-md">
                                 <Table className="[&_*]:max-w-[200px] [&_*]:truncate [&_*]:overflow-hidden [&_*]:whitespace-nowrap">
                                     <TableHeader>
                                         <TableRow>
                                             <TableHead>Part No.</TableHead>
                                             <TableHead>Product Name</TableHead>
-                                            <TableHead>Category</TableHead>
-                                            <TableHead>Brand</TableHead>
-                                            <TableHead className="text-right">Stock</TableHead>
                                             <TableHead className="text-right">Action</TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
-                                        {filteredStocks.length > 0 ? (
-                                            filteredStocks.map((stock) => (
-                                                <TableRow key={stock.id}>
+                                        {searchResults.length > 0 ? (
+                                            searchResults.map((product) => (
+                                                <TableRow key={product.id}>
                                                     <TableCell
                                                         className="font-medium whitespace-nowrap max-w-[300px] truncate overflow-hidden"
-                                                        title={stock.product.part_number} // tooltip
+                                                        title={product.part_number}
                                                     >
-                                                        {stock.product.part_number}
+                                                        {product.part_number}
                                                     </TableCell>
 
                                                     <TableCell
                                                         className="whitespace-nowrap max-w-[300px] truncate overflow-hidden"
-                                                        title={stock.product.name} // tooltip
+                                                        title={product.name}
                                                     >
-                                                        {stock.product.name}
-                                                    </TableCell>
-
-                                                    <TableCell>{stock.product.category?.name ?? "Uncategorized"}</TableCell>
-                                                    <TableCell>{stock.product.brand?.name ?? "No Brand"}</TableCell>
-
-                                                    <TableCell className="text-right">
-                                                        {stock.quantity}
+                                                        {product.name}
                                                     </TableCell>
 
                                                     <TableCell className="text-right">
@@ -316,7 +441,7 @@ export default function Create({ stocks, categories, brands, generatedPoNumber }
                                                             type='button'
                                                             variant="ghost"
                                                             size="icon"
-                                                            onClick={() => handleAddProductClick(stock)}
+                                                            onClick={() => handleAddProductClick(product)}
                                                         >
                                                             <PlusCircle className="h-4 w-4" />
                                                         </Button>
@@ -325,7 +450,7 @@ export default function Create({ stocks, categories, brands, generatedPoNumber }
                                             ))
                                         ) : (
                                             <TableRow>
-                                                <TableCell colSpan={6} className="text-center">No products found.</TableCell>
+                                                <TableCell colSpan={3} className="text-center">{isSearchingProducts ? 'Searching...' : 'No products found.'}</TableCell>
                                             </TableRow>
                                         )}
                                     </TableBody>
@@ -352,7 +477,7 @@ export default function Create({ stocks, categories, brands, generatedPoNumber }
                                 <TableBody>
                                     {data.items.length > 0 ? (
                                         data.items.map((item, index) => (
-                                            <TableRow key={item.stock_id}>
+                                            <TableRow key={index}>
                                                 <TableCell>{item.part_number}</TableCell>
                                                 <TableCell>{item.name}</TableCell>
                                                 <TableCell>
@@ -392,8 +517,7 @@ export default function Create({ stocks, categories, brands, generatedPoNumber }
                         <DialogHeader>
                             <DialogTitle>Add Quantity</DialogTitle>
                             <p className="text-sm text-gray-500">
-                                Enter the quantity for `<strong>{selectedStock?.product.name}</strong>`
-                                (Available: {selectedStock?.quantity}).
+                                Enter the quantity for `<strong>{selectedProduct?.name}</strong>`
                             </p>
                         </DialogHeader>
                         <div className="py-4">

@@ -146,10 +146,10 @@ export default function Edit({ grn }: Props) {
                     <h2 className="font-semibold">Items</h2>
                     {data.items.map((item: any, idx: number) => {
                         const lineTotal = item.quantity * item.unit_price;
-                        const product =
-                            grn.purchase_order.purchase_order_items.find(
-                                (i: any) => i.id === item.purchase_order_item_id
-                            )?.stock?.product ?? '';
+                        const poItem = grn.purchase_order.purchase_order_items.find(
+                            (i: any) => i.id === item.purchase_order_item_id
+                        );
+                        const product = poItem?.product || poItem?.stock?.product;
 
                         // Load initial selling price if not set, from stock if possible, otherwise keep as is
                         // We rely on backend to have passed stock info. In 'edit', we load 'grnItems'.

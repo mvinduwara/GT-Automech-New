@@ -19,10 +19,10 @@ interface Props {
 export default function Create({ purchaseOrder, nextGrnNumber }: Props) {
     const { data, setData, post, processing, errors, reset } = useForm({
         grn_no: nextGrnNumber,
-        supplier_id: '',
+        supplier_id: purchaseOrder.supplier_id || '',
         purchase_order_id: purchaseOrder.id,
         date: new Date().toISOString().substr(0, 10),
-        remarks: '',
+        remarks: purchaseOrder.notes || '',
         items: purchaseOrder.purchase_order_items.map((i: any) => ({
             purchase_order_item_id: i.id,
             quantity: i.quantity,
@@ -34,7 +34,7 @@ export default function Create({ purchaseOrder, nextGrnNumber }: Props) {
 
     const [supplierQuery, setSupplierQuery] = useState('');
     const [supplierResults, setSupplierResults] = useState<any[]>([]);
-    const [selectedSupplier, setSelectedSupplier] = useState<any>(null);
+    const [selectedSupplier, setSelectedSupplier] = useState<any>(purchaseOrder.supplier || null);
 
     const searchSupplier = async (q: string) => {
         if (q.length < 2) return setSupplierResults([]);
@@ -132,10 +132,15 @@ export default function Create({ purchaseOrder, nextGrnNumber }: Props) {
                     <h2 className="font-semibold">Items</h2>
                     {data.items.map((item: any, idx: number) => {
                         const lineTotal = item.quantity * item.unit_price;
+                        const originalItem = purchaseOrder.purchase_order_items[idx];
+                        const product = originalItem.product || originalItem.stock?.product;
+                        const productName = product?.name || 'Unknown Product';
+                        const productPartNo = product?.part_number || 'N/A';
+
                         return (
                             <div key={idx} className="border p-4 rounded space-y-2">
                                 <p className="font-semibold">
-                                    {purchaseOrder.purchase_order_items[idx].stock.product.name + " (" + purchaseOrder.purchase_order_items[idx].stock.product.part_number + ")"}
+                                    {productName} ({productPartNo})
                                 </p>
                                 <div className="grid grid-cols-4 gap-2">
                                     <div>

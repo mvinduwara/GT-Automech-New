@@ -142,29 +142,23 @@
             </div>
         </div>
 
+        @if($po->supplier)
         <div class="section">
             <h3>Supplier</h3>
             <div class="kv">
-                <!-- Assuming supplier relation exists on PO or through Items logic if PO has no direct supplier field -->
-                <!-- Since PO Logic often involves creating PO for general stock or multiple suppliers, we check the data structure -->
-                <!-- The current PO creation doesn't explicitly link a Supplier to the PO header, but items come from stocks.
-                     However, usually a PO is sent to a SUPPLIER. The current create design allows picking any product.
-                     If there is no single supplier, we might skip this or just show 'Internal / Various'.
-                     But looking at GRN, it requires a Supplier.
-                     Let's check if the PO model has a supplier_id or if we can infer it.
-                     The Controller 'print' method loads 'supplier' but the 'create' method didn't enforce it.
-                     Let's check the Model briefly. If no supplier, we leave it blank or Generic. -->
-                 
-                 {{-- If your PO has a supplier_id --}}
-                 @if($po->supplier)
-                    <span>Name</span><span>{{ $po->supplier->name }}</span>
-                    <span>Phone</span><span>{{ $po->supplier->phone ?? $po->supplier->mobile ?? 'N/A' }}</span>
-                    <span>Email</span><span>{{ $po->supplier->email ?? 'N/A' }}</span>
-                 @else
-                    <span>Note</span><span>Open Purchase Order</span>
-                 @endif
+                <span>Name</span><span>{{ $po->supplier->name }}</span>
+                <span>Mobile</span><span>{{ $po->supplier->mobile ?? 'N/A' }}</span>
+                <span>Email</span><span>{{ $po->supplier->email ?? 'N/A' }}</span>
             </div>
         </div>
+        @endif
+
+        @if($po->notes)
+        <div class="section">
+            <h3>Notes</h3>
+            <p>{{ $po->notes }}</p>
+        </div>
+        @endif
 
         <table>
             <thead>
@@ -177,8 +171,8 @@
             <tbody>
                 @foreach ($po->purchaseOrderItems as $item)
                     <tr>
-                        <td>{{ $item->stock->product->part_number ?? 'N/A' }}</td>
-                        <td>{{ $item->stock->product->name ?? 'N/A' }}</td>
+                        <td>{{ $item->product->part_number ?? $item->stock->product->part_number ?? 'N/A' }}</td>
+                        <td>{{ $item->product->name ?? $item->stock->product->name ?? 'N/A' }}</td>
                         <td class="right">{{ $item->quantity }}</td>
                     </tr>
                 @endforeach

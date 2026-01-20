@@ -66,7 +66,7 @@ class GrnController extends Controller
     public function create($purchaseOrderId)
     {
         Log::info('GRN create page opened', ['purchase_order_id' => $purchaseOrderId]);
-        $po = PurchaseOrder::with('purchaseOrderItems.stock.product')
+        $po = PurchaseOrder::with('purchaseOrderItems.product', 'purchaseOrderItems.stock.product', 'supplier') // Load product directly too
             ->findOrFail($purchaseOrderId);
 
         // Generate next GRN Number: GRN-YYYY-SEQUENCE
@@ -125,23 +125,37 @@ class GrnController extends Controller
                 // We must assume the 'PurchaseOrderItem' model exists.
                 $poItem = PurchaseOrderItem::find($item['purchase_order_item_id']);
 
-                if (!$poItem || !$poItem->stock_id) {
-                    throw new \Exception("Stock information is missing for PO Item ID: {$item['purchase_order_item_id']}.");
+                if (!$poItem) {
+                    throw new \Exception("PO Item ID: {$item['purchase_order_item_id']} not found.");
                 }
 
-                $stockId = $poItem->stock_id;
+                $newStock = null;
 
-                // 3. Create a NEW Stock record (Batch)
-                $templateStock = Stock::findOrFail($stockId);
+                if ($poItem->stock_id) {
+                    // Legacy path or if stock is linked
+                    $templateStock = Stock::findOrFail($poItem->stock_id);
+                    $newStock = Stock::create([
+                        'product_id' => $templateStock->product_id,
+                        'alternative_product_id' => $templateStock->alternative_product_id,
+                        'quantity' => $item['quantity'],
+                        'buying_price' => $item['unit_price'],
+                        'selling_price' => $item['selling_price'], // Use input selling price
+                        'status' => 'active',
+                    ]);
+                } else if ($poItem->product_id) {
+                    // New path: Create stock from Product
+                    $newStock = Stock::create([
+                        'product_id' => $poItem->product_id,
+                        'alternative_product_id' => null,
+                        'quantity' => $item['quantity'],
+                        'buying_price' => $item['unit_price'],
+                        'selling_price' => $item['selling_price'],
+                        'status' => 'active',
+                    ]);
+                } else {
+                    throw new \Exception("Stock information (stock_id or product_id) is missing for PO Item ID: {$item['purchase_order_item_id']}.");
+                }
 
-                $newStock = Stock::create([
-                    'product_id' => $templateStock->product_id,
-                    'alternative_product_id' => $templateStock->alternative_product_id,
-                    'quantity' => $item['quantity'],
-                    'buying_price' => $item['unit_price'],
-                    'selling_price' => $item['selling_price'], // Use input selling price
-                    'status' => 'active',
-                ]);
 
                 $stockId = $newStock->id; // Use the new stock ID for the GRN Item
 
@@ -197,7 +211,7 @@ class GrnController extends Controller
     public function edit($grnId)
     {
         Log::info('GRN edit page opened', ['grn_id' => $grnId]);
-        $grn = Grn::with(['grnItems.stock', 'supplier', 'purchaseOrder.purchaseOrderItems', 'purchaseOrder.purchaseOrderItems.stock.product'])
+        $grn = Grn::with(['grnItems.stock', 'supplier', 'purchaseOrder.purchaseOrderItems.product', 'purchaseOrder.purchaseOrderItems.stock.product'])
             ->findOrFail($grnId);
 
         return Inertia::render('grn/edit', ['grn' => $grn]);
@@ -207,7 +221,7 @@ class GrnController extends Controller
     public function show($grnId)
     {
         Log::info('GRN show page opened', ['grn_id' => $grnId]);
-        $grn = Grn::with(['grnItems.purchaseOrderItem.stock.product', 'supplier', 'purchaseOrder'])
+        $grn = Grn::with(['grnItems.purchaseOrderItem.product', 'grnItems.purchaseOrderItem.stock.product', 'supplier', 'purchaseOrder'])
             ->findOrFail($grnId);
 
         return Inertia::render('grn/view', ['grn' => $grn]);
@@ -272,10 +286,21 @@ class GrnController extends Controller
 
                 // === START: STOCK APPLICATION LOGIC ===
                 $poItem = PurchaseOrderItem::find($item['purchase_order_item_id']);
-                if (!$poItem || !$poItem->stock_id) {
-                    throw new \Exception("Stock information is missing for PO Item ID: {$item['purchase_order_item_id']}.");
+                // if (!$poItem || !$poItem->stock_id) {
+                //    throw new \Exception("Stock information is missing for PO Item ID: {$item['purchase_order_item_id']}.");
+                // } 
+                if (!$poItem) {
+                    throw new \Exception("PO Item ID: {$item['purchase_order_item_id']} not found.");
                 }
-                $stockId = $poItem->stock_id;
+
+                // $stockId = $poItem->stock_id;
+                // Determine base product ID from PO Item (either direct product or via stock)
+                $productId = $poItem->product_id;
+                if (!$productId && $poItem->stock_id) {
+                    $st = Stock::find($poItem->stock_id);
+                    if ($st)
+                        $productId = $st->product_id;
+                }
 
 
                 // 2. Find and apply new stock quantity
@@ -307,10 +332,9 @@ class GrnController extends Controller
                     } else {
                         // Fallback if existing item had no stock_id (shouldn't happen)
                         // Treat as new stock creation
-                        $templateStock = Stock::findOrFail($stockId); // $stockId from PO Item
                         $newStock = Stock::create([
-                            'product_id' => $templateStock->product_id,
-                            'alternative_product_id' => $templateStock->alternative_product_id,
+                            'product_id' => $productId,
+                            'alternative_product_id' => null, // Simplified
                             'quantity' => $item['quantity'],
                             'buying_price' => $item['unit_price'],
                             'selling_price' => $item['selling_price'], // Use input
@@ -320,10 +344,9 @@ class GrnController extends Controller
                     }
                 } else {
                     // New Item: Create new stock
-                    $templateStock = Stock::findOrFail($stockId); // $stockId from PO Item
                     $newStock = Stock::create([
-                        'product_id' => $templateStock->product_id,
-                        'alternative_product_id' => $templateStock->alternative_product_id,
+                        'product_id' => $productId,
+                        'alternative_product_id' => null, // Simplified
                         'quantity' => $item['quantity'],
                         'buying_price' => $item['unit_price'],
                         'selling_price' => $item['selling_price'], // Use input
@@ -419,7 +442,7 @@ class GrnController extends Controller
 
     public function print($id)
     {
-        $grn = Grn::with(['grnItems.purchaseOrderItem.stock.product', 'supplier', 'purchaseOrder'])
+        $grn = Grn::with(['grnItems.purchaseOrderItem.product', 'grnItems.purchaseOrderItem.stock.product', 'supplier', 'purchaseOrder'])
             ->findOrFail($id);
 
         return view('grn.print', compact('grn'));

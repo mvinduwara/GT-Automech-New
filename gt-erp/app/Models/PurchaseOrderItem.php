@@ -19,6 +19,7 @@ class PurchaseOrderItem extends Model
     protected $fillable = [
         'purchase_order_id',
         'stock_id',
+        'product_id',
         'quantity',
         'is_approved',
     ];
@@ -42,7 +43,12 @@ class PurchaseOrderItem extends Model
     {
         return $this->belongsTo(Stock::class);
     }
-    
+
+    public function product(): BelongsTo
+    {
+        return $this->belongsTo(Product::class);
+    }
+
     public function grnItems(): HasMany
     {
         return $this->hasMany(GrnItem::class);

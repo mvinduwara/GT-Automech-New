@@ -26,22 +26,32 @@ import { Head, router, useForm, usePage } from '@inertiajs/react';
 import { Link, Printer } from "lucide-react";
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from "@/components/ui/separator";
+
+type Product = {
+    name: string;
+    part_number: string;
+}
 
 type PurchaseOrderItem = {
     id: number;
     purchase_order_id: number;
-    stock_id: number;
+    product_id: number;
     quantity: number;
     is_approved: number;
     created_at: string;
     updated_at: string;
-    stock: {
-        product: {
-            name: string;
-            part_number: string;
-        }
-    }
+    product: Product;
+    // stock: { product: Product } // Legacy support if needed, but we should focus on product
 };
+
+type Supplier = {
+    id: number;
+    name: string;
+    mobile: string;
+    email: string;
+}
 
 type PurchaseOrder = {
     id: number;
@@ -49,6 +59,9 @@ type PurchaseOrder = {
     date: string;
     status: 'pending' | 'checked' | 'requested' | 'completed';
     purchase_order_items: PurchaseOrderItem[];
+    supplier_id: number | null;
+    supplier?: Supplier;
+    notes: string | null;
 };
 
 export default function View({ purchaseOrder }: { purchaseOrder: PurchaseOrder }) {
@@ -121,95 +134,130 @@ export default function View({ purchaseOrder }: { purchaseOrder: PurchaseOrder }
             <div className="flex h-full flex-1 flex-col gap-4 rounded-xl p-4 overflow-x-auto">
                 <Card>
                     <CardHeader>
-                        <div className='flex items-center justify-between'>
-                            <CardTitle className='w-full'>Purchase Order: {purchaseOrder.name}</CardTitle>
-                            {purchaseOrder.status != 'requested' && (
-                                <AlertDialog>
-                                    <AlertDialogTrigger asChild>
-                                        <Button disabled={purchaseOrder.status != 'checked'} variant={'outline'} className='text-red-800'>Request</Button>
-                                    </AlertDialogTrigger>
-                                    <AlertDialogContent>
-                                        <AlertDialogHeader>
-                                            <AlertDialogTitle>Request purchase order</AlertDialogTitle>
-                                            <AlertDialogDescription>
-                                                Are you sure you want to request this purchase order?
-                                            </AlertDialogDescription>
-                                        </AlertDialogHeader>
-                                        <AlertDialogFooter>
-                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                            <AlertDialogAction onClick={handleRequested}>Continue</AlertDialogAction>
-                                        </AlertDialogFooter>
-                                    </AlertDialogContent>
-                                </AlertDialog>
-                            )}
-                            {purchaseOrder.status === 'requested' && (
-                                <AlertDialog>
-                                    <AlertDialogTrigger asChild>
-                                        <Button variant={'secondary'} className='bg-yellow-200 hover:bg-yellow-400'>Create GRN</Button>
-                                    </AlertDialogTrigger>
-                                    <AlertDialogContent>
-                                        <AlertDialogHeader>
-                                            <AlertDialogTitle>Create GRN</AlertDialogTitle>
-                                            <AlertDialogDescription>
-                                                Are you sure you want to Create GRN for this purchase order?
-                                            </AlertDialogDescription>
-                                        </AlertDialogHeader>
-                                        <AlertDialogFooter>
-                                            <AlertDialogCancel >Cancel</AlertDialogCancel>
-                                            <AlertDialogAction onClick={() => { router.visit(`/dashboard/grn/create/${purchaseOrder.id}`) }}>
-                                                Create
-                                            </AlertDialogAction>
-                                        </AlertDialogFooter>
-                                    </AlertDialogContent>
-                                </AlertDialog>)}
+                        <div className='flex flex-wrap items-center justify-between gap-4'>
+                            <div>
+                                <CardTitle className='text-2xl'>Purchase Order: {purchaseOrder.name}</CardTitle>
+                                <div className="mt-2 text-sm text-muted-foreground flex items-center gap-4">
+                                    <Badge variant="outline">{purchaseOrder.status.toUpperCase()}</Badge>
+                                    <span>{purchaseOrder.date}</span>
+                                </div>
+                            </div>
 
-                            <a href={`/dashboard/purchase-order/${purchaseOrder.id}/print`} target="_blank" rel="noopener noreferrer">
-                                <Button variant="outline" className="gap-2 ml-2">
-                                    <Printer className="h-4 w-4" />
-                                    Print
-                                </Button>
-                            </a>
+                            <div className="flex items-center gap-2">
+                                {purchaseOrder.status != 'requested' && (
+                                    <AlertDialog>
+                                        <AlertDialogTrigger asChild>
+                                            <Button disabled={purchaseOrder.status != 'checked'} variant={'outline'} className='text-red-800'>Request</Button>
+                                        </AlertDialogTrigger>
+                                        <AlertDialogContent>
+                                            <AlertDialogHeader>
+                                                <AlertDialogTitle>Request purchase order</AlertDialogTitle>
+                                                <AlertDialogDescription>
+                                                    Are you sure you want to request this purchase order?
+                                                </AlertDialogDescription>
+                                            </AlertDialogHeader>
+                                            <AlertDialogFooter>
+                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                <AlertDialogAction onClick={handleRequested}>Continue</AlertDialogAction>
+                                            </AlertDialogFooter>
+                                        </AlertDialogContent>
+                                    </AlertDialog>
+                                )}
+                                {purchaseOrder.status === 'requested' && (
+                                    <AlertDialog>
+                                        <AlertDialogTrigger asChild>
+                                            <Button variant={'secondary'} className='bg-yellow-200 hover:bg-yellow-400'>Create GRN</Button>
+                                        </AlertDialogTrigger>
+                                        <AlertDialogContent>
+                                            <AlertDialogHeader>
+                                                <AlertDialogTitle>Create GRN</AlertDialogTitle>
+                                                <AlertDialogDescription>
+                                                    Are you sure you want to Create GRN for this purchase order?
+                                                </AlertDialogDescription>
+                                            </AlertDialogHeader>
+                                            <AlertDialogFooter>
+                                                <AlertDialogCancel >Cancel</AlertDialogCancel>
+                                                <AlertDialogAction onClick={() => { router.visit(`/dashboard/grn/create/${purchaseOrder.id}`) }}>
+                                                    Create
+                                                </AlertDialogAction>
+                                            </AlertDialogFooter>
+                                        </AlertDialogContent>
+                                    </AlertDialog>)}
+
+                                <a href={`/dashboard/purchase-order/${purchaseOrder.id}/print`} target="_blank" rel="noopener noreferrer">
+                                    <Button variant="outline" className="gap-2">
+                                        <Printer className="h-4 w-4" />
+                                        Print
+                                    </Button>
+                                </a>
+                            </div>
                         </div>
                     </CardHeader>
-                    <CardContent>
-                        <p><strong>Date:</strong> {purchaseOrder.date}</p>
-                        <p><strong>Status:</strong> {purchaseOrder.status.charAt(0).toUpperCase() + purchaseOrder.status.slice(1)}</p>
-
-                        <div className="mt-6 overflow-x-auto">
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Product</TableHead>
-                                        <TableHead>Part Number</TableHead>
-                                        <TableHead>Quantity</TableHead>
-                                        <TableHead className="text-center">Approved</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {data.items.map((item: any) => {
-                                        const originalItem = purchaseOrder.purchase_order_items.find(
-                                            (original: PurchaseOrderItem) => original.id === item.id
-                                        );
-                                        return (
-                                            <TableRow key={item.id}>
-                                                <TableCell>{originalItem?.stock?.product?.name}</TableCell>
-                                                <TableCell>{originalItem?.stock?.product?.part_number}</TableCell>
-                                                <TableCell>{originalItem?.quantity}</TableCell>
-                                                <TableCell className="text-center">
-                                                    <Switch
-                                                        disabled={processing || purchaseOrder.status === 'checked'}
-                                                        checked={!!item.is_approved}
-                                                        onCheckedChange={(checked) => handleApprovalChange(item.id, checked)}
-                                                    />
-                                                </TableCell>
-                                            </TableRow>
-                                        );
-                                    })}
-                                </TableBody>
-                            </Table>
+                    <CardContent className="space-y-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <h3 className="font-semibold text-lg mb-2">Supplier Details</h3>
+                                {purchaseOrder.supplier ? (
+                                    <div className="text-sm space-y-1">
+                                        <p><span className="font-medium">Name:</span> {purchaseOrder.supplier.name}</p>
+                                        <p><span className="font-medium">Mobile:</span> {purchaseOrder.supplier.mobile}</p>
+                                        <p><span className="font-medium">Email:</span> {purchaseOrder.supplier.email}</p>
+                                    </div>
+                                ) : (
+                                    <p className="text-sm text-gray-500">No supplier selected.</p>
+                                )}
+                            </div>
+                            <div>
+                                <h3 className="font-semibold text-lg mb-2">Notes</h3>
+                                <p className="text-sm whitespace-pre-wrap bg-gray-50 p-3 rounded-md min-h-[50px]">
+                                    {purchaseOrder.notes ?? 'No notes provided.'}
+                                </p>
+                            </div>
                         </div>
 
-                        <div className="mt-6 flex justify-end">
+                        <Separator />
+
+                        <div>
+                            <h3 className="font-semibold text-lg mb-4">Items</h3>
+                            <div className="border rounded-md">
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead>Product Name</TableHead>
+                                            <TableHead>Part Number</TableHead>
+                                            <TableHead>Quantity</TableHead>
+                                            <TableHead className="text-center">Approved</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {data.items.map((item: any) => {
+                                            const originalItem = purchaseOrder.purchase_order_items.find(
+                                                (original: PurchaseOrderItem) => original.id === item.id
+                                            );
+                                            // Handle both direct product and nested stock.product (legacy)
+                                            const product = originalItem?.product || (originalItem as any)?.stock?.product;
+
+                                            return (
+                                                <TableRow key={item.id}>
+                                                    <TableCell className="font-medium">{product?.name || 'Unknown'}</TableCell>
+                                                    <TableCell>{product?.part_number || 'N/A'}</TableCell>
+                                                    <TableCell>{originalItem?.quantity}</TableCell>
+                                                    <TableCell className="text-center">
+                                                        <Switch
+                                                            disabled={processing || purchaseOrder.status === 'checked'}
+                                                            checked={!!item.is_approved}
+                                                            onCheckedChange={(checked) => handleApprovalChange(item.id, checked)}
+                                                        />
+                                                    </TableCell>
+                                                </TableRow>
+                                            );
+                                        })}
+                                    </TableBody>
+                                </Table>
+                            </div>
+                        </div>
+
+                        <div className="flex justify-end">
                             <Button
                                 onClick={handleFinish}
                                 disabled={!allItemsReviewed || processing}
