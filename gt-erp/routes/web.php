@@ -45,6 +45,14 @@ Route::middleware(['auth'])->group(function () {
 require __DIR__ . '/settings.php';
 require __DIR__ . '/auth.php';
 require __DIR__ . '/stock.php';
+
+use App\Http\Controllers\PurchaseOrder\PurchaseOrderController;
+use App\Http\Controllers\GRN\GrnController;
+
+Route::get('/dashboard/purchase-order/{id}/print', [PurchaseOrderController::class, 'print'])->name('dashboard.purchase-order.print');
+Route::get('/dashboard/grn/{id}/print', [GrnController::class, 'print'])->name('dashboard.grn.print');
+Route::get('/dashboard/grn/{id}', [GrnController::class, 'show'])->name('dashboard.grn.show');
+
 require __DIR__ . '/purchase-order.php';
 require __DIR__ . '/customer.php';
 require __DIR__ . '/grn.php';

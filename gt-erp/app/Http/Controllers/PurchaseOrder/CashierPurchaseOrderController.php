@@ -28,10 +28,16 @@ class CashierPurchaseOrderController extends Controller
         $categories = Category::where('status', 'active')->get();
         $brands = Brand::where('status', 'active')->get();
 
+        // Generate next PO Number: PO-YYYY-SEQUENCE
+        $year = now()->year;
+        $count = PurchaseOrder::whereYear('created_at', $year)->count() + 1;
+        $nextPoNumber = 'PO-' . $year . '-' . str_pad($count, 6, '0', STR_PAD_LEFT);
+
         return Inertia::render('purchase-order/create', [
             'stocks' => $stocks,
             'categories' => $categories,
             'brands' => $brands,
+            'generatedPoNumber' => $nextPoNumber,
         ]);
     }
 

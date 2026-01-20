@@ -22,6 +22,12 @@ class JobCard extends Model
         'ac',
         'electronic',
         'mechanical',
+        'service_types',
+    ];
+
+    protected $casts = [
+        'service_types' => 'array',
+        'date' => 'date',
     ];
 
     public function vehicle()

@@ -36,6 +36,7 @@ Route::middleware(['auth', 'is_admin_or_cashier'])->group(function () {
                     Route::post('/store', [ProductController::class, 'store'])->name('store');
                     Route::get('/{product}/edit', [ProductController::class, 'edit'])->name('edit');
                     Route::post('/{product}/update', [ProductController::class, 'update'])->name('update');
+                    Route::delete('/{product}', [ProductController::class, 'destroy'])->name('destroy');
                 });
 
             Route::prefix('stock')

@@ -26,6 +26,7 @@
         rel="stylesheet">
 
     @routes
+@if (env('APP_DEBUG') === 'true')
     <script>
         (function() {
             const methods = [
@@ -38,6 +39,7 @@
             }
         })();
     </script> 
+     @endif
     @viteReactRefresh
     @vite(['resources/js/app.tsx', "resources/js/pages/{$page['component']}.tsx"])
     @inertiaHead

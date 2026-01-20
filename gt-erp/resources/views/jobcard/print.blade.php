@@ -12,142 +12,146 @@
             padding: 0;
             background: #fff;
             color: #000;
-            font-size: 13px;
+            font-size: 12px;
         }
 
         .job-card {
             width: 210mm;
-            min-height: 297mm;
             margin: auto;
-            padding: 20mm;
+            padding: 15mm;
             box-sizing: border-box;
         }
 
         .header {
             display: flex;
             justify-content: space-between;
-            align-items: flex-start;
             border-bottom: 2px solid #000;
             padding-bottom: 10px;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
         }
 
-        .brand-details {
+        .brand {
             display: flex;
             gap: 12px;
             align-items: center;
         }
 
-        .brand-details img {
+        .brand img {
             width: 60px;
             height: auto;
         }
 
-        .brand-details h1 {
+        .brand h1 {
             margin: 0;
             font-size: 20px;
         }
 
-        .brand-details p {
+        .brand p {
             margin: 2px 0;
-            font-size: 12px;
+            font-size: 10px;
         }
 
-        .meta-info {
+        .meta {
             text-align: right;
         }
 
-        .meta-info h2 {
+        .meta h2 {
             margin: 0;
-            font-size: 22px;
+            font-size: 20px;
         }
 
-        .meta-info .badge {
+        .meta .badge {
             font-weight: bold;
-            font-size: 14px;
-            margin: 4px 0;
-            display: block;
         }
 
         .section {
-            margin-bottom: 20px;
+            margin-bottom: 15px;
+        }
+
+        .details-row {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 15px;
+        }
+
+        .details-row .section {
+            flex: 1;
+            margin-bottom: 0;
         }
 
         .section h3 {
-            margin: 0 0 6px 0;
-            font-size: 14px;
-            font-weight: bold;
+            margin-bottom: 4px;
+            font-size: 12px;
             border-bottom: 1px solid #000;
-            padding-bottom: 3px;
+            padding-bottom: 2px;
         }
 
-        .info-grid {
+        .kv {
             display: grid;
-            grid-template-columns: 120px 1fr;
-            row-gap: 4px;
-        }
-
-        .info-grid span:nth-child(odd) {
-            font-weight: 500;
+            grid-template-columns: 70px 1fr;
+            row-gap: 2px;
         }
 
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
         }
 
         table thead th {
             border-bottom: 2px solid #000;
             text-align: left;
-            padding: 6px;
-            font-size: 12px;
+            padding: 4px;
+            font-size: 10px;
             text-transform: uppercase;
         }
 
         table tbody td {
-            padding: 6px;
+            padding: 4px;
             border-bottom: 1px solid #ccc;
         }
 
-        .text-right {
+        .right {
             text-align: right;
         }
 
         .totals {
-            max-width: 300px;
+            max-width: 250px;
             margin-left: auto;
         }
 
         .totals .row {
             display: flex;
             justify-content: space-between;
-            padding: 4px 0;
+            padding: 2px 0;
         }
 
         .totals .grand {
             font-weight: bold;
-            font-size: 14px;
+            font-size: 12px;
             border-top: 2px solid #000;
             margin-top: 4px;
-            padding-top: 6px;
+            padding-top: 4px;
         }
 
         .footer {
             border-top: 1px solid #000;
-            padding-top: 10px;
-            font-size: 12px;
-            margin-top: 40px;
+            padding-top: 8px;
+            font-size: 10px;
+            margin-top: 30px;
             text-align: center;
         }
 
         .no-content {
-            text-align: center;
-            padding: 20px;
             color: #888;
+            font-style: italic;
         }
 
         @media print {
+            @page {
+                margin: 0;
+                size: auto;
+            }
             body {
                 margin: 0;
             }
@@ -158,15 +162,15 @@
 <body>
     <div class="job-card">
         <div class="header">
-            <div class="brand-details">
-                {{-- <img src="{{ public_path('assets/images/logo.jpg') }}" alt="GT Logo"> --}}
+            <div class="brand">
+                {{-- <img src="{{ asset('assets/img/gt-nav.png') }}" alt="GT Logo"> --}}
                 <div>
                     <h1>GT Automech</h1>
                     <p>186/2, Raigama Junction, Kothalawala, Bandaragama</p>
                     <p>www.gtdrive.lk • info@gtdrive.lk • +94 77 409 8580</p>
                 </div>
             </div>
-            <div class="meta-info">
+            <div class="meta">
                 <h2>JOB CARD</h2>
                 <div class="badge">#{{ $jobCard->job_card_no }}</div>
                 <div>Date: {{ \Carbon\Carbon::parse($jobCard->date)->format('d M Y') }}</div>
@@ -174,33 +178,33 @@
             </div>
         </div>
 
-        <div style="display: flex; gap: 20px; margin-bottom: 20px;">
-            <div class="section" style="flex: 1;">
+        <div class="details-row">
+            <div class="section">
                 <h3>Customer Details</h3>
-                <div class="info-grid">
+                <div class="kv">
                     <span>Name</span><span>{{ $jobCard->customer->title }} {{ $jobCard->customer->name }}</span>
-                    <span>Mobile</span><span>{{ $jobCard->customer->mobile }}</span>
+                    <span>Phone</span><span>{{ $jobCard->customer->mobile }}</span>
                     <span>Address</span><span>{{ $jobCard->customer->address ?? 'N/A' }}</span>
                 </div>
             </div>
-            <div class="section" style="flex: 1;">
+
+            <div class="section">
                 <h3>Vehicle Details</h3>
-                <div class="info-grid">
+                <div class="kv">
+                    <span>Vehicle</span><span>{{ $jobCard->vehicle->brand?->name }} {{ $jobCard->vehicle->model?->name }}</span>
                     <span>Reg. No</span><span>{{ $jobCard->vehicle->vehicle_no }}</span>
-                    <span>Make/Model</span><span>{{ $jobCard->vehicle->brand?->name }}
-                        {{ $jobCard->vehicle->model?->name }}</span>
                     <span>Year</span><span>{{ $jobCard->vehicle->make_year }}</span>
                     <span>Odometer</span><span>{{ number_format($jobCard->mileage) }} km</span>
                 </div>
             </div>
-        </div>
 
-        <div class="section">
-            <h3>Assigned Technicians</h3>
-            <div class="info-grid">
-                <span>Mechanical</span><span>{{ $jobCard->mechanicalTechnician?->first_name ?? 'N/A' }}</span>
-                <span>AC</span><span>{{ $jobCard->acTechnician?->first_name ?? 'N/A' }}</span>
-                <span>Electronic</span><span>{{ $jobCard->electronicTechnician?->first_name ?? 'N/A' }}</span>
+            <div class="section">
+                <h3>Assigned Technicians</h3>
+                <div class="kv">
+                    <span>Mechanical</span><span>{{ $jobCard->mechanicalTechnician?->first_name ?? 'N/A' }}</span>
+                    <span>AC</span><span>{{ $jobCard->acTechnician?->first_name ?? 'N/A' }}</span>
+                    <span>Electronic</span><span>{{ $jobCard->electronicTechnician?->first_name ?? 'N/A' }}</span>
+                </div>
             </div>
         </div>
 
@@ -218,16 +222,15 @@
                     <thead>
                         <tr>
                             <th>Service Description</th>
-                            <th class="text-right">Price (LKR)</th>
+                            <th class="right">Price (LKR)</th>
                         </tr>
                     </thead>
                     <tbody>
                         @foreach ($jobCard->jobCardVehicleServices as $service)
                             @if ($service->is_included)
                                 <tr>
-                                    <td>{{ $service->vehicleService->name }} -
-                                        {{ $service->vehicleServiceOption->name }}</td>
-                                    <td class="text-right">{{ number_format($service->total, 2) }}</td>
+                                    <td>{{ $service->vehicleService->name }} - {{ $service->vehicleServiceOption->name }}</td>
+                                    <td class="right">{{ number_format($service->total, 2) }}</td>
                                 </tr>
                             @endif
                         @endforeach
@@ -246,9 +249,9 @@
                         <tr>
                             <th>Product Name</th>
                             <th>Part Number</th>
-                            <th class="text-right">Qty</th>
-                            <th class="text-right">Unit Price</th>
-                            <th class="text-right">Total</th>
+                            <th class="right">Qty</th>
+                            <th class="right">Unit Price</th>
+                            <th class="right">Total</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -256,9 +259,9 @@
                             <tr>
                                 <td>{{ $product->stock->product->name }}</td>
                                 <td>{{ $product->stock->product->part_number }}</td>
-                                <td class="text-right">{{ $product->quantity }}</td>
-                                <td class="text-right">{{ number_format($product->unit_price, 2) }}</td>
-                                <td class="text-right">{{ number_format($product->total, 2) }}</td>
+                                <td class="right">{{ $product->quantity }}</td>
+                                <td class="right">{{ number_format($product->unit_price, 2) }}</td>
+                                <td class="right">{{ number_format($product->total, 2) }}</td>
                             </tr>
                         @endforeach
                     </tbody>
@@ -275,14 +278,14 @@
                     <thead>
                         <tr>
                             <th>Description</th>
-                            <th class="text-right">Total (LKR)</th>
+                            <th class="right">Total (LKR)</th>
                         </tr>
                     </thead>
                     <tbody>
                         @foreach ($jobCard->jobCardCharges as $charge)
                             <tr>
                                 <td>{{ $charge->name }}</td>
-                                <td class="text-right">{{ number_format($charge->total, 2) }}</td>
+                                <td class="right">{{ number_format($charge->total, 2) }}</td>
                             </tr>
                         @endforeach
                     </tbody>
@@ -306,12 +309,9 @@
     </div>
     <script>
         window.onload = function() {
-            // This triggers the print dialog as soon as the page is ready.
             window.print();
         };
-
         window.onafterprint = function() {
-            // This closes the tab after the print dialog is closed.
             window.close();
         };
     </script>

@@ -13,26 +13,28 @@ import { Combobox } from '@headlessui/react';
 
 interface Props {
     purchaseOrder: any;
+    nextGrnNumber: string;
 }
 
-export default function Create({ purchaseOrder }: Props) {
+export default function Create({ purchaseOrder, nextGrnNumber }: Props) {
     const { data, setData, post, processing, errors, reset } = useForm({
-        grn_no: '',
-        supplier_id: '',
+        grn_no: nextGrnNumber,
+        supplier_id: purchaseOrder.supplier_id || '',
         purchase_order_id: purchaseOrder.id,
         date: new Date().toISOString().substr(0, 10),
-        remarks: '',
+        remarks: purchaseOrder.notes || '',
         items: purchaseOrder.purchase_order_items.map((i: any) => ({
             purchase_order_item_id: i.id,
             quantity: i.quantity,
-            unit_price: 0,
+            unit_price: i.stock?.buying_price || 0,
+            selling_price: i.stock?.selling_price || 0,
             remarks: '',
         })),
     });
 
     const [supplierQuery, setSupplierQuery] = useState('');
     const [supplierResults, setSupplierResults] = useState<any[]>([]);
-    const [selectedSupplier, setSelectedSupplier] = useState<any>(null);
+    const [selectedSupplier, setSelectedSupplier] = useState<any>(purchaseOrder.supplier || null);
 
     const searchSupplier = async (q: string) => {
         if (q.length < 2) return setSupplierResults([]);
@@ -130,12 +132,17 @@ export default function Create({ purchaseOrder }: Props) {
                     <h2 className="font-semibold">Items</h2>
                     {data.items.map((item: any, idx: number) => {
                         const lineTotal = item.quantity * item.unit_price;
+                        const originalItem = purchaseOrder.purchase_order_items[idx];
+                        const product = originalItem.product || originalItem.stock?.product;
+                        const productName = product?.name || 'Unknown Product';
+                        const productPartNo = product?.part_number || 'N/A';
+
                         return (
                             <div key={idx} className="border p-4 rounded space-y-2">
                                 <p className="font-semibold">
-                                    {purchaseOrder.purchase_order_items[idx].stock.product.name + " (" + purchaseOrder.purchase_order_items[idx].stock.product.part_number + ")"}
+                                    {productName} ({productPartNo})
                                 </p>
-                                <div className="grid grid-cols-3 gap-2">
+                                <div className="grid grid-cols-4 gap-2">
                                     <div>
                                         <label className='text-xs' htmlFor="">Quantity</label>
                                         <Input
@@ -160,7 +167,21 @@ export default function Create({ purchaseOrder }: Props) {
                                                 v[idx].unit_price = parseFloat(e.target.value) || 0;
                                                 setData('items', v);
                                             }}
-                                        /></div>
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className='text-xs' htmlFor="">Selling Price (LKR)</label>
+                                        <Input
+                                            type="number"
+                                            placeholder="Selling Price (LKR)"
+                                            value={item.selling_price}
+                                            onChange={(e) => {
+                                                const v = [...data.items];
+                                                v[idx].selling_price = parseFloat(e.target.value) || 0;
+                                                setData('items', v);
+                                            }}
+                                        />
+                                    </div>
                                     <div>
                                         <label className='text-xs' htmlFor="">Total</label>
                                         <Input

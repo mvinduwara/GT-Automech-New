@@ -28,9 +28,13 @@ Route::middleware(['auth', 'is_admin_or_cashier'])->group(function () {
     Route::prefix('dashboard/purchase-order')
         ->name('dashboard.purchase-order.')
         ->group(function () {
-           Route::get('/create', [CashierPurchaseOrderController::class, 'create'])->name('create');
-            Route::post('/store', [CashierPurchaseOrderController::class, 'store'])->name('store');
-            Route::get('/{purchase_order_id}/edit', [CashierPurchaseOrderController::class, 'edit'])->name('edit');
-            Route::put('/{purchase_order_id}', [CashierPurchaseOrderController::class, 'update'])->name('update');
+            Route::get('/create', [PurchaseOrderController::class, 'create'])->name('create');
+            Route::post('/store', [PurchaseOrderController::class, 'store'])->name('store');
+            Route::get('/{purchase_order_id}/edit', [PurchaseOrderController::class, 'edit'])->name('edit');
+            Route::put('/{purchase_order_id}', [PurchaseOrderController::class, 'update'])->name('update');
+
+            // Search Routes
+            Route::get('/products/search', [PurchaseOrderController::class, 'searchProducts'])->name('products.search');
+            Route::get('/suppliers/search', [PurchaseOrderController::class, 'searchSuppliers'])->name('suppliers.search');
         });
 });

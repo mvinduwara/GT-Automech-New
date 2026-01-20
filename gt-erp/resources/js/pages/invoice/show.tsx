@@ -10,7 +10,7 @@ import InvoiceStatusForm from "./InvoiceStatusForm";
 import PaymentMethodForm from "./PaymentMethodForm";
 
 type InvoiceStatus = "draft" | "unpaid" | "partial" | "paid" | "cancelled";
-type PaymentMethod = 'cash' | 'card' | 'online' | 'cheque'|'credit';
+type PaymentMethod = 'cash' | 'card' | 'online' | 'cheque' | 'credit';
 
 interface Customer {
     id: number;
@@ -42,6 +42,8 @@ interface JobCard {
     id: number;
     job_card_no: string;
     vehicle: Vehicle;
+    mileage?: number;
+    remarks?: string | null;
 }
 
 interface User {
@@ -290,6 +292,10 @@ export default function Show({ invoice }: Props) {
                                         <span className="text-gray-600">Year:</span>
                                         <span className="ml-2 font-medium">{invoice.job_card.vehicle.make_year}</span>
                                     </div>
+                                    <div>
+                                        <span className="text-gray-600">Odometer:</span>
+                                        <span className="ml-2 font-medium">{invoice.job_card.mileage ? `${Number(invoice.job_card.mileage).toLocaleString()} km` : 'N/A'}</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -318,8 +324,8 @@ export default function Show({ invoice }: Props) {
                                                         </div>
                                                     </td>
                                                     <td className="px-4 py-3 text-sm text-center">{item.quantity}</td>
-                                                    <td className="px-4 py-3 text-sm text-right">Rs. {Number(item.unit_price).toLocaleString()}</td>
-                                                    <td className="px-4 py-3 text-sm font-medium text-right">Rs. {Number(item.line_total).toLocaleString()}</td>
+                                                    <td className="px-4 py-3 text-sm text-right">Rs. {Number(item.unit_price).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                                                    <td className="px-4 py-3 text-sm font-medium text-right">Rs. {Number(item.line_total).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                                                 </tr>
                                             ))}
                                         </tbody>
@@ -352,8 +358,8 @@ export default function Show({ invoice }: Props) {
                                                         </div>
                                                     </td>
                                                     <td className="px-4 py-3 text-sm text-center">{item.quantity}</td>
-                                                    <td className="px-4 py-3 text-sm text-right">Rs. {Number(item.unit_price).toLocaleString()}</td>
-                                                    <td className="px-4 py-3 text-sm font-medium text-right">Rs. {Number(item.line_total).toLocaleString()}</td>
+                                                    <td className="px-4 py-3 text-sm text-right">Rs. {Number(item.unit_price).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                                                    <td className="px-4 py-3 text-sm font-medium text-right">Rs. {Number(item.line_total).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                                                 </tr>
                                             ))}
                                         </tbody>
@@ -386,8 +392,8 @@ export default function Show({ invoice }: Props) {
                                                         </div>
                                                     </td>
                                                     <td className="px-4 py-3 text-sm text-center">{item.quantity}</td>
-                                                    <td className="px-4 py-3 text-sm text-right">Rs. {Number(item.unit_price).toLocaleString()}</td>
-                                                    <td className="px-4 py-3 text-sm font-medium text-right">Rs. {Number(item.line_total).toLocaleString()}</td>
+                                                    <td className="px-4 py-3 text-sm text-right">Rs. {Number(item.unit_price).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                                                    <td className="px-4 py-3 text-sm font-medium text-right">Rs. {Number(item.line_total).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                                                 </tr>
                                             ))}
                                         </tbody>
@@ -402,15 +408,15 @@ export default function Show({ invoice }: Props) {
                                 <div className="space-y-2 text-sm">
                                     <div className="flex justify-between py-2">
                                         <span className="text-gray-600">Services Total:</span>
-                                        <span className="font-medium">Rs. {Number(invoice.services_total).toLocaleString()}</span>
+                                        <span className="font-medium">Rs. {Number(invoice.services_total).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                                     </div>
                                     <div className="flex justify-between py-2">
                                         <span className="text-gray-600">Products Total:</span>
-                                        <span className="font-medium">Rs. {Number(invoice.products_total).toLocaleString()}</span>
+                                        <span className="font-medium">Rs. {Number(invoice.products_total).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                                     </div>
                                     <div className="flex justify-between py-2">
                                         <span className="text-gray-600">Charges Total:</span>
-                                        <span className="font-medium">Rs. {Number(invoice.charges_total).toLocaleString()}</span>
+                                        <span className="font-medium">Rs. {Number(invoice.charges_total).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                                     </div>
                                     <Separator />
                                     <div className="flex justify-between py-2">
@@ -422,28 +428,28 @@ export default function Show({ invoice }: Props) {
                                     </div>
                                     <div className="flex justify-between py-2">
                                         <span className="font-semibold text-gray-900">Subtotal:</span>
-                                        <span className="font-semibold">Rs. {Number(invoice.subtotal).toLocaleString()}</span>
+                                        <span className="font-semibold">Rs. {Number(invoice.subtotal).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                                     </div>
                                     {invoice.advance_payment > 0 && (
                                         <div className="flex justify-between py-2 text-green-600">
                                             <span>Advance Payment:</span>
-                                            <span className="font-medium">- Rs. {Number(invoice.advance_payment).toLocaleString()}</span>
+                                            <span className="font-medium">- Rs. {Number(invoice.advance_payment).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                                         </div>
                                     )}
                                     <Separator />
                                     <div className="flex justify-between py-3 bg-indigo-50 px-4 rounded-lg">
                                         <span className="text-lg font-bold text-gray-900">Amount Due:</span>
-                                        <span className="text-lg font-bold text-indigo-600">Rs. {Number(invoice.remaining).toLocaleString()}</span>
+                                        <span className="text-lg font-bold text-indigo-600">Rs. {Number(invoice.remaining).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
                         {/* Remarks */}
-                        {invoice.remarks && (
+                        {invoice.job_card.remarks && (
                             <div className="mt-8 p-4 bg-yellow-50 rounded-lg">
                                 <h3 className="font-semibold text-gray-900 mb-2">Remarks:</h3>
-                                <p className="text-sm text-gray-700 whitespace-pre-wrap">{invoice.remarks}</p>
+                                <p className="text-sm text-gray-700 whitespace-pre-wrap">{invoice.job_card.remarks}</p>
                             </div>
                         )}
 
@@ -472,7 +478,7 @@ export default function Show({ invoice }: Props) {
                         <div className="brand-info">
                             <h1 className="company-name">GT Automech</h1>
                             <p className="company-tagline">Professional Car Service & Repairs</p>
-                            <p className="company-contact">www.gtdrive.lk • +94 77 000 0000</p>
+                            <p className="company-contact">www.gtdrive.lk • +94 77 409 8580 • +94 74 212 0450</p>
                         </div>
                     </div>
                     <div className="invoice-meta">
@@ -485,55 +491,62 @@ export default function Show({ invoice }: Props) {
                     </div>
                 </div>
 
-                {/* Bill To Section */}
-                <div className="info-section">
-                    <h3 className="section-title">Bill To</h3>
-                    <div className="info-grid">
-                        <span className="label">Name</span>
-                        <span className="value">{invoice.customer.title} {invoice.customer.name}</span>
-                        <span className="label">Phone</span>
-                        <span className="value">{invoice.customer.mobile}</span>
-                        <span className="label">Address</span>
-                        <span className="value">{invoice.customer.address}</span>
+                {/* Details Grid */}
+                <div className="three-col-grid">
+                    {/* Bill To Section */}
+                    <div>
+                        <h3 className="section-title">Bill To</h3>
+                        <div className="info-grid">
+                            <span className="label">Name</span>
+                            <span className="value">{invoice.customer.title} {invoice.customer.name}</span>
+                            <span className="label">Phone</span>
+                            <span className="value">{invoice.customer.mobile}</span>
+                            <span className="label">Address</span>
+                            <span className="value">{invoice.customer.address}</span>
+                        </div>
+                    </div>
+
+                    {/* Vehicle Section */}
+                    <div>
+                        <h3 className="section-title">Vehicle</h3>
+                        <div className="info-grid">
+                            <span className="label">Make/Model</span>
+                            <span className="value">{invoice.job_card.vehicle.brand?.name} {invoice.job_card.vehicle.model?.name}</span>
+                            <span className="label">Year</span>
+                            <span className="value">{invoice.job_card.vehicle.make_year}</span>
+                            <span className="label">Reg No.</span>
+                            <span className="value">{invoice.job_card.vehicle.vehicle_no}</span>
+                            <span className="label">Odometer</span>
+                            <span className="value">{invoice.job_card.mileage ? `${Number(invoice.job_card.mileage).toLocaleString()} km` : 'N/A'}</span>
+                        </div>
+                    </div>
+
+                    {/* Job Section */}
+                    <div>
+                        <h3 className="section-title">Job</h3>
+                        <div className="info-grid">
+                            <span className="label">Job #</span>
+                            <span className="value">{invoice.job_card.job_card_no}</span>
+                            <span className="label">Service Advisor</span>
+                            <span className="value">{invoice.user.name}</span>
+                        </div>
                     </div>
                 </div>
 
-                {/* Vehicle Section */}
-                <div className="info-section">
-                    <h3 className="section-title">Vehicle</h3>
-                    <div className="info-grid">
-                        <span className="label">Make/Model</span>
-                        <span className="value">{invoice.job_card.vehicle.brand?.name} {invoice.job_card.vehicle.model?.name}</span>
-                        <span className="label">Year</span>
-                        <span className="value">{invoice.job_card.vehicle.make_year}</span>
-                        <span className="label">Reg No.</span>
-                        <span className="value">{invoice.job_card.vehicle.vehicle_no}</span>
+                {/* Remarks - Full Width */}
+                {invoice.job_card.remarks && (
+                    <div className="info-section mt-4 mb-4">
+                        <h3 className="section-title">Remarks / Notes</h3>
+                        <p>{invoice.job_card.remarks}</p>
                     </div>
-                </div>
-
-                {/* Job Section */}
-                <div className="info-section">
-                    <h3 className="section-title">Job</h3>
-                    <div className="info-grid">
-                        <span className="label">Job #</span>
-                        <span className="value">{invoice.job_card.job_card_no}</span>
-                        <span className="label">Service Advisor</span>
-                        <span className="value">{invoice.user.name}</span>
-                        {invoice.remarks && (
-                            <>
-                                <span className="label">Notes</span>
-                                <span className="value">{invoice.remarks}</span>
-                            </>
-                        )}
-                    </div>
-                </div>
+                )}
 
                 {/* Items Table */}
                 <table className="items-table">
                     <thead>
                         <tr>
                             <th>Description</th>
-                            <th>Type</th>
+                            {/* <th>Type</th> */}
                             <th className="text-right">Unit Cost</th>
                             <th className="text-right">Qty</th>
                             <th className="text-right">Line Total</th>
@@ -542,11 +555,11 @@ export default function Show({ invoice }: Props) {
                     <tbody>
                         {invoice.items.map((item) => (
                             <tr key={item.id}>
-                                <td><strong>{item.description}</strong></td>
-                                <td className="capitalize">{item.item_type}</td>
-                                <td className="text-right">{Number(item.unit_price).toLocaleString()}</td>
+                                <td>{item.description}</td>
+                                {/* <td className="capitalize">{item.item_type}</td> */}
+                                <td className="text-right">{Number(item.unit_price).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                                 <td className="text-right">{item.quantity}</td>
-                                <td className="text-right">{Number(item.line_total).toLocaleString()}</td>
+                                <td className="text-right">{Number(item.line_total).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                             </tr>
                         ))}
                     </tbody>
@@ -560,17 +573,17 @@ export default function Show({ invoice }: Props) {
                     </div>
                     <div className="totals-row">
                         <span>Subtotal</span>
-                        <span>{Number(invoice.subtotal).toLocaleString()}</span>
+                        <span>{Number(invoice.subtotal).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                     </div>
                     {invoice.advance_payment > 0 && (
                         <div className="totals-row">
                             <span>Advance Payment</span>
-                            <span>- {Number(invoice.advance_payment).toLocaleString()}</span>
+                            <span>- {Number(invoice.advance_payment).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                         </div>
                     )}
                     <div className="totals-row grand-total">
                         <span>Amount Due</span>
-                        <span>Rs. {Number(invoice.remaining).toLocaleString()}</span>
+                        <span>Rs. {Number(invoice.remaining).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                     </div>
                 </div>
 
@@ -594,12 +607,11 @@ export default function Show({ invoice }: Props) {
 
                     .print-invoice {
                         width: 210mm;
-                        min-height: 297mm;
                         margin: 0;
-                        padding: 20mm;
+                        padding: 15mm;
                         box-sizing: border-box;
                         font-family: Arial, sans-serif;
-                        font-size: 13px;
+                        font-size: 11px;
                         color: #000;
                     }
 
@@ -608,7 +620,7 @@ export default function Show({ invoice }: Props) {
                         justify-content: space-between;
                         border-bottom: 2px solid #000;
                         padding-bottom: 10px;
-                        margin-bottom: 20px;
+                        margin-bottom: 15px;
                     }
 
                     .brand-section {
@@ -619,14 +631,14 @@ export default function Show({ invoice }: Props) {
 
                     .company-name {
                         margin: 0;
-                        font-size: 20px;
+                        font-size: 18px;
                         font-weight: bold;
                     }
 
                     .company-tagline,
                     .company-contact {
                         margin: 2px 0;
-                        font-size: 12px;
+                        font-size: 10px;
                     }
 
                     .invoice-meta {
@@ -635,7 +647,7 @@ export default function Show({ invoice }: Props) {
 
                     .invoice-title {
                         margin: 0;
-                        font-size: 22px;
+                        font-size: 20px;
                         font-weight: bold;
                     }
 
@@ -645,51 +657,59 @@ export default function Show({ invoice }: Props) {
                     }
 
                     .invoice-dates {
-                        font-size: 12px;
+                        font-size: 10px;
+                    }
+
+                    .three-col-grid {
+                        display: grid;
+                        grid-template-columns: 1fr 1fr 1fr;
+                        gap: 15px;
+                        margin-bottom: 15px;
                     }
 
                     .info-section {
-                        margin-bottom: 20px;
+                        margin-bottom: 15px;
                     }
 
                     .section-title {
-                        margin: 0 0 6px 0;
-                        font-size: 14px;
+                        margin: 0 0 4px 0;
+                        font-size: 12px;
                         font-weight: bold;
                         border-bottom: 1px solid #000;
-                        padding-bottom: 3px;
+                        padding-bottom: 2px;
                     }
 
                     .info-grid {
                         display: grid;
-                        grid-template-columns: 120px 1fr;
-                        row-gap: 4px;
-                        font-size: 13px;
+                        grid-template-columns: 70px 1fr;
+                        row-gap: 2px;
+                        font-size: 11px;
                     }
 
                     .label {
                         font-weight: 500;
+                        color: #444;
                     }
 
                     .items-table {
                         width: 100%;
                         border-collapse: collapse;
-                        margin-bottom: 20px;
+                        margin-bottom: 15px;
                     }
 
                     .items-table thead th {
                         border-bottom: 2px solid #000;
                         text-align: left;
-                        padding: 6px;
-                        font-size: 12px;
+                        padding: 4px;
+                        font-size: 10px;
                         text-transform: uppercase;
                         font-weight: 600;
                     }
 
                     .items-table tbody td {
-                        padding: 6px;
+                        padding: 4px;
                         border-bottom: 1px solid #ccc;
-                        font-size: 13px;
+                        font-size: 11px;
                     }
 
                     .items-table .text-right {
@@ -701,30 +721,30 @@ export default function Show({ invoice }: Props) {
                     }
 
                     .totals-section {
-                        max-width: 300px;
+                        max-width: 250px;
                         margin-left: auto;
-                        margin-top: 20px;
+                        margin-top: 15px;
                     }
 
                     .totals-row {
                         display: flex;
                         justify-content: space-between;
-                        padding: 4px 0;
+                        padding: 2px 0;
                     }
 
                     .grand-total {
                         font-weight: bold;
-                        font-size: 14px;
+                        font-size: 12px;
                         border-top: 2px solid #000;
                         margin-top: 4px;
-                        padding-top: 6px;
+                        padding-top: 4px;
                     }
 
                     .invoice-footer {
                         border-top: 1px solid #000;
-                        padding-top: 10px;
-                        font-size: 12px;
-                        margin-top: 40px;
+                        padding-top: 8px;
+                        font-size: 10px;
+                        margin-top: 30px;
                         text-align: center;
                     }
 

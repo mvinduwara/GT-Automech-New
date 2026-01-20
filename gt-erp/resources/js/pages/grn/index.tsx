@@ -28,15 +28,15 @@ interface Props {
 }
 
 export default function Index({ grns, filters }: Props) {
-  const [search, setSearch]   = useState(filters.search || '');
-  const [status, setStatus]   = useState(filters.status || '');
-  const [start, setStart]     = useState(filters.start || '');
-  const [end, setEnd]         = useState(filters.end || '');
+  const [search, setSearch] = useState(filters.search || '');
+  const [status, setStatus] = useState(filters.status || '');
+  const [start, setStart] = useState(filters.start || '');
+  const [end, setEnd] = useState(filters.end || '');
 
   const { flash } = usePage().props as any;
   useEffect(() => {
     if (flash?.success) toast.success(flash.success);
-    if (flash?.error)   toast.error(flash.error);
+    if (flash?.error) toast.error(flash.error);
   }, [flash]);
 
   const applyFilter = () =>
@@ -67,7 +67,7 @@ export default function Index({ grns, filters }: Props) {
         <div className="grid grid-cols-2 md:grid-cols-5 gap-2 items-end">
           <Input placeholder="GRN / Supplier / PO / Total" value={search} onChange={e => setSearch(e.target.value)} />
           <Input type="date" value={start} onChange={e => setStart(e.target.value)} />
-          <Input type="date" value={end}   onChange={e => setEnd(e.target.value)} />
+          <Input type="date" value={end} onChange={e => setEnd(e.target.value)} />
           <select value={status} onChange={e => setStatus(e.target.value)} className="border rounded p-2">
             <option value="">All Status</option>
             <option value="pending">Pending</option>
@@ -96,12 +96,15 @@ export default function Index({ grns, filters }: Props) {
             {grns.map((g) => (
               <TableRow key={g.id}>
                 <TableCell>{g.grn_no}</TableCell>
-                <TableCell>{g.supplier??""}</TableCell>
+                <TableCell>{g.supplier ?? ""}</TableCell>
                 <TableCell>{g.po}</TableCell>
                 <TableCell>{g.status}</TableCell>
                 <TableCell>LKR {g.total.toFixed(2)}</TableCell>
                 <TableCell>{g.date}</TableCell>
                 <TableCell className="flex gap-2">
+                  <Link href={`/dashboard/grn/${g.id}`}>
+                    <Button size="sm" variant="outline">View</Button>
+                  </Link>
                   <Link href={`/dashboard/grn/${g.id}/edit`}>
                     <Button size="sm">Edit</Button>
                   </Link>

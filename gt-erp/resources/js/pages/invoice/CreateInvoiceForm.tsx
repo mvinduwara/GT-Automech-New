@@ -40,7 +40,7 @@ function CreateInvoiceForm({
         due_date: '',
         advance_payment: '0',
         remarks: '',
-        terms_conditions: 'Payment is due within 30 days.\nLate payments may incur additional charges.\nAll prices are in LKR.',
+        terms_conditions: '',
     });
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -96,7 +96,7 @@ function CreateInvoiceForm({
             due_date: '',
             advance_payment: '0',
             remarks: '',
-            terms_conditions: 'Payment is due within 30 days.\nLate payments may incur additional charges.\nAll prices are in LKR.',
+            terms_conditions: 'All prices are in LKR.',
         });
     };
 
