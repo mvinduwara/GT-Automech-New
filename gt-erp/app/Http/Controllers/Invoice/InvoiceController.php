@@ -329,6 +329,9 @@ class InvoiceController extends Controller
             'jobCard.vehicle.brand',
             'jobCard.vehicle.model',
             'items',
+            'items.jobCardProduct',
+            'items.jobCardVehicleService',
+            'items.jobCardCharge',
             'user'
         ]);
 

@@ -378,7 +378,7 @@ export default function Index() {
                                     Category
                                 </TableHead>
                                 <TableHead className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 ">
-                                    Alt. Part Number
+                                    Brand
                                 </TableHead>
                                 <TableHead className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 ">
                                     Quantity
@@ -440,43 +440,7 @@ export default function Index() {
                                                 'N/A'}
                                         </TableCell>
                                         <TableCell className="whitespace-nowrap px-6 py-4 ">
-                                            {stock.alternative_product ? (
-                                                <TooltipProvider>
-                                                    <Tooltip>
-                                                        <TooltipTrigger>
-                                                            {
-                                                                stock
-                                                                    .alternative_product
-                                                                    .part_number
-                                                            }
-                                                        </TooltipTrigger>
-                                                        <TooltipContent className="bg-gray-800 text-white ">
-                                                            <p>
-                                                                {
-                                                                    stock
-                                                                        .alternative_product
-                                                                        .name
-                                                                }
-                                                            </p>
-                                                        </TooltipContent>
-                                                    </Tooltip>
-                                                </TooltipProvider>
-                                            ) : (
-                                                <TooltipProvider>
-                                                    <Tooltip>
-                                                        <TooltipTrigger>
-                                                            <p>
-                                                                N/A
-                                                            </p>
-                                                        </TooltipTrigger>
-                                                        <TooltipContent className="bg-gray-800 text-white ">
-                                                            <p>
-                                                                N/A
-                                                            </p>
-                                                        </TooltipContent>
-                                                    </Tooltip>
-                                                </TooltipProvider>
-                                            )}
+                                            {stock.product.brand?.name || 'N/A'}
                                         </TableCell>
                                         <TableCell className="whitespace-nowrap px-6 py-4">
                                             {stock.quantity}

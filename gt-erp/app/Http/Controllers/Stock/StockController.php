@@ -24,6 +24,7 @@ class StockController extends Controller
         try {
             $query = Stock::with([
                 'product.category',
+                'product.brand',
                 'product.unitOfMeasure',
                 'alternativeProduct.category',
                 'alternativeProduct.unitOfMeasure'
@@ -59,8 +60,8 @@ class StockController extends Controller
             // Filter by vehicle model
             $selectedVehicleModels = [];
             if ($request->has('vehicle_model_id') && $request->input('vehicle_model_id')) {
-                $ids = is_array($request->input('vehicle_model_id')) 
-                    ? $request->input('vehicle_model_id') 
+                $ids = is_array($request->input('vehicle_model_id'))
+                    ? $request->input('vehicle_model_id')
                     : [$request->input('vehicle_model_id')];
 
                 $query->whereHas('product', function ($q) use ($ids) {
