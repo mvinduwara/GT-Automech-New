@@ -1,6 +1,6 @@
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
-import { Head, useForm, usePage } from '@inertiajs/react';
+import { Head, useForm, usePage, router } from '@inertiajs/react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -74,7 +74,7 @@ export default function Create() {
 
     console.log("brands, models", brands, models);
 
-    const { flash } = usePage().props;
+    const { flash } = usePage<{ flash: { success?: string; error?: string } }>().props;
 
     useEffect(() => {
         if (flash?.success) {
@@ -108,11 +108,12 @@ export default function Create() {
     const handleAddModel = (e: React.FormEvent) => {
         e.preventDefault();
         e.stopPropagation();
-        modelForm.post(route('dashboard.vehicle-model.store'), {
+        modelForm.post(route('dashboard.vehicle-models.store'), {
             onSuccess: () => {
                 toast.success('Model added successfully');
                 setModelDialogOpen(false);
                 modelForm.reset();
+                router.reload({ only: ['models'] });
             },
             onError: () => {
                 toast.error('Failed to add model');

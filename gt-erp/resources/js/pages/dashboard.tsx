@@ -81,7 +81,7 @@ export const FinancialSummaryCard: FC<{ title: string; value: number | string; i
             <Icon className={`h-6 w-6 ${color}`} />
         </div>
         <p className="mt-4 text-3xl font-bold tracking-tight text-gray-900">
-            {typeof value === 'number' && (title.includes("Income") || title.includes("Expenses") || title.includes("Profit")) ? formatCurrency(value) : value}
+            {typeof value === 'number' && (title.includes("Income") || title.includes("Expenses") || title.includes("Profit") || title.includes("Value")) ? formatCurrency(value) : value}
         </p>
     </div>
 );

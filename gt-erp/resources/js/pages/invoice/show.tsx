@@ -52,6 +52,14 @@ interface User {
     email: string;
 }
 
+interface JobCardDiscountInfo {
+    discount_type: 'percentage' | 'amount' | null;
+    discount_value: number | null;
+    subtotal?: number; // For products/services
+    charge?: number; // For charges
+    unit_price?: number; // For products
+}
+
 interface InvoiceItem {
     id: number;
     item_type: "service" | "product" | "charge";
@@ -59,6 +67,9 @@ interface InvoiceItem {
     quantity: number;
     unit_price: number;
     line_total: number;
+    job_card_product?: JobCardDiscountInfo;
+    job_card_vehicle_service?: JobCardDiscountInfo;
+    job_card_charge?: JobCardDiscountInfo;
 }
 
 interface Invoice {
@@ -166,6 +177,82 @@ export default function Show({ invoice }: Props) {
             default: return <Banknote className="h-3 w-3 mr-1" />;
         }
     };
+
+    const getOriginalPrice = (item: InvoiceItem) => {
+        if (item.item_type === 'product') {
+            const info = item.job_card_product;
+            // For products, product.unit_price is the original unit price
+            // Wait, looking at the code, in screen view:
+            // "Rs. {Number(item.unit_price).toLocaleString..."
+            // And in calculateTotalDiscount:
+            // originalTotal = info?.subtotal ?? (item.unit_price * item.quantity);
+            // So item.unit_price is indeed the original unit price per item?
+            // Let's re-verify my previous assumption.
+            // Screen view code for product:
+            // <td className="px-4 py-3 text-sm text-right">Rs. {Number(item.unit_price) ....
+            // So for products, item.unit_price IS the unit price.
+            return item.unit_price;
+        } else if (item.item_type === 'service') {
+            const info = item.job_card_vehicle_service;
+            // For service, item.unit_price is the TOTAL (discounted) price in the database.
+            // We want the original subtotal (charge)
+            return info?.subtotal || item.unit_price;
+        } else if (item.item_type === 'charge') {
+            const info = item.job_card_charge;
+            // For charge, item.unit_price is the TOTAL (discounted) price.
+            // We want the original charge
+            return info?.charge || item.unit_price;
+        }
+        return item.unit_price;
+    };
+
+    const getDiscountDisplay = (item: InvoiceItem) => {
+        let info: JobCardDiscountInfo | undefined;
+        if (item.item_type === 'product') info = item.job_card_product;
+        else if (item.item_type === 'service') info = item.job_card_vehicle_service;
+        else if (item.item_type === 'charge') info = item.job_card_charge;
+
+        if (!info || !info.discount_value) return '-';
+
+        if (info.discount_type === 'percentage') {
+            return `${Number(info.discount_value)}%`;
+        }
+        return `Rs. ${Number(info.discount_value).toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
+    };
+
+    const calculateTotalDiscount = () => {
+        return invoice.items.reduce((acc, item) => {
+            let info: JobCardDiscountInfo | undefined;
+            let originalTotal = 0;
+
+            if (item.item_type === 'product') {
+                info = item.job_card_product;
+                // For products, subtotal is qty * unit_price
+                originalTotal = info?.subtotal ?? (item.unit_price * item.quantity);
+                // wait, item.unit_price for product is original price in invoice controller?
+                // Check controller: 'unit_price' => $product->unit_price
+                // 'line_total' => $product->total
+                // So item.unit_price * item.quantity is the original amount.
+                originalTotal = item.unit_price * item.quantity;
+            } else if (item.item_type === 'service') {
+                info = item.job_card_vehicle_service;
+                // For services, item.unit_price is the FINAL total.
+                // We need original from info.subtotal (or charge?)
+                // Assuming subtotal exists for service
+                originalTotal = info?.subtotal ?? item.line_total;
+            } else if (item.item_type === 'charge') {
+                info = item.job_card_charge;
+                // For charges, item.unit_price is FINAL total.
+                originalTotal = info?.charge ?? item.line_total;
+            }
+
+            const finalTotal = item.line_total;
+            return acc + Math.max(0, originalTotal - finalTotal);
+        }, 0);
+    };
+
+    const totalDiscount = calculateTotalDiscount();
+    const grossTotal = Number(invoice.subtotal) + totalDiscount;
 
     const serviceItems = invoice.items.filter(item => item.item_type === 'service');
     const productItems = invoice.items.filter(item => item.item_type === 'product');
@@ -311,6 +398,7 @@ export default function Show({ invoice }: Props) {
                                                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Description</th>
                                                 <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Qty</th>
                                                 <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Unit Price</th>
+                                                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Discount</th>
                                                 <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Total</th>
                                             </tr>
                                         </thead>
@@ -324,7 +412,11 @@ export default function Show({ invoice }: Props) {
                                                         </div>
                                                     </td>
                                                     <td className="px-4 py-3 text-sm text-center">{item.quantity}</td>
-                                                    <td className="px-4 py-3 text-sm text-right">Rs. {Number(item.unit_price).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                                                    <td className="px-4 py-3 text-sm text-right">
+                                                        {/* For Service, item.unit_price is Total. We want original price here. */}
+                                                        Rs. {Number(item.job_card_vehicle_service?.subtotal || item.unit_price).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                    </td>
+                                                    <td className="px-4 py-3 text-sm text-right text-red-600">{getDiscountDisplay(item)}</td>
                                                     <td className="px-4 py-3 text-sm font-medium text-right">Rs. {Number(item.line_total).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                                                 </tr>
                                             ))}
@@ -345,6 +437,7 @@ export default function Show({ invoice }: Props) {
                                                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Description</th>
                                                 <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Qty</th>
                                                 <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Unit Price</th>
+                                                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Discount</th>
                                                 <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Total</th>
                                             </tr>
                                         </thead>
@@ -359,6 +452,7 @@ export default function Show({ invoice }: Props) {
                                                     </td>
                                                     <td className="px-4 py-3 text-sm text-center">{item.quantity}</td>
                                                     <td className="px-4 py-3 text-sm text-right">Rs. {Number(item.unit_price).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                                                    <td className="px-4 py-3 text-sm text-right text-red-600">{getDiscountDisplay(item)}</td>
                                                     <td className="px-4 py-3 text-sm font-medium text-right">Rs. {Number(item.line_total).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                                                 </tr>
                                             ))}
@@ -379,6 +473,7 @@ export default function Show({ invoice }: Props) {
                                                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Description</th>
                                                 <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Qty</th>
                                                 <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Unit Price</th>
+                                                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Discount</th>
                                                 <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Total</th>
                                             </tr>
                                         </thead>
@@ -392,7 +487,11 @@ export default function Show({ invoice }: Props) {
                                                         </div>
                                                     </td>
                                                     <td className="px-4 py-3 text-sm text-center">{item.quantity}</td>
-                                                    <td className="px-4 py-3 text-sm text-right">Rs. {Number(item.unit_price).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                                                    <td className="px-4 py-3 text-sm text-right">
+                                                        {/* Charge unit_price is Total. Use original charge if available */}
+                                                        Rs. {Number(item.job_card_charge?.charge || item.unit_price).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                    </td>
+                                                    <td className="px-4 py-3 text-sm text-right text-red-600">{getDiscountDisplay(item)}</td>
                                                     <td className="px-4 py-3 text-sm font-medium text-right">Rs. {Number(item.line_total).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                                                 </tr>
                                             ))}
@@ -427,9 +526,14 @@ export default function Show({ invoice }: Props) {
                                         </Badge>
                                     </div>
                                     <div className="flex justify-between py-2">
-                                        <span className="font-semibold text-gray-900">Subtotal:</span>
                                         <span className="font-semibold">Rs. {Number(invoice.subtotal).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                                     </div>
+                                    {totalDiscount > 0 && (
+                                        <div className="flex justify-between py-2 text-red-600">
+                                            <span>Total Discount:</span>
+                                            <span className="font-medium">- Rs. {Number(totalDiscount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                                        </div>
+                                    )}
                                     {invoice.advance_payment > 0 && (
                                         <div className="flex justify-between py-2 text-green-600">
                                             <span>Advance Payment:</span>
@@ -549,6 +653,7 @@ export default function Show({ invoice }: Props) {
                             {/* <th>Type</th> */}
                             <th className="text-right">Unit Cost</th>
                             <th className="text-right">Qty</th>
+                            <th className="text-right">Disc.</th>
                             <th className="text-right">Line Total</th>
                         </tr>
                     </thead>
@@ -557,8 +662,9 @@ export default function Show({ invoice }: Props) {
                             <tr key={item.id}>
                                 <td>{item.description}</td>
                                 {/* <td className="capitalize">{item.item_type}</td> */}
-                                <td className="text-right">{Number(item.unit_price).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                                <td className="text-right">{Number(getOriginalPrice(item)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                                 <td className="text-right">{item.quantity}</td>
+                                <td className="text-right">{getDiscountDisplay(item)}</td>
                                 <td className="text-right">{Number(item.line_total).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                             </tr>
                         ))}
@@ -573,8 +679,14 @@ export default function Show({ invoice }: Props) {
                     </div>
                     <div className="totals-row">
                         <span>Subtotal</span>
-                        <span>{Number(invoice.subtotal).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                        <span>{Number(grossTotal).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                     </div>
+                    {totalDiscount > 0 && (
+                        <div className="totals-row">
+                            <span>Total Discount (You Saved)</span>
+                            <span>- {Number(totalDiscount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                        </div>
+                    )}
                     {invoice.advance_payment > 0 && (
                         <div className="totals-row">
                             <span>Advance Payment</span>

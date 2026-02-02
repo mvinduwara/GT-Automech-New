@@ -92,7 +92,10 @@ export default function CategoryIndex() {
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { id, value } = e.target;
-        setFormData((prev) => ({ ...prev, [id]: value }));
+        // Force uppercase for name field
+        const finalValue = id === 'name' ? value.toUpperCase() : value;
+
+        setFormData((prev) => ({ ...prev, [id]: finalValue }));
         if (formErrors[id]) {
             setFormErrors((prev) => {
                 const newErrors = { ...prev };
@@ -273,16 +276,16 @@ export default function CategoryIndex() {
                         </div>
 
                         <div className="md:col-span-2 flex justify-end space-x-2">
-                            <Button 
-                                variant="default" 
+                            <Button
+                                variant="default"
                                 onClick={() => {
                                     router.get(route('dashboard.category.index'), { search: searchTerm, status: statusFilter }, { preserveState: true, replace: true });
                                 }}
                             >
                                 Apply Filters
                             </Button>
-                            <Button 
-                                variant="outline" 
+                            <Button
+                                variant="outline"
                                 onClick={() => {
                                     setSearchTerm('');
                                     setStatusFilter('');
