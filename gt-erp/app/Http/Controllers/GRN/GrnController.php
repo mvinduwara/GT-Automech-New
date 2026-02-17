@@ -74,6 +74,19 @@ class GrnController extends Controller
         $count = Grn::whereYear('created_at', $year)->count() + 1;
         $nextGrnNumber = 'GRN-' . $year . '-' . str_pad($count, 6, '0', STR_PAD_LEFT);
 
+        // Inject latest stock info for items that don't have a specific stock linked but have a product
+        foreach ($po->purchaseOrderItems as $item) {
+            if (!$item->stock && $item->product_id) {
+                $latestStock = Stock::where('product_id', $item->product_id)
+                    ->where('status', 'active')
+                    ->latest()
+                    ->first();
+                if ($latestStock) {
+                    $item->setRelation('stock', $latestStock);
+                }
+            }
+        }
+
         return Inertia::render('grn/create', [
             'purchaseOrder' => $po,
             'nextGrnNumber' => $nextGrnNumber,
@@ -129,35 +142,47 @@ class GrnController extends Controller
                     throw new \Exception("PO Item ID: {$item['purchase_order_item_id']} not found.");
                 }
 
-                $newStock = null;
+                $productId = null;
+                $alternativeProductId = null;
 
                 if ($poItem->stock_id) {
                     // Legacy path or if stock is linked
                     $templateStock = Stock::findOrFail($poItem->stock_id);
-                    $newStock = Stock::create([
-                        'product_id' => $templateStock->product_id,
-                        'alternative_product_id' => $templateStock->alternative_product_id,
-                        'quantity' => $item['quantity'],
-                        'buying_price' => $item['unit_price'],
-                        'selling_price' => $item['selling_price'], // Use input selling price
-                        'status' => 'active',
-                    ]);
+                    $productId = $templateStock->product_id;
+                    $alternativeProductId = $templateStock->alternative_product_id;
                 } else if ($poItem->product_id) {
                     // New path: Create stock from Product
+                    $productId = $poItem->product_id;
+                    $alternativeProductId = null;
+                } else {
+                    throw new \Exception("Stock information (stock_id or product_id) is missing for PO Item ID: {$item['purchase_order_item_id']}.");
+                }
+
+                // Check for existing stock with same product, buying price, and selling price
+                $existingStock = Stock::where('product_id', $productId)
+                    ->where('buying_price', $item['unit_price'])
+                    ->where('selling_price', $item['selling_price'])
+                    ->where('status', 'active')
+                    ->first();
+
+                $stockId = null;
+
+                if ($existingStock) {
+                    // Reuse existing stock and increment quantity
+                    $existingStock->increment('quantity', $item['quantity']);
+                    $stockId = $existingStock->id;
+                } else {
+                    // Create new stock
                     $newStock = Stock::create([
-                        'product_id' => $poItem->product_id,
-                        'alternative_product_id' => null,
+                        'product_id' => $productId,
+                        'alternative_product_id' => $alternativeProductId,
                         'quantity' => $item['quantity'],
                         'buying_price' => $item['unit_price'],
                         'selling_price' => $item['selling_price'],
                         'status' => 'active',
                     ]);
-                } else {
-                    throw new \Exception("Stock information (stock_id or product_id) is missing for PO Item ID: {$item['purchase_order_item_id']}.");
+                    $stockId = $newStock->id;
                 }
-
-
-                $stockId = $newStock->id; // Use the new stock ID for the GRN Item
 
                 // === END: STOCK UPDATE LOGIC ===
 
@@ -293,63 +318,40 @@ class GrnController extends Controller
                     throw new \Exception("PO Item ID: {$item['purchase_order_item_id']} not found.");
                 }
 
-                // $stockId = $poItem->stock_id;
                 // Determine base product ID from PO Item (either direct product or via stock)
                 $productId = $poItem->product_id;
+                $alternativeProductId = null;
+
                 if (!$productId && $poItem->stock_id) {
                     $st = Stock::find($poItem->stock_id);
-                    if ($st)
+                    if ($st) {
                         $productId = $st->product_id;
-                }
-
-
-                // 2. Find and apply new stock quantity
-                $existingGrnItem = null;
-
-                // Try to find by ID if provided
-                if (isset($item['id'])) {
-                    $existingGrnItem = GrnItem::find($item['id']);
-                }
-
-                // If not found by ID (or ID not provided), try to find by PO Item ID within this GRN
-                if (!$existingGrnItem) {
-                    $existingGrnItem = GrnItem::where('grn_id', $grn->id)
-                        ->where('purchase_order_item_id', $item['purchase_order_item_id'])
-                        ->first();
-                }
-
-                if ($existingGrnItem) {
-                    // Existing item: Update its specific stock
-                    if ($existingGrnItem->stock_id) {
-                        $stock = Stock::findOrFail($existingGrnItem->stock_id);
-                        $stock->increment('quantity', $item['quantity']);
-                        $stock->update([
-                            'buying_price' => $item['unit_price'],
-                            'selling_price' => $item['selling_price'], // Update selling price
-                            'status' => 'active'
-                        ]);
-                        $stockId = $stock->id;
-                    } else {
-                        // Fallback if existing item had no stock_id (shouldn't happen)
-                        // Treat as new stock creation
-                        $newStock = Stock::create([
-                            'product_id' => $productId,
-                            'alternative_product_id' => null, // Simplified
-                            'quantity' => $item['quantity'],
-                            'buying_price' => $item['unit_price'],
-                            'selling_price' => $item['selling_price'], // Use input
-                            'status' => 'active',
-                        ]);
-                        $stockId = $newStock->id;
+                        $alternativeProductId = $st->alternative_product_id;
                     }
+                }
+
+                // Check for existing stock with same product, buying price, and selling price
+                // Since we already reversed the old quantities, we treat this as finding/creating the correct destination for the new quantity
+                $targetStock = Stock::where('product_id', $productId)
+                    ->where('buying_price', $item['unit_price'])
+                    ->where('selling_price', $item['selling_price'])
+                    ->where('status', 'active')
+                    ->first();
+
+                $stockId = null;
+
+                if ($targetStock) {
+                    // Reuse existing stock and increment quantity
+                    $targetStock->increment('quantity', $item['quantity']);
+                    $stockId = $targetStock->id;
                 } else {
-                    // New Item: Create new stock
+                    // Create new stock
                     $newStock = Stock::create([
                         'product_id' => $productId,
-                        'alternative_product_id' => null, // Simplified
+                        'alternative_product_id' => $alternativeProductId,
                         'quantity' => $item['quantity'],
                         'buying_price' => $item['unit_price'],
-                        'selling_price' => $item['selling_price'], // Use input
+                        'selling_price' => $item['selling_price'],
                         'status' => 'active',
                     ]);
                     $stockId = $newStock->id;
