@@ -29,6 +29,7 @@ class JobCardController extends Controller
             $query->where(function ($q) use ($search) {
                 $q->where('job_card_no', 'like', "%{$search}%")
                     ->orWhereHas('customer', fn($cq) => $cq->where('name', 'like', "%{$search}%"))
+                    ->orWhereHas('customer', fn($cq) => $cq->where('mobile', 'like', "%{$search}%"))
                     ->orWhereHas('vehicle', fn($vq) => $vq->where('vehicle_no', 'like', "%{$search}%"));
             });
         }

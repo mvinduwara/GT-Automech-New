@@ -106,8 +106,8 @@ class GrnController extends Controller
             'items' => 'required|array|min:1',
             'items.*.purchase_order_item_id' => 'required|exists:purchase_order_items,id',
             'items.*.quantity' => 'required|numeric|min:0.01',
-            'items.*.unit_price' => 'required|numeric|min:0.01',
-            'items.*.selling_price' => 'required|numeric|min:0.01',
+            'items.*.unit_price' => 'required|numeric|min:0',
+            'items.*.selling_price' => 'required|numeric|min:0',
             'items.*.remarks' => 'nullable|string|max:255',
         ], [
             'grn_no.unique' => 'GRN number already exists.',
@@ -269,8 +269,8 @@ class GrnController extends Controller
             'items.*.id' => 'sometimes|exists:grn_items,id',
             'items.*.purchase_order_item_id' => 'required|exists:purchase_order_items,id',
             'items.*.quantity' => 'required|numeric|min:0.01',
-            'items.*.unit_price' => 'required|numeric|min:0.01',
-            'items.*.selling_price' => 'required|numeric|min:0.01', // Added validation for selling price
+            'items.*.unit_price' => 'required|numeric|min:0',
+            'items.*.selling_price' => 'required|numeric|min:0', // Added validation for selling price
             'items.*.remarks' => 'nullable|string|max:255',
         ]);
 
