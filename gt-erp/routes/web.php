@@ -39,6 +39,7 @@ Route::post('/review/{token}', [CustomerReviewController::class, 'store'])->name
 
 Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard/reviews', [AdminReviewController::class, 'index'])->name('dashboard.reviews.index');
+    Route::get('/dashboard/reviews/export-pdf', [AdminReviewController::class, 'exportPdf'])->name('dashboard.reviews.export-pdf');
     Route::post('/dashboard/reviews/{invoice}/manual', [AdminReviewController::class, 'storeManual'])->name('dashboard.reviews.manual.store');
 });
 

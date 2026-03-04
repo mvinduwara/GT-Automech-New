@@ -11,61 +11,106 @@ use Inertia\Inertia;
 
 class AdminReviewController extends Controller
 {
+    private function getCallsQuery(Request $request)
+    {
+        $search = $request->input('search');
+        $dateFrom = $request->input('date_from');
+        $dateTo = $request->input('date_to');
+
+        $query = Invoice::query()
+            ->with(['customer', 'jobCard.vehicle'])
+            ->whereIn('status', ['paid', 'partial', 'unpaid'])
+            ->where('status', '!=', 'cancelled')
+            ->latest('invoice_date');
+
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('invoice_no', 'like', "%{$search}%")
+                    ->orWhereHas('customer', fn($c) => $c->where('name', 'like', "%{$search}%")->orWhere('mobile', 'like', "%{$search}%"))
+                    ->orWhereHas('jobCard.vehicle', fn($v) => $v->where('vehicle_no', 'like', "%{$search}%"));
+            });
+        }
+
+        if ($dateFrom) {
+            $query->whereDate('invoice_date', '>=', $dateFrom);
+        }
+
+        if ($dateTo) {
+            $query->whereDate('invoice_date', '<=', $dateTo);
+        }
+
+        if ($request->input('filter') === 'completed') {
+            $query->whereNotNull('manual_rating');
+        } else {
+            $query->whereNull('manual_rating');
+        }
+
+        return $query;
+    }
+
+    private function getReviewsQuery(Request $request)
+    {
+        $search = $request->input('search');
+        $dateFrom = $request->input('date_from');
+        $dateTo = $request->input('date_to');
+
+        $query = CustomerReview::with([
+            'invoice:id,invoice_no,customer_id',
+            'invoice.customer:id,name,mobile',
+            'jobCard:id,job_card_no,vehicle_id',
+            'jobCard.vehicle:id,vehicle_no'
+        ])->latest();
+
+        if ($search) {
+            $query->whereHas('invoice', function ($q) use ($search) {
+                $q->where('invoice_no', 'like', "%{$search}%")
+                    ->orWhereHas('customer', fn($c) => $c->where('name', 'like', "%{$search}%"));
+            });
+        }
+
+        if ($dateFrom) {
+            $query->whereDate('created_at', '>=', $dateFrom);
+        }
+
+        if ($dateTo) {
+            $query->whereDate('created_at', '<=', $dateTo);
+        }
+
+        return $query;
+    }
+
     public function index(Request $request)
     {
-        $view = $request->input('view', 'reviews'); // Default to 'reviews'
-        $search = $request->input('search');
+        $view = $request->input('view', 'reviews');
 
         if ($view === 'calls') {
-            // --- LOGIC FOR PENDING CALLS (INVOICES) ---
-            $query = Invoice::query()
-                ->with(['customer', 'jobCard.vehicle'])
-                ->whereIn('status', ['paid', 'partial', 'unpaid'])
-                ->where('status', '!=', 'cancelled')
-                ->latest('invoice_date');
-
-            if ($search) {
-                $query->where(function ($q) use ($search) {
-                    $q->where('invoice_no', 'like', "%{$search}%")
-                        ->orWhereHas('customer', fn($c) => $c->where('name', 'like', "%{$search}%")->orWhere('mobile', 'like', "%{$search}%"))
-                        ->orWhereHas('jobCard.vehicle', fn($v) => $v->where('vehicle_no', 'like', "%{$search}%"));
-                });
-            }
-            
-            // Optional: Filter for completed manual reviews vs pending
-            if ($request->input('filter') === 'completed') {
-                 $query->whereNotNull('manual_rating');
-            } else {
-                 $query->whereNull('manual_rating');
-            }
-
-            $data = $query->paginate(20)->withQueryString();
-
+            $data = $this->getCallsQuery($request)->paginate(20)->withQueryString();
         } else {
-            // --- LOGIC FOR SUBMITTED REVIEWS (CUSTOMER REVIEWS) ---
-            $query = CustomerReview::with([
-                'invoice:id,invoice_no,customer_id',
-                'invoice.customer:id,name,mobile',
-                'jobCard:id,job_card_no,vehicle_id',
-                'jobCard.vehicle:id,vehicle_no'
-            ])->latest();
-
-            // Note: Search logic for reviews is slightly different because data is in relationships
-            if ($search) {
-                $query->whereHas('invoice', function($q) use ($search) {
-                    $q->where('invoice_no', 'like', "%{$search}%")
-                      ->orWhereHas('customer', fn($c) => $c->where('name', 'like', "%{$search}%"));
-                });
-            }
-
-            $data = $query->paginate(20)->withQueryString();
+            $data = $this->getReviewsQuery($request)->paginate(20)->withQueryString();
         }
 
         return Inertia::render('review/index', [
-            'listData' => $data, // Generic name 'listData' because it changes based on view
+            'listData' => $data,
             'filters' => $request->all(),
-            'currentView' => $view, // To set the active tab in frontend
+            'currentView' => $view,
         ]);
+    }
+
+    public function exportPdf(Request $request)
+    {
+        $view = $request->input('view', 'reviews');
+
+        if ($view === 'calls') {
+            $records = $this->getCallsQuery($request)->get();
+            $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.calls', compact('records'))
+                ->setPaper('a4', 'landscape');
+            return $pdf->download('call-list-export.pdf');
+        } else {
+            $records = $this->getReviewsQuery($request)->get();
+            $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.reviews', compact('records'))
+                ->setPaper('a4', 'portrait');
+            return $pdf->download('reviews-export.pdf');
+        }
     }
 
     public function storeManual(Request $request, Invoice $invoice)
