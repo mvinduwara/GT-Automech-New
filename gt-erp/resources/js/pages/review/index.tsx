@@ -38,7 +38,7 @@ import AppLayout from '@/layouts/app-layout';
 import { BreadcrumbItem, PaginatedResource } from '@/types';
 import { Head, router, useForm } from '@inertiajs/react';
 import { format } from 'date-fns';
-import { MessageSquare, Phone, Search, Star, User } from 'lucide-react';
+import { MessageSquare, Phone, Search, Star, Download, X } from 'lucide-react';
 import { useState } from 'react';
 
 // --- Shared Types ---
@@ -169,14 +169,18 @@ export default function Index({
     currentView
 }: {
     listData: PaginatedResource<any>; // Can be InvoiceItem or ReviewItem
-    filters: { search?: string, filter?: string };
+    filters: { search?: string, filter?: string, date_from?: string, date_to?: string };
     currentView: 'reviews' | 'calls';
 }) {
     const [search, setSearch] = useState(filters.search || '');
+    const [dateFrom, setDateFrom] = useState(filters.date_from || '');
+    const [dateTo, setDateTo] = useState(filters.date_to || '');
 
     // Function to handle tab switching
     const handleTabChange = (value: string) => {
         setSearch(''); // Clear search when switching context
+        setDateFrom('');
+        setDateTo('');
         router.get(route('dashboard.reviews.index'), { view: value }, { preserveState: true });
     };
 
@@ -184,7 +188,7 @@ export default function Index({
     const handleSearch = () => {
         router.get(
             route('dashboard.reviews.index'),
-            { view: currentView, search, filter: filters.filter },
+            { view: currentView, search, filter: filters.filter, date_from: dateFrom, date_to: dateTo },
             { preserveState: true }
         );
     };
@@ -194,7 +198,32 @@ export default function Index({
         const newFilter = filters.filter === 'completed' ? '' : 'completed';
         router.get(
             route('dashboard.reviews.index'),
-            { view: 'calls', search, filter: newFilter },
+            { view: 'calls', search, filter: newFilter, date_from: dateFrom, date_to: dateTo },
+            { preserveState: true }
+        );
+    };
+
+    // Function to handle PDF export
+    const handleExport = () => {
+        const params = new URLSearchParams();
+        params.append('view', currentView);
+        if (search) params.append('search', search);
+        if (filters.filter) params.append('filter', filters.filter);
+        if (dateFrom) params.append('date_from', dateFrom);
+        if (dateTo) params.append('date_to', dateTo);
+
+        const url = `${route('dashboard.reviews.export-pdf')}?${params.toString()}`;
+        window.open(url, '_blank');
+    };
+
+    // Function to handle clearing filters
+    const handleClearFilters = () => {
+        setSearch('');
+        setDateFrom('');
+        setDateTo('');
+        router.get(
+            route('dashboard.reviews.index'),
+            { view: currentView, filter: filters.filter },
             { preserveState: true }
         );
     };
@@ -241,14 +270,42 @@ export default function Index({
                                             : 'Manage manual feedback calls for completed invoices.'}
                                     </CardDescription>
                                 </div>
-                                <div className="flex gap-2 w-full max-w-sm">
+                                <div className="flex gap-2 w-full justify-end items-center flex-wrap">
+                                    <div className="flex items-center gap-2">
+                                        <Label className="text-xs whitespace-nowrap">From</Label>
+                                        <Input
+                                            type="date"
+                                            className="max-w-[160px] text-sm h-9"
+                                            value={dateFrom}
+                                            onChange={(e) => setDateFrom(e.target.value)}
+                                        />
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <Label className="text-xs whitespace-nowrap">To</Label>
+                                        <Input
+                                            type="date"
+                                            className="max-w-[160px] text-sm h-9"
+                                            value={dateTo}
+                                            onChange={(e) => setDateTo(e.target.value)}
+                                        />
+                                    </div>
                                     <Input
+                                        className="w-[180px] h-9"
                                         placeholder="Search..."
                                         value={search}
                                         onChange={(e) => setSearch(e.target.value)}
                                         onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                                     />
-                                    <Button variant="secondary" onClick={handleSearch}><Search className="h-4 w-4" /></Button>
+                                    <Button variant="secondary" className="h-9 w-9 p-0" onClick={handleSearch}><Search className="h-4 w-4" /></Button>
+                                    {(search || dateFrom || dateTo) && (
+                                        <Button variant="ghost" className="h-9 w-9 p-0 text-red-500 hover:text-red-700 hover:bg-red-50" onClick={handleClearFilters} title="Clear Filters">
+                                            <X className="h-4 w-4" />
+                                        </Button>
+                                    )}
+                                    <Button variant="outline" onClick={handleExport} className="gap-2 h-9">
+                                        <Download className="h-4 w-4" />
+                                        Export PDF
+                                    </Button>
                                 </div>
                             </div>
                         </CardHeader>
@@ -275,13 +332,13 @@ export default function Index({
                                                     <TableRow key={review.id}>
                                                         <TableCell>
                                                             {review.created_at ? (<>{
-                                                            format(
-                                                                new Date(
-                                                                    review.created_at
-                                                                ),
-                                                                'yyyy-MM-dd'
-                                                            )}</>) : ""
-                                                        }
+                                                                format(
+                                                                    new Date(
+                                                                        review.created_at
+                                                                    ),
+                                                                    'yyyy-MM-dd'
+                                                                )}</>) : ""
+                                                            }
                                                         </TableCell>
                                                         {/* <TableCell>
                                                             {format(
@@ -338,13 +395,13 @@ export default function Index({
                                                     <TableRow key={invoice.id}>
                                                         <TableCell>
                                                             {invoice.created_at ? (<>{
-                                                            format(
-                                                                new Date(
-                                                                    invoice.created_at
-                                                                ),
-                                                                'yyyy-MM-dd'
-                                                            )}</>) : ""
-                                                        }
+                                                                format(
+                                                                    new Date(
+                                                                        invoice.created_at
+                                                                    ),
+                                                                    'yyyy-MM-dd'
+                                                                )}</>) : ""
+                                                            }
                                                         </TableCell>
                                                         <TableCell className="font-mono text-xs">{invoice.invoice_no}</TableCell>
                                                         <TableCell>
