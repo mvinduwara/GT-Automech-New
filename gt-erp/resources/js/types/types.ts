@@ -27,17 +27,22 @@ export interface Employee {
 
 export interface pettyCash {
     id: number;
-    voucher_number: number;
-    date: Date;
+    voucher_number: string;
+    date: string;
     name: string;
     requested_by_user_id: number;
-    approved_by_user_id: number;
-    description: string;
+    approved_by_user_id?: number | null;
+    description?: string | null;
+    requested_amount: number;
+    total_amount: number;
+    actual_amount?: number | null;
+    balance_amount?: number | null;
+    proof_path?: string | null;
+    status: string;
+    finalized_at?: string | null;
+    checked: boolean | number;
     requested_by?: User;
     approved_by?: User;
-    total_amount: number;
-    status: string;
-    checked: number;
     items?: PettyCashItem[];
 }
 
@@ -50,7 +55,6 @@ export interface PettyCashItem {
     amount: number;
     checked: boolean;
 }
-
 
 export type Product = {
     id: number;
@@ -99,24 +103,6 @@ export interface Stock {
     status: 'active' | 'deactive' | 'out of stock' | 'rejected';
     product: Product;
     alternative_product: Product | null;
-}
-
-// Add this to your existing pettyCash interface
-export interface pettyCash {
-    voucher_number: number;
-    date: string;
-    total_amount: number;
-    status: string;
-    requested_by?: { name: string };
-    approved_by?: { name: string };
-    items?: {
-        id: number;
-        item_description: string;
-        quantity: number;
-        unit_price: number;
-        amount: number;
-        checked: boolean;
-    }[];
 }
 
 export interface Customer {

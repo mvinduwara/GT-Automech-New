@@ -17,19 +17,39 @@ class PettyCashController extends Controller
 {
     public function index(Request $request)
     {
-        $petty_cash = PettyCashVoucher::with(['requestedBy', 'approvedBy', 'items'])
+        $petty_cash = PettyCashVoucher::with(['requestedBy', 'approvedBy'])
             ->orderBy('created_at', 'desc')
             ->get();
 
         return Inertia::render('petty-cash/index', ['petty_cash' => $petty_cash]);
     }
 
+    public function show($voucher_number)
+    {
+        $petty_cash = PettyCashVoucher::with(['requestedBy', 'approvedBy', 'items'])
+            ->where('voucher_number', $voucher_number)
+            ->firstOrFail();
+
+        return Inertia::render('petty-cash/show', [
+            'voucher' => $petty_cash
+        ]);
+    }
+
     public function create(Request $request)
     {
-        $users = User::select('id', 'name')->where('status', 'active')->get();
+        // Generate auto-number
+        $lastVoucher = PettyCashVoucher::latest()->first();
+        $nextNumber = 1;
+        if ($lastVoucher) {
+            $lastNum = str_replace('PCV-' . date('Ymd') . '-', '', $lastVoucher->voucher_number);
+            if (is_numeric($lastNum)) {
+                $nextNumber = intval($lastNum) + 1;
+            }
+        }
+        $autoVoucherNumber = 'PCV-' . date('Ymd') . '-' . str_pad($nextNumber, 3, '0', STR_PAD_LEFT);
 
         return Inertia::render('petty-cash/create', [
-            'users' => $users
+            'auto_voucher_number' => $autoVoucherNumber
         ]);
     }
 
@@ -40,19 +60,10 @@ class PettyCashController extends Controller
             'date' => 'required|date',
             'name' => 'required|string',
             'description' => 'nullable|string',
-            'items' => 'required|array|min:1',
-            'items.*.item_description' => 'required|string|max:255',
-            'items.*.quantity' => 'required|numeric|min:1',
-            'items.*.unit_price' => 'required|numeric|min:0',
-            'items.*.amount' => 'required|numeric|min:0',
+            'requested_amount' => 'required|numeric|min:0',
         ]);
 
-        DB::beginTransaction();
-
         try {
-            // Calculate total amount from items
-            $totalAmount = collect($validated['items'])->sum('amount');
-
             // Create the voucher
             $voucher = PettyCashVoucher::create([
                 'voucher_number' => $validated['voucher_number'],
@@ -60,27 +71,13 @@ class PettyCashController extends Controller
                 'requested_by_user_id' => auth()->id(),
                 'name' => $validated['name'],
                 'description' => $validated['description'] ?? null,
-                'total_amount' => $totalAmount,
+                'requested_amount' => $validated['requested_amount'],
+                'total_amount' => 0, // Not spent yet
                 'status' => 'pending',
             ]);
 
-            // Create the items
-            foreach ($validated['items'] as $itemData) {
-                PettyCashItem::create([
-                    'petty_cash_voucher_id' => $voucher->id,
-                    'item_description' => $itemData['item_description'],
-                    'quantity' => $itemData['quantity'],
-                    'unit_price' => $itemData['unit_price'],
-                    'amount' => $itemData['amount'],
-                    'checked' => false,
-                ]);
-            }
-
-            DB::commit();
-
-            return redirect()->route('dashboard.petty-cash.index')->with('success', 'Voucher created successfully!');
+            return redirect()->route('dashboard.petty-cash.index')->with('success', 'Voucher request created successfully!');
         } catch (\Exception $e) {
-            DB::rollBack();
             return back()->withErrors(['error' => 'Failed to create voucher: ' . $e->getMessage()])->withInput();
         }
     }
@@ -304,8 +301,8 @@ class PettyCashController extends Controller
 
                 CreateLedgerEntries::run(
                     description: "Petty cash expense for Voucher #{$voucher->voucher_number} - {$voucher->name}",
-                    date: $voucher->date,
-                    amount: $voucher->total_amount,
+                    date: \Carbon\Carbon::parse($voucher->date),
+                    amount: (float) $voucher->requested_amount,
                     debitAccount: $expenseAccount, // Expense increases
                     creditAccount: $cashAccount,    // Cash asset decreases
                     transactionable: $voucher
@@ -319,5 +316,75 @@ class PettyCashController extends Controller
             Log::error('Failed to mark voucher as paid', ['voucher_id' => $voucher->id, 'error' => $e->getMessage()]);
             return back()->withErrors(['error' => 'Failed to process payment: ' . $e->getMessage()]);
         }
+    }
+
+    public function finalize(Request $request, $voucher_number)
+    {
+        $voucher = PettyCashVoucher::where('voucher_number', $voucher_number)->firstOrFail();
+
+        if ($voucher->status !== 'paid') {
+            return back()->withErrors(['error' => 'Only paid vouchers can be finalized.']);
+        }
+
+        $validated = $request->validate([
+            'items' => 'required|array|min:1',
+            'items.*.item_description' => 'required|string|max:255',
+            'items.*.quantity' => 'required|numeric|min:1',
+            'items.*.unit_price' => 'required|numeric|min:0',
+            'items.*.amount' => 'required|numeric|min:0',
+            'proof' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
+        ]);
+
+        DB::beginTransaction();
+
+        try {
+            $actualAmount = collect($validated['items'])->sum('amount');
+            $balanceAmount = $voucher->requested_amount - $actualAmount;
+
+            // Handle proof upload
+            $proofPath = $voucher->proof_path;
+            if ($request->hasFile('proof')) {
+                $proofPath = $request->file('proof')->store('petty-cash-proofs', 'public');
+            }
+
+            // Create items
+            foreach ($validated['items'] as $itemData) {
+                PettyCashItem::create([
+                    'petty_cash_voucher_id' => $voucher->id,
+                    'item_description' => $itemData['item_description'],
+                    'quantity' => $itemData['quantity'],
+                    'unit_price' => $itemData['unit_price'],
+                    'amount' => $itemData['amount'],
+                ]);
+            }
+
+            // Update voucher
+            $voucher->update([
+                'actual_amount' => $actualAmount,
+                'total_amount' => $actualAmount, // syncing with actual spent
+                'balance_amount' => $balanceAmount,
+                'proof_path' => $proofPath,
+                'status' => 'paid', // Keep as paid or add a 'finalized' if you prefer, but we'll use finalized_at to distinguish
+                'finalized_at' => now(),
+            ]);
+
+            DB::commit();
+
+            return redirect()->route('dashboard.petty-cash.show', $voucher_number)->with('success', 'Voucher finalized successfully!');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->withErrors(['error' => 'Failed to finalize voucher: ' . $e->getMessage()]);
+        }
+    }
+
+    public function downloadPdf($voucher_number)
+    {
+        $voucher = PettyCashVoucher::with(['requestedBy', 'approvedBy', 'items'])
+            ->where('voucher_number', $voucher_number)
+            ->firstOrFail();
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdfs.petty-cash-voucher', compact('voucher'));
+
+        return $pdf->download("PettyCashVoucher_{$voucher->voucher_number}.pdf");
     }
 }

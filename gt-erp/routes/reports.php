@@ -4,6 +4,7 @@ use App\Http\Controllers\Reports\FinancialReportController;
 use App\Http\Controllers\Reports\EmployeeReportController;
 use App\Http\Controllers\Reports\PettyCashReportController;
 use App\Http\Controllers\Reports\PettyCashVoucherReportController;
+use App\Http\Controllers\Reports\PettyCashDailyReportController;
 use App\Http\Controllers\Reports\PurchaseOrderItemReportController;
 use App\Http\Controllers\Reports\PurchaseOrderReportController;
 use App\Http\Controllers\Reports\StockReportController;
@@ -26,6 +27,13 @@ Route::middleware(['auth', 'is_admin_or_cashier'])->group(function () {
 
         Route::get('/petty-cash-vouchers/download', [PettyCashVoucherReportController::class, 'download'])
             ->name('petty_cash_vouchers.download');
+
+        // Petty Cash Daily Report Routes
+        Route::get('/petty-cash-daily', [PettyCashDailyReportController::class, 'index'])->name('petty_cash_daily');
+        Route::get('/petty-cash-daily/export', [PettyCashDailyReportController::class, 'exportExcel'])->name('petty_cash_daily.export');
+        Route::get('/petty-cash-daily/{date}', [PettyCashDailyReportController::class, 'show'])->name('petty_cash_daily.show');
+        Route::get('/petty-cash-daily/{date}/export', [PettyCashDailyReportController::class, 'exportDayExcel'])->name('petty_cash_daily.day_export');
+        Route::get('/petty-cash-daily/{date}/download-pdf', [PettyCashDailyReportController::class, 'downloadDailyPdf'])->name('petty_cash_daily.download_pdf');
 
 
         // Employee Report Routes

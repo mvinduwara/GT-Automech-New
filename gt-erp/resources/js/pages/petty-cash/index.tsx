@@ -36,9 +36,8 @@ export default function Index({ petty_cash }: { petty_cash: pettyCash[] }) {
     const [selectedVoucher, setSelectedVoucher] = useState<pettyCash | null>(null);
     const [isApproveDialogOpen, setIsApproveDialogOpen] = useState(false);
     const [isPaidDialogOpen, setIsPaidDialogOpen] = useState(false);
-    const [itemStatus, setItemStatus] = useState(petty_cash.items?.status);
 
-    const { auth } = usePage().props;
+    const { auth } = usePage<any>().props;
     console.log('auth', auth);
 
     const handleDelete = (voucherNumber: string) => {
@@ -162,9 +161,14 @@ export default function Index({ petty_cash }: { petty_cash: pettyCash[] }) {
             <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
                 <div className="flex items-center justify-between">
                     <h1 className="h1 font-bold">All Petty Cash Vouchers</h1>
-                    <Link href={route('dashboard.petty-cash.create')}>
-                        <Button>Add New PettyCash Voucher</Button>
-                    </Link>
+                    <div className="flex items-center justify-end gap-2">
+                        <Link href={route('dashboard.reports.petty_cash_daily')}>
+                            <Button variant={'secondary'}>Reports</Button>
+                        </Link>
+                        <Link href={route('dashboard.petty-cash.create')}>
+                            <Button>Add New PettyCash Voucher</Button>
+                        </Link>
+                    </div>
                 </div>
 
                 <div className="flex h-full flex-1 flex-col overflow-y-auto">
@@ -187,7 +191,7 @@ export default function Index({ petty_cash }: { petty_cash: pettyCash[] }) {
                                 <TableRow key={index}>
                                     <TableCell className="font-medium">{petty_cash.voucher_number}</TableCell>
                                     <TableCell>{new Date(petty_cash.date).toLocaleDateString()}</TableCell>
-                                    <TableCell align="right">{petty_cash.total_amount}</TableCell>
+                                    <TableCell align="right">{petty_cash.status === 'pending' || petty_cash.status === 'approved' || (petty_cash.status === 'paid' && !petty_cash.finalized_at) ? petty_cash.requested_amount : petty_cash.actual_amount || petty_cash.total_amount}</TableCell>
                                     <TableCell align="center">
                                         <Badge
                                             variant={
@@ -200,7 +204,7 @@ export default function Index({ petty_cash }: { petty_cash: pettyCash[] }) {
                                                             : 'outline'
                                             }
                                         >
-                                            {petty_cash.status}
+                                            {petty_cash.finalized_at && petty_cash.status === 'paid' ? 'Finalized' : petty_cash.status}
                                         </Badge>
                                     </TableCell>
 
@@ -222,198 +226,80 @@ export default function Index({ petty_cash }: { petty_cash: pettyCash[] }) {
                                     </Tooltip>
                                     <TableCell className="pr-0">
                                         <div className="flex items-center justify-center space-x-2">
-                                            {auth?.user?.role === 'cashier' && (
-                                                <Link href={route('dashboard.petty-cash.edit', { voucher_number: petty_cash.voucher_number })}>
-                                                    <Button variant="ghost" className="flex items-center justify-center p-2 text-neutral-800">
-                                                        <UserPen className="h-5 w-5" />
+                                            <Link href={route('dashboard.petty-cash.show', { voucher_number: petty_cash.voucher_number })}>
+                                                <Button variant="outline" size="sm">View</Button>
+                                            </Link>
+
+                                            <a href={route('dashboard.petty-cash.download-pdf', { voucher_number: petty_cash.voucher_number })} target="_blank" rel="noreferrer">
+                                                <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-800">
+                                                    PDF
+                                                </Button>
+                                            </a>
+
+                                            {petty_cash.status === 'paid' && !petty_cash.finalized_at && (
+                                                <Link href={route('dashboard.petty-cash.show', { voucher_number: petty_cash.voucher_number })}>
+                                                    <Button className="bg-orange-600 hover:bg-orange-700" size="sm">
+                                                        Finalize
                                                     </Button>
                                                 </Link>
                                             )}
 
-                                            {auth?.user?.role === 'admin' && (
-                                                <>
-                                                    <AlertDialog
-                                                        open={isApproveDialogOpen && selectedVoucher?.voucher_number === petty_cash.voucher_number}
-                                                        onOpenChange={setIsApproveDialogOpen}
-                                                    >
-                                                        <div onClick={() => setSelectedVoucher(petty_cash)}>
-                                                            <AlertDialogTrigger asChild>
-                                                                <Button variant="outline">
-                                                                    Approve/Reject
-                                                                </Button>
-                                                            </AlertDialogTrigger>
-                                                        </div>
-                                                        <AlertDialogContent>
-                                                            <AlertDialogCancel className="ml-auto">
-                                                                <X />
-                                                            </AlertDialogCancel>
-                                                            <AlertDialogHeader>
-                                                                <AlertDialogTitle>Approve or Reject Petty Cash Voucher ?</AlertDialogTitle>
-                                                                <AlertDialogDescription>
-                                                                    <div className="space-y-2">
-                                                                        <p>
-                                                                            <strong>Voucher Number:</strong> {selectedVoucher?.voucher_number}
-                                                                        </p>
-                                                                        <p>
-                                                                            <strong>Date:</strong>{' '}
-                                                                            {selectedVoucher?.date
-                                                                                ? new Date(selectedVoucher.date).toLocaleDateString()
-                                                                                : 'N/A'}
-                                                                        </p>
-                                                                        <p>
-                                                                            <strong>Total Amount:</strong> {selectedVoucher?.total_amount || 'N/A'}
-                                                                        </p>
-                                                                        <p>
-                                                                            <strong>Requested By:</strong> {selectedVoucher?.requested_by?.name || 'N/A'}
-                                                                        </p>
-                                                                        <p>
-                                                                            <strong>Approved By:</strong> {selectedVoucher?.approved_by?.name || 'N/A'}
-                                                                        </p>
-
-                                                                        {selectedVoucher?.items?.length ? (
-                                                                            <div className="pt-4">
-                                                                                <strong>Voucher Items:</strong>
-                                                                                <ul className="mt-2 space-y-3">
-                                                                                    {selectedVoucher.items.map((item) => (
-                                                                                        <li
-                                                                                            key={item.id}
-                                                                                            className="flex flex-col items-start justify-start gap-2 border-b-2 border-b-neutral-300 pb-2"
-                                                                                        >
-                                                                                            <p>
-                                                                                                {item.item_description} - {item.quantity} × {item.unit_price} = {item.amount}
-                                                                                            </p>
-                                                                                            <div className="flex items-center space-x-2">
-                                                                                                <Switch
-                                                                                                    id={`checked-switch-${item.id}`}
-                                                                                                    checked={item.checked ? true : false}
-                                                                                                    onCheckedChange={(checked) =>
-                                                                                                        handleToggleChecked(item.id, checked)
-                                                                                                    }
-                                                                                                    disabled={selectedVoucher?.status !== 'pending'}
-                                                                                                />
-                                                                                                <Label htmlFor={`checked-switch-${item.id}`}>
-                                                                                                    Checked
-                                                                                                </Label>
-                                                                                            </div>
-                                                                                        </li>
-                                                                                    ))}
-                                                                                </ul>
-                                                                            </div>
-                                                                        ) : (
-                                                                            <p className="text-sm text-muted italic">No items found for this voucher.</p>
-                                                                        )}
-                                                                    </div>
-                                                                </AlertDialogDescription>
-                                                            </AlertDialogHeader>
-                                                            {selectedVoucher?.status === 'pending' && (
-                                                                <AlertDialogFooter>
-                                                                    <Button
-                                                                        variant="ghost"
-                                                                        onClick={() => selectedVoucher && handleApprove(selectedVoucher.voucher_number)}
-                                                                        disabled={processing}
-                                                                    >
-                                                                        Approve
-                                                                    </Button>
-                                                                    <Button
-                                                                        className="flex items-center justify-center bg-red-100 p-2 text-red-800 hover:bg-red-200 hover:text-red-950"
-                                                                        onClick={() => selectedVoucher && handleReject(selectedVoucher.voucher_number)}
-                                                                        disabled={processing}
-                                                                    >
-                                                                        Reject
-                                                                    </Button>
-                                                                </AlertDialogFooter>
-                                                            )}
-                                                        </AlertDialogContent>
-                                                    </AlertDialog>
-
-                                                    <AlertDialog
-                                                        open={isPaidDialogOpen && selectedVoucher?.voucher_number === petty_cash.voucher_number}
-                                                        onOpenChange={setIsPaidDialogOpen}
-                                                    >
-                                                        <div onClick={() => setSelectedVoucher(petty_cash)}>
-                                                            <AlertDialogTrigger asChild>
-                                                                <Button variant="outline">
-                                                                    Pending/Paid
-                                                                </Button>
-                                                            </AlertDialogTrigger>
-                                                        </div>
-                                                        <AlertDialogContent>
-                                                            <AlertDialogCancel className="ml-auto">
-                                                                <X />
-                                                            </AlertDialogCancel>
-                                                            <AlertDialogHeader>
-                                                                <AlertDialogTitle>Status Change to Pending or Paid ?</AlertDialogTitle>
-                                                                <AlertDialogDescription>
-                                                                    <div className="space-y-2">
-                                                                        <p>
-                                                                            <strong>Voucher Number:</strong> {selectedVoucher?.voucher_number}
-                                                                        </p>
-                                                                        <p>
-                                                                            <strong>Date:</strong>{' '}
-                                                                            {selectedVoucher?.date
-                                                                                ? new Date(selectedVoucher.date).toLocaleDateString()
-                                                                                : 'N/A'}
-                                                                        </p>
-                                                                        <p>
-                                                                            <strong>Total Amount:</strong> {selectedVoucher?.total_amount || 'N/A'}
-                                                                        </p>
-                                                                        <p>
-                                                                            <strong>Requested By:</strong> {selectedVoucher?.requested_by?.name || 'N/A'}
-                                                                        </p>
-                                                                        <p>
-                                                                            <strong>Approved By:</strong> {selectedVoucher?.approved_by?.name || 'N/A'}
-                                                                        </p>
-
-                                                                        {selectedVoucher?.items?.length ? (
-                                                                            <div className="pt-4">
-                                                                                <strong>Voucher Items:</strong>
-                                                                                <ul className="mt-2 list-inside list-disc space-y-1">
-                                                                                    {selectedVoucher.items.map((item) => (
-                                                                                        <li key={item.id}>
-                                                                                            {item.item_description} - {item.quantity} × {item.unit_price}{' '}
-                                                                                            = {item.amount}
-                                                                                        </li>
-                                                                                    ))}
-                                                                                </ul>
-                                                                            </div>
-                                                                        ) : (
-                                                                            <p className="text-sm text-muted italic">No items found for this voucher.</p>
-                                                                        )}
-                                                                    </div>
-                                                                </AlertDialogDescription>
-                                                            </AlertDialogHeader>
-                                                            {selectedVoucher?.status === 'approved' && (
-                                                                <AlertDialogFooter>
-                                                                    <Button
-                                                                        variant="ghost"
-                                                                        onClick={() =>
-                                                                            selectedVoucher && handleSetPending(selectedVoucher.voucher_number)
-                                                                        }
-                                                                        disabled={processing}
-                                                                    >
-                                                                        Set Pending
-                                                                    </Button>
-                                                                    <Button
-                                                                        onClick={() => selectedVoucher && handleSetPaid(selectedVoucher.voucher_number)}
-                                                                        disabled={processing}
-                                                                    >
-                                                                        Mark as Paid
-                                                                    </Button>
-                                                                </AlertDialogFooter>
-                                                            )}
-                                                        </AlertDialogContent>
-                                                    </AlertDialog>
-                                                </>
+                                            {auth?.user?.role === 'admin' && petty_cash.status === 'pending' && (
+                                                <AlertDialog
+                                                    open={isApproveDialogOpen && selectedVoucher?.voucher_number === petty_cash.voucher_number}
+                                                    onOpenChange={setIsApproveDialogOpen}
+                                                >
+                                                    <div onClick={() => setSelectedVoucher(petty_cash)}>
+                                                        <AlertDialogTrigger asChild>
+                                                            <Button variant="outline" size="sm">
+                                                                Approve/Reject
+                                                            </Button>
+                                                        </AlertDialogTrigger>
+                                                    </div>
+                                                    <AlertDialogContent>
+                                                        <AlertDialogCancel className="ml-auto">
+                                                            <X />
+                                                        </AlertDialogCancel>
+                                                        <AlertDialogHeader>
+                                                            <AlertDialogTitle>Approve or Reject Petty Cash Voucher ?</AlertDialogTitle>
+                                                            <AlertDialogDescription>
+                                                                <div className="space-y-2 text-sm text-foreground">
+                                                                    <p><strong>Voucher Number:</strong> {selectedVoucher?.voucher_number}</p>
+                                                                    <p><strong>Payee Name:</strong> {selectedVoucher?.name}</p>
+                                                                    <p><strong>Requested Amount:</strong> LKR {selectedVoucher?.requested_amount ? parseFloat(selectedVoucher.requested_amount.toString()).toLocaleString() : 'N/A'}</p>
+                                                                    <p><strong>Date:</strong> {selectedVoucher?.date ? new Date(selectedVoucher.date).toLocaleDateString() : 'N/A'}</p>
+                                                                    <p><strong>Requested By:</strong> {selectedVoucher?.requested_by?.name || 'N/A'}</p>
+                                                                </div>
+                                                            </AlertDialogDescription>
+                                                        </AlertDialogHeader>
+                                                        <AlertDialogFooter>
+                                                            <Button
+                                                                variant="ghost"
+                                                                onClick={() => selectedVoucher && handleApprove(selectedVoucher.voucher_number)}
+                                                                disabled={processing}
+                                                            >
+                                                                Approve
+                                                            </Button>
+                                                            <Button
+                                                                className="bg-red-600 hover:bg-red-700 text-white"
+                                                                onClick={() => selectedVoucher && handleReject(selectedVoucher.voucher_number)}
+                                                                disabled={processing}
+                                                            >
+                                                                Reject
+                                                            </Button>
+                                                        </AlertDialogFooter>
+                                                    </AlertDialogContent>
+                                                </AlertDialog>
                                             )}
 
-                                            {auth?.user?.role === 'service-manager' && (
+                                            {(auth?.user?.role === 'admin' || auth?.user?.role === 'service-manager') && petty_cash.status === 'approved' && (
                                                 <AlertDialog
                                                     open={isPaidDialogOpen && selectedVoucher?.voucher_number === petty_cash.voucher_number}
                                                     onOpenChange={setIsPaidDialogOpen}
                                                 >
                                                     <div onClick={() => setSelectedVoucher(petty_cash)}>
                                                         <AlertDialogTrigger asChild>
-                                                            <Button variant="outline">
+                                                            <Button variant="outline" size="sm">
                                                                 Pending/Paid
                                                             </Button>
                                                         </AlertDialogTrigger>
@@ -425,70 +311,39 @@ export default function Index({ petty_cash }: { petty_cash: pettyCash[] }) {
                                                         <AlertDialogHeader>
                                                             <AlertDialogTitle>Status Change to Pending or Paid ?</AlertDialogTitle>
                                                             <AlertDialogDescription>
-                                                                <div className="space-y-2">
-                                                                    <p>
-                                                                        <strong>Voucher Number:</strong> {selectedVoucher?.voucher_number}
-                                                                    </p>
-                                                                    <p>
-                                                                        <strong>Date:</strong>{' '}
-                                                                        {selectedVoucher?.date
-                                                                            ? new Date(selectedVoucher.date).toLocaleDateString()
-                                                                            : 'N/A'}
-                                                                    </p>
-                                                                    <p>
-                                                                        <strong>Total Amount:</strong> {selectedVoucher?.total_amount || 'N/A'}
-                                                                    </p>
-                                                                    <p>
-                                                                        <strong>Requested By:</strong> {selectedVoucher?.requested_by?.name || 'N/A'}
-                                                                    </p>
-                                                                    <p>
-                                                                        <strong>Approved By:</strong> {selectedVoucher?.approved_by?.name || 'N/A'}
-                                                                    </p>
-
-                                                                    {selectedVoucher?.items?.length ? (
-                                                                        <div className="pt-4">
-                                                                            <strong>Voucher Items:</strong>
-                                                                            <ul className="mt-2 list-inside list-disc space-y-1">
-                                                                                {selectedVoucher.items.map((item) => (
-                                                                                    <li key={item.id}>
-                                                                                        {item.item_description} - {item.quantity} × {item.unit_price}{' '}
-                                                                                        = {item.amount}
-                                                                                    </li>
-                                                                                ))}
-                                                                            </ul>
-                                                                        </div>
-                                                                    ) : (
-                                                                        <p className="text-sm text-muted italic">No items found for this voucher.</p>
-                                                                    )}
+                                                                <div className="space-y-2 text-sm text-foreground">
+                                                                    <p><strong>Voucher Number:</strong> {selectedVoucher?.voucher_number}</p>
+                                                                    <p><strong>Payee Name:</strong> {selectedVoucher?.name}</p>
+                                                                    <p><strong>Requested Amount:</strong> LKR {selectedVoucher?.requested_amount ? parseFloat(selectedVoucher.requested_amount.toString()).toLocaleString() : 'N/A'}</p>
+                                                                    <p><strong>Date:</strong> {selectedVoucher?.date ? new Date(selectedVoucher.date).toLocaleDateString() : 'N/A'}</p>
+                                                                    <p><strong>Requested By:</strong> {selectedVoucher?.requested_by?.name || 'N/A'}</p>
+                                                                    <p><strong>Approved By:</strong> {selectedVoucher?.approved_by?.name || 'N/A'}</p>
                                                                 </div>
                                                             </AlertDialogDescription>
                                                         </AlertDialogHeader>
-                                                        {selectedVoucher?.status === 'approved' && (
-                                                            <AlertDialogFooter>
-                                                                <Button
-                                                                    variant="ghost"
-                                                                    onClick={() =>
-                                                                        selectedVoucher && handleSetPending(selectedVoucher.voucher_number)
-                                                                    }
-                                                                    disabled={processing}
-                                                                >
-                                                                    Set Pending
-                                                                </Button>
-                                                                <Button
-                                                                    onClick={() => selectedVoucher && handleSetPaid(selectedVoucher.voucher_number)}
-                                                                    disabled={processing}
-                                                                >
-                                                                    Mark as Paid
-                                                                </Button>
-                                                            </AlertDialogFooter>
-                                                        )}
+                                                        <AlertDialogFooter>
+                                                            <Button
+                                                                variant="ghost"
+                                                                onClick={() =>
+                                                                    selectedVoucher && handleSetPending(selectedVoucher.voucher_number)
+                                                                }
+                                                                disabled={processing}
+                                                            >
+                                                                Set Pending
+                                                            </Button>
+                                                            <Button
+                                                                className="bg-blue-600 hover:bg-blue-700 text-white"
+                                                                onClick={() => selectedVoucher && handleSetPaid(selectedVoucher.voucher_number)}
+                                                                disabled={processing}
+                                                            >
+                                                                Mark as Paid
+                                                            </Button>
+                                                        </AlertDialogFooter>
                                                     </AlertDialogContent>
                                                 </AlertDialog>
                                             )}
                                         </div>
-
                                     </TableCell>
-
                                 </TableRow>
                             ))}
                         </TableBody>
