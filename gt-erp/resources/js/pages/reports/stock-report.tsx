@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/app-layout';
 import { BreadcrumbItem } from '@/types';
 import { Head } from '@inertiajs/react';
-import { Download } from 'lucide-react';
+import { Download, Eye } from 'lucide-react';
 import { FilteredStockReportDialog } from './FilteredStockReportDialog';
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -52,7 +52,7 @@ export default function Reports() {
                         {/* Stock Report */}
                         <div className="flex flex-col items-start justify-between gap-4 rounded-md bg-gradient-to-r from-red-300 to-amber-200 p-5 shadow-md">
                             <p className="font-medium text-neutral-700">Stock Report</p>
-                            <Button variant={'outline'} onClick={downloadStockReport} c>
+                            <Button variant={'outline'} onClick={downloadStockReport}>
                                 <Download className="h-4 w-4" /> Download
                             </Button>
                         </div>
@@ -113,6 +113,17 @@ export default function Reports() {
                         <div className="flex flex-col items-start justify-between gap-4 rounded-md bg-gradient-to-r from-indigo-300 to-purple-200 p-5 shadow-md">
                             <p className="font-medium text-neutral-700">Filtered Stock Report (PDF)</p>
                             <FilteredStockReportDialog />
+                        </div>
+
+                        {/* Daily Petty Cash Report */}
+                        <div className="flex flex-col items-start justify-between gap-4 rounded-md bg-gradient-to-r from-orange-300 to-rose-200 p-5 shadow-md">
+                            <p className="font-medium text-neutral-700">Daily Petty Cash Summary</p>
+                            <Button
+                                variant={'outline'}
+                                onClick={() => (window.location.href = route('dashboard.reports.petty_cash_daily'))}
+                            >
+                                <Eye className="mr-2 h-4 w-4" /> View Daily Reports
+                            </Button>
                         </div>
                     </div>
                 </>

@@ -23,8 +23,13 @@ class PettyCashVoucher extends Model
         'requested_by_user_id',
         'approved_by_user_id',
         'description',
+        'requested_amount',
         'total_amount',
+        'actual_amount',
+        'balance_amount',
+        'proof_path',
         'status',
+        'finalized_at',
         'checked',
     ];
 
@@ -35,7 +40,11 @@ class PettyCashVoucher extends Model
      */
     protected $casts = [
         'date' => 'date',
+        'requested_amount' => 'decimal:2',
         'total_amount' => 'decimal:2',
+        'actual_amount' => 'decimal:2',
+        'balance_amount' => 'decimal:2',
+        'finalized_at' => 'datetime',
         'checked' => 'boolean',
     ];
 
