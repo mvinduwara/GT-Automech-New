@@ -53,9 +53,21 @@ class CustomerController extends Controller
                 'address' => 'required|string',
             ]);
 
-            Customer::create($validatedData);
+            $customer = Customer::create($validatedData);
 
             Log::info('Customer created successfully.');
+
+            if ($request->boolean('redirect_back')) {
+                return redirect()->back()->with([
+                    'success' => 'Customer created successfully.',
+                    'customer' => [
+                        'id' => $customer->id,
+                        'name' => $customer->name,
+                        'mobile' => $customer->mobile,
+                    ]
+                ]);
+            }
+
             return redirect()->route('dashboard.customer.index')->with('success', 'Customer created successfully.');
         } catch (\Illuminate\Validation\ValidationException $e) {
             Log::error('Validation error when creating customer: ' . $e->getMessage());

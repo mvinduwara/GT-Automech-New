@@ -9,6 +9,8 @@ Route::middleware(['auth'])->group(function () {
         ->group(function () {
             Route::get('/', [InvoiceController::class, 'index'])->name('index');
             Route::get('/create', [InvoiceController::class, 'create'])->name('create');
+            Route::get('/direct-create', [InvoiceController::class, 'directCreate'])->name('direct-create');
+            Route::post('/direct-store', [InvoiceController::class, 'directStore'])->name('direct-store');
             Route::post('/{jobCard}/store', [InvoiceController::class, 'store'])->name('store');
             Route::get('/{invoice}', [InvoiceController::class, 'show'])->name('show');
             Route::patch('/{invoice}/payment', [InvoiceController::class, 'updatePayment'])->name('payment');

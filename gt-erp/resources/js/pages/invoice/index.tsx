@@ -21,7 +21,7 @@ import { format } from 'date-fns';
 import AppLayout from '@/layouts/app-layout';
 import { BreadcrumbItem } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Banknote, CreditCard, Globe, ScrollText, TriangleAlert, Wallet } from 'lucide-react';
+import { Banknote, CreditCard, Globe, Plus, ScrollText, TriangleAlert, Wallet } from 'lucide-react';
 
 interface Invoice {
     id: number;
@@ -176,6 +176,12 @@ export default function Index({ invoices, filters = {}, statusOptions,dailyStats
             <div className="flex h-full flex-1 flex-col gap-6 p-6">
                 <div className="flex items-center justify-between">
                     <h1 className="text-2xl font-bold">All Invoices</h1>
+                    <Link href={route('dashboard.invoice.direct-create')}>
+                        <Button className="bg-primary text-white">
+                            <Plus className="h-4 w-4 mr-2" />
+                            Direct Invoice
+                        </Button>
+                    </Link>
                 </div>
 
                 <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-3">

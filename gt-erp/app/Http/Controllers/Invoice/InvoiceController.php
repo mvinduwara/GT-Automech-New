@@ -8,6 +8,11 @@ use App\Models\Account;
 use App\Models\Invoice;
 use App\Models\JobCard;
 use App\Models\InvoiceItem;
+use App\Models\Customer;
+use App\Models\Product;
+use App\Models\Stock;
+use App\Models\VehicleService;
+use App\Models\VehicleServiceOption;
 use App\Traits\SendsSms; // 1. Import the Trait
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -564,6 +569,196 @@ class InvoiceController extends Controller
             return redirect()
                 ->back()
                 ->with('error', $e->getMessage());
+        }
+    }
+
+    public function directCreate()
+    {
+        $customers = Customer::orderBy('name')->get();
+        $stocks = Stock::with('product')
+            ->whereHas('product')
+            ->where('quantity', '>', 0)
+            ->get()
+            ->map(function ($stock) {
+                return [
+                    'id' => $stock->id,
+                    'name' => $stock->product->name . ' (' . $stock->quantity . ' available)',
+                    'price' => $stock->selling_price,
+                    'available_qty' => $stock->quantity,
+                ];
+            });
+
+        $services = VehicleService::with(['options' => function($q) {
+            $q->where('status', 'active');
+        }])->where('status', 'active')->get();
+
+        return Inertia::render('invoice/direct-create', [
+            'customers' => $customers,
+            'stocks' => $stocks,
+            'services' => $services,
+            'default_invoice_date' => date('Y-m-d'),
+        ]);
+    }
+
+    public function directStore(Request $request)
+    {
+        $validated = $request->validate([
+            'customer_id' => 'required|exists:customers,id',
+            'invoice_date' => 'required|date',
+            'due_date' => 'nullable|date|after_or_equal:invoice_date',
+            'payment_method' => 'required|in:cash,card,online,cheque,credit',
+            'advance_payment' => 'required|numeric|min:0',
+            'remarks' => 'nullable|string',
+            'items' => 'required|array|min:1',
+            'items.*.type' => 'required|in:service,product,charge',
+            'items.*.description' => 'required|string',
+            'items.*.quantity' => 'required|numeric|min:1',
+            'items.*.unit_price' => 'required|numeric|min:0',
+            'items.*.discount_type' => 'required|in:fixed,percentage',
+            'items.*.discount_amount' => 'required|numeric|min:0',
+            'items.*.stock_id' => 'nullable|exists:stocks,id',
+            'items.*.vehicle_service_option_id' => 'nullable|exists:vehicle_service_options,id',
+        ]);
+
+        try {
+            $invoice = DB::transaction(function () use ($validated) {
+                // Generate invoice number
+                $invoiceNo = 'INV-' . date('Y') . '-' . str_pad(Invoice::count() + 1, 6, '0', STR_PAD_LEFT);
+
+                $servicesTotal = 0;
+                $productsTotal = 0;
+                $chargesTotal = 0;
+                $discountTotal = 0;
+
+                foreach ($validated['items'] as $item) {
+                    $itemSubtotal = $item['quantity'] * $item['unit_price'];
+                    $itemDiscount = 0;
+
+                    if ($item['discount_type'] === 'percentage') {
+                        $itemDiscount = ($itemSubtotal * $item['discount_amount']) / 100;
+                    } else {
+                        $itemDiscount = $item['discount_amount'];
+                    }
+
+                    $itemTotal = $itemSubtotal - $itemDiscount;
+                    $discountTotal += $itemDiscount;
+
+                    if ($item['type'] === 'service') $servicesTotal += $itemTotal;
+                    if ($item['type'] === 'product') $productsTotal += $itemTotal;
+                    if ($item['type'] === 'charge') $chargesTotal += $itemTotal;
+                }
+
+                $subtotal = $servicesTotal + $productsTotal + $chargesTotal + $discountTotal;
+
+                // Create invoice
+                $invoice = Invoice::create([
+                    'invoice_no' => $invoiceNo,
+                    'customer_id' => $validated['customer_id'],
+                    'user_id' => auth()->id(),
+                    'services_total' => $servicesTotal,
+                    'products_total' => $productsTotal,
+                    'charges_total' => $chargesTotal,
+                    'subtotal' => $subtotal,
+                    'discount_total' => $discountTotal,
+                    'advance_payment' => $validated['advance_payment'],
+                    'total' => $subtotal - $discountTotal,
+                    'payment_method' => $validated['payment_method'],
+                    'invoice_date' => $validated['invoice_date'],
+                    'due_date' => $validated['due_date'] ?? null,
+                    'remarks' => $validated['remarks'] ?? null,
+                    'status' => 'draft',
+                ]);
+
+                foreach ($validated['items'] as $itemData) {
+                    $itemSubtotal = $itemData['quantity'] * $itemData['unit_price'];
+                    $itemDiscount = 0;
+
+                    if ($itemData['discount_type'] === 'percentage') {
+                        $itemDiscount = ($itemSubtotal * $itemData['discount_amount']) / 100;
+                    } else {
+                        $itemDiscount = $itemData['discount_amount'];
+                    }
+
+                    $lineTotal = $itemSubtotal - $itemDiscount;
+                    
+                    InvoiceItem::create([
+                        'invoice_id' => $invoice->id,
+                        'item_type' => $itemData['type'],
+                        'stock_id' => $itemData['stock_id'] ?? null,
+                        'vehicle_service_option_id' => $itemData['vehicle_service_option_id'] ?? null,
+                        'description' => $itemData['description'],
+                        'quantity' => $itemData['quantity'],
+                        'unit_price' => $itemData['unit_price'],
+                        'discount_type' => $itemData['discount_type'],
+                        'discount_amount' => $itemData['discount_amount'],
+                        'discount_total' => $itemDiscount,
+                        'line_total' => $lineTotal,
+                    ]);
+
+                    // Reduce stock if product
+                    if ($itemData['type'] === 'product' && !empty($itemData['stock_id'])) {
+                        $stock = Stock::findOrFail($itemData['stock_id']);
+                        $stock->decrement('quantity', $itemData['quantity']);
+                    }
+                }
+
+                // Ledger entries
+                $salesAccount = Account::where('code', '4000')->firstOrFail();
+                $receivablesAccount = Account::where('code', '1100')->firstOrFail();
+
+                CreateLedgerEntries::run(
+                    description: "Direct Sale for Invoice #{$invoice->invoice_no}",
+                    date: Carbon::parse($invoice->invoice_date),
+                    amount: $invoice->total,
+                    debitAccount: $receivablesAccount,
+                    creditAccount: $salesAccount,
+                    transactionable: $invoice
+                );
+
+                if ($invoice->advance_payment > 0) {
+                    $cashAccount = Account::where('code', '1000')->firstOrFail();
+                    CreateLedgerEntries::run(
+                        description: "Initial payment for Direct Invoice #{$invoice->invoice_no}",
+                        date: Carbon::parse($invoice->invoice_date),
+                        amount: $invoice->advance_payment,
+                        debitAccount: $cashAccount,
+                        creditAccount: $receivablesAccount,
+                        transactionable: $invoice
+                    );
+                }
+
+                return $invoice;
+            });
+
+            // Send SMS if needed (reusing logic from standard store)
+            $customer = Customer::find($validated['customer_id']);
+            if ($customer && $customer->mobile) {
+                $totalAmount = number_format($invoice->total, 2);
+                $dueAmount = number_format($invoice->remaining, 2);
+                $reviewUrl = 'https://gtdrive.lk/review/' . $invoice->review_token;
+                
+                $message = "Dear {$customer->name},\n\n" .
+                    "Thank you for choosing GT Automech.\n" .
+                    "Your invoice ($invoice->invoice_no) for Rs. $totalAmount is ready.\n" .
+                    "Amount due: Rs. $dueAmount.\n\n" .
+                    "We value your feedback!\n" .
+                    "Please tell us about your service below:\n$reviewUrl\n\n" .
+                    "We appreciate your trust in our services.\n\n" .
+                    "For inquiries: 077-409-8580\n\n" .
+                    "- GT AutoMech";
+
+                $this->sendSms($customer->mobile, $message);
+            }
+
+            return redirect()->route('dashboard.invoice.show', $invoice->id)->with('success', 'Direct invoice created successfully');
+
+        } catch (\Exception $e) {
+            Log::error('Failed to create direct invoice', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return back()->withErrors(['error' => 'Failed to create invoice: ' . $e->getMessage()])->withInput();
         }
     }
 }

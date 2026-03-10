@@ -7,6 +7,8 @@ use App\Http\Controllers\Reviews\AdminReviewController;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
+use App\Http\Controllers\PurchaseOrder\PurchaseOrderController;
+use App\Http\Controllers\GRN\GrnController;
 
 Route::get('/', function () {
     return redirect('login');
@@ -27,6 +29,17 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         return Inertia::render('cache-clear');
     });
+
+    Route::get('/dashboard/run-migrations', function () {
+        // Artisan::call('migrate', [
+        //     '--force' => true
+        // ]);
+
+        Artisan::call('migrate');
+
+        return "Migrations executed successfully!";
+    });
+
 });
 
 Route::middleware(['auth'])->group(function () {
@@ -43,17 +56,13 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/dashboard/reviews/{invoice}/manual', [AdminReviewController::class, 'storeManual'])->name('dashboard.reviews.manual.store');
 });
 
-require __DIR__ . '/settings.php';
-require __DIR__ . '/auth.php';
-require __DIR__ . '/stock.php';
-
-use App\Http\Controllers\PurchaseOrder\PurchaseOrderController;
-use App\Http\Controllers\GRN\GrnController;
-
 Route::get('/dashboard/purchase-order/{id}/print', [PurchaseOrderController::class, 'print'])->name('dashboard.purchase-order.print');
 Route::get('/dashboard/grn/{id}/print', [GrnController::class, 'print'])->name('dashboard.grn.print');
 Route::get('/dashboard/grn/{id}', [GrnController::class, 'show'])->name('dashboard.grn.show');
 
+require __DIR__ . '/settings.php';
+require __DIR__ . '/auth.php';
+require __DIR__ . '/stock.php';
 require __DIR__ . '/purchase-order.php';
 require __DIR__ . '/customer.php';
 require __DIR__ . '/grn.php';
@@ -69,3 +78,4 @@ require __DIR__ . '/vehicle-services.php';
 require __DIR__ . '/job-card-charges.php';
 require __DIR__ . '/insurance.php';
 require __DIR__ . '/attendance.php';
+require __DIR__ . '/expense.php';
