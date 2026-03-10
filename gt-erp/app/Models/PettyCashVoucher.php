@@ -71,4 +71,12 @@ class PettyCashVoucher extends Model
     {
         return $this->hasMany(PettyCashItem::class, 'petty_cash_voucher_id');
     }
+
+    /**
+     * Get the ledger entries associated with this voucher.
+     */
+    public function ledgerEntries()
+    {
+        return $this->morphMany(LedgerEntry::class, 'transactionable');
+    }
 }
