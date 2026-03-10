@@ -106,16 +106,19 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 export default function Dashboard() {
     const { auth, financialSummary } = usePage<PageProps>().props;
 
-    const [viewType, setViewType] = useState<'monthly' | 'yearly'>('monthly');
+    const [viewType, setViewType] = useState<'daily' | 'monthly' | 'yearly'>('daily');
     const [startDate, setStartDate] = useState(financialSummary.filters.startDate);
     const [endDate, setEndDate] = useState(financialSummary.filters.endDate);
 
-    const handleQuickFilter = (type: 'monthly' | 'yearly') => {
+    const handleQuickFilter = (type: 'daily' | 'monthly' | 'yearly') => {
         setViewType(type);
         const now = new Date();
         let start, end;
 
-        if (type === 'monthly') {
+        if (type === 'daily') {
+            start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            end = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        } else if (type === 'monthly') {
             start = new Date(now.getFullYear(), now.getMonth(), 1);
             end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
         } else {
@@ -183,6 +186,15 @@ export default function Dashboard() {
                             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 w-full md:w-auto">
                                 {/* Quick Filters */}
                                 <div className="flex gap-2">
+                                    <button
+                                        onClick={() => handleQuickFilter('daily')}
+                                        className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${viewType === 'daily'
+                                            ? 'bg-blue-600 text-white'
+                                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                            }`}
+                                    >
+                                        Daily
+                                    </button>
                                     <button
                                         onClick={() => handleQuickFilter('monthly')}
                                         className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${viewType === 'monthly'

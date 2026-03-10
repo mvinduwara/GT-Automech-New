@@ -17,11 +17,11 @@ class DashboardController extends Controller
         // --- Financial Summary Logic ---
         $startDate = $request->input('start_date')
             ? Carbon::parse($request->input('start_date'))
-            : now()->startOfMonth();
+            : now()->startOfDay();
 
         $endDate = $request->input('end_date')
             ? Carbon::parse($request->input('end_date'))
-            : now()->endOfMonth();
+            : now()->endOfDay();
 
         // 1. Get total income
         $incomeAccountIds = Account::where('type', 'income')->pluck('id');

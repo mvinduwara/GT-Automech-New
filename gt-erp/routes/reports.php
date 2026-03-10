@@ -57,5 +57,9 @@ Route::middleware(['auth', 'is_admin_or_cashier'])->group(function () {
         Route::get('/product-vehicle-analysis', [App\Http\Controllers\Reports\ProductVehicleAnalysisController::class, 'index'])->name('product_vehicle_analysis');
         Route::get('/product-vehicle-analysis/download-excel', [App\Http\Controllers\Reports\ProductVehicleAnalysisController::class, 'exportExcel'])->name('product_vehicle_analysis.excel');
         Route::get('/product-vehicle-analysis/download-pdf', [App\Http\Controllers\Reports\ProductVehicleAnalysisController::class, 'exportPdf'])->name('product_vehicle_analysis.pdf');
+
+        // Top Selling Products Report Routes
+        Route::get('/top-selling-products', [App\Http\Controllers\Reports\TopSellingProductReportController::class, 'index'])->name('top_selling_products');
+        Route::get('/top-selling-products/pdf', [App\Http\Controllers\Reports\TopSellingProductReportController::class, 'downloadPdf'])->name('top_selling_products.pdf');
     });
 });

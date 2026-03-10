@@ -3,7 +3,7 @@ import { NavUser } from '@/components/nav-user';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { type NavItem } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
-import { File, Cog, Car, FileText, HandCoins, Home, IdCard, LayoutGrid, NotepadText, StickyNote, TicketCheck, Trash, UserPlus, UserRound, UserRoundCheck, Users, Star, Calendar } from 'lucide-react';
+import { File, Cog, Car, FileText, HandCoins, Home, IdCard, LayoutGrid, NotepadText, StickyNote, TicketCheck, Trash, UserPlus, UserRound, UserRoundCheck, Users, Star, Calendar, TrendingUp } from 'lucide-react';
 import { useMemo } from 'react';
 import AppLogo from './app-logo';
 
@@ -122,6 +122,12 @@ const mainNavItems: (NavItem & { roles?: string[] })[] = [
         title: 'Product Analysis',
         href: '/dashboard/reports/product-vehicle-analysis',
         icon: FileText,
+        roles: [USER_ROLES.CASHIER, USER_ROLES.ADMIN, USER_ROLES.SERVICEMANAGER],
+    },
+    {
+        title: 'Top Selling Products',
+        href: '/dashboard/reports/top-selling-products',
+        icon: TrendingUp,
         roles: [USER_ROLES.CASHIER, USER_ROLES.ADMIN, USER_ROLES.SERVICEMANAGER],
     },
     {
