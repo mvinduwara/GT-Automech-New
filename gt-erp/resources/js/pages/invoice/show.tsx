@@ -67,6 +67,9 @@ interface InvoiceItem {
     quantity: number;
     unit_price: number;
     line_total: number;
+    discount_type?: 'fixed' | 'percentage' | null;
+    discount_amount?: number | null;
+    discount_total?: number | null;
     job_card_product?: JobCardDiscountInfo;
     job_card_vehicle_service?: JobCardDiscountInfo;
     job_card_charge?: JobCardDiscountInfo;
@@ -179,28 +182,19 @@ export default function Show({ invoice }: Props) {
     };
 
     const getOriginalPrice = (item: InvoiceItem) => {
+        // For direct invoice items, unit_price is already the original price
+        if (!invoice.job_card?.id) {
+            return item.unit_price;
+        }
+
         if (item.item_type === 'product') {
             const info = item.job_card_product;
-            // For products, product.unit_price is the original unit price
-            // Wait, looking at the code, in screen view:
-            // "Rs. {Number(item.unit_price).toLocaleString..."
-            // And in calculateTotalDiscount:
-            // originalTotal = info?.subtotal ?? (item.unit_price * item.quantity);
-            // So item.unit_price is indeed the original unit price per item?
-            // Let's re-verify my previous assumption.
-            // Screen view code for product:
-            // <td className="px-4 py-3 text-sm text-right">Rs. {Number(item.unit_price) ....
-            // So for products, item.unit_price IS the unit price.
             return item.unit_price;
         } else if (item.item_type === 'service') {
             const info = item.job_card_vehicle_service;
-            // For service, item.unit_price is the TOTAL (discounted) price in the database.
-            // We want the original subtotal (charge)
             return info?.subtotal || item.unit_price;
         } else if (item.item_type === 'charge') {
             const info = item.job_card_charge;
-            // For charge, item.unit_price is the TOTAL (discounted) price.
-            // We want the original charge
             return info?.charge || item.unit_price;
         }
         return item.unit_price;
@@ -212,16 +206,30 @@ export default function Show({ invoice }: Props) {
         else if (item.item_type === 'service') info = item.job_card_vehicle_service;
         else if (item.item_type === 'charge') info = item.job_card_charge;
 
-        if (!info || !info.discount_value) return '-';
-
-        if (info.discount_type === 'percentage') {
-            return `${Number(info.discount_value)}%`;
+        if (info && info.discount_value) {
+            if (info.discount_type === 'percentage') {
+                return `${Number(info.discount_value)}%`;
+            }
+            return `Rs. ${Number(info.discount_value).toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
         }
-        return `Rs. ${Number(info.discount_value).toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
+
+        if (item.discount_amount && Number(item.discount_amount) > 0) {
+            if (item.discount_type === 'percentage') {
+                return `${Number(item.discount_amount)}%`;
+            }
+            return `Rs. ${Number(item.discount_amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
+        }
+
+        return '-';
     };
 
     const calculateTotalDiscount = () => {
         return invoice.items.reduce((acc, item) => {
+            // For direct invoice items, use the stored discount_total
+            if (!invoice.job_card?.id && item.discount_total) {
+                return acc + Number(item.discount_total);
+            }
+
             let info: JobCardDiscountInfo | undefined;
             let originalTotal = 0;
 
@@ -359,32 +367,39 @@ export default function Show({ invoice }: Props) {
                             </div>
 
                             {/* Job Card & Vehicle Info */}
-                            <div className="bg-gray-50 p-4 rounded-lg mb-6">
-                                <div className="grid grid-cols-2 gap-4 text-sm">
-                                    <div>
-                                        <span className="text-gray-600">Job Card:</span>
-                                        <span className="ml-2 font-medium">{invoice.job_card.job_card_no}</span>
-                                    </div>
-                                    <div>
-                                        <span className="text-gray-600">Vehicle:</span>
-                                        <span className="ml-2 font-medium">{invoice.job_card.vehicle.vehicle_no}</span>
-                                    </div>
-                                    <div>
-                                        <span className="text-gray-600">Make/Model:</span>
-                                        <span className="ml-2 font-medium">
-                                            {invoice.job_card.vehicle.brand?.name} {invoice.job_card.vehicle.model?.name}
-                                        </span>
-                                    </div>
-                                    <div>
-                                        <span className="text-gray-600">Year:</span>
-                                        <span className="ml-2 font-medium">{invoice.job_card.vehicle.make_year}</span>
-                                    </div>
-                                    <div>
-                                        <span className="text-gray-600">Odometer:</span>
-                                        <span className="ml-2 font-medium">{invoice.job_card.mileage ? `${Number(invoice.job_card.mileage).toLocaleString()} km` : 'N/A'}</span>
+                            {invoice.job_card?.id ? (
+                                <div className="bg-gray-50 p-4 rounded-lg mb-6">
+                                    <div className="grid grid-cols-2 gap-4 text-sm">
+                                        <div>
+                                            <span className="text-gray-600">Job Card:</span>
+                                            <span className="ml-2 font-medium">{invoice.job_card.job_card_no}</span>
+                                        </div>
+                                        <div>
+                                            <span className="text-gray-600">Vehicle:</span>
+                                            <span className="ml-2 font-medium">{invoice.job_card.vehicle?.vehicle_no || 'N/A'}</span>
+                                        </div>
+                                        <div>
+                                            <span className="text-gray-600">Make/Model:</span>
+                                            <span className="ml-2 font-medium">
+                                                {invoice.job_card.vehicle?.brand?.name} {invoice.job_card.vehicle?.model?.name}
+                                            </span>
+                                        </div>
+                                        <div>
+                                            <span className="text-gray-600">Year:</span>
+                                            <span className="ml-2 font-medium">{invoice.job_card.vehicle?.make_year || 'N/A'}</span>
+                                        </div>
+                                        <div>
+                                            <span className="text-gray-600">Odometer:</span>
+                                            <span className="ml-2 font-medium">{invoice.job_card.mileage ? `${Number(invoice.job_card.mileage).toLocaleString()} km` : 'N/A'}</span>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
+                            ) : (
+                                <div className="bg-indigo-50/50 p-4 rounded-lg mb-6 border border-indigo-100/50">
+                                    <p className="text-sm font-medium text-indigo-900">Direct Invoice</p>
+                                    <p className="text-xs text-indigo-700 mt-1">This invoice was created directly without a job card.</p>
+                                </div>
+                            )}
                         </div>
 
                         {/* Services */}
@@ -611,30 +626,44 @@ export default function Show({ invoice }: Props) {
                     </div>
 
                     {/* Vehicle Section */}
-                    <div>
-                        <h3 className="section-title">Vehicle</h3>
-                        <div className="info-grid">
-                            <span className="label">Make/Model</span>
-                            <span className="value">{invoice.job_card.vehicle.brand?.name} {invoice.job_card.vehicle.model?.name}</span>
-                            <span className="label">Year</span>
-                            <span className="value">{invoice.job_card.vehicle.make_year}</span>
-                            <span className="label">Reg No.</span>
-                            <span className="value">{invoice.job_card.vehicle.vehicle_no}</span>
-                            <span className="label">Odometer</span>
-                            <span className="value">{invoice.job_card.mileage ? `${Number(invoice.job_card.mileage).toLocaleString()} km` : 'N/A'}</span>
-                        </div>
-                    </div>
+                    {invoice.job_card?.id ? (
+                        <>
+                            <div>
+                                <h3 className="section-title">Vehicle</h3>
+                                <div className="info-grid">
+                                    <span className="label">Make/Model</span>
+                                    <span className="value">{invoice.job_card.vehicle?.brand?.name} {invoice.job_card.vehicle?.model?.name}</span>
+                                    <span className="label">Year</span>
+                                    <span className="value">{invoice.job_card.vehicle?.make_year || 'N/A'}</span>
+                                    <span className="label">Reg No.</span>
+                                    <span className="value">{invoice.job_card.vehicle?.vehicle_no || 'N/A'}</span>
+                                    <span className="label">Odometer</span>
+                                    <span className="value">{invoice.job_card.mileage ? `${Number(invoice.job_card.mileage).toLocaleString()} km` : 'N/A'}</span>
+                                </div>
+                            </div>
 
-                    {/* Job Section */}
-                    <div>
-                        <h3 className="section-title">Job</h3>
-                        <div className="info-grid">
-                            <span className="label">Job #</span>
-                            <span className="value">{invoice.job_card.job_card_no}</span>
-                            <span className="label">Service Advisor</span>
-                            <span className="value">{invoice.user.name}</span>
+                            {/* Job Section */}
+                            <div>
+                                <h3 className="section-title">Job</h3>
+                                <div className="info-grid">
+                                    <span className="label">Job #</span>
+                                    <span className="value">{invoice.job_card.job_card_no}</span>
+                                    <span className="label">Service Advisor</span>
+                                    <span className="value">{invoice.user.name}</span>
+                                </div>
+                            </div>
+                        </>
+                    ) : (
+                        <div>
+                            <h3 className="section-title">Invoice Details</h3>
+                            <div className="info-grid">
+                                <span className="label">Type</span>
+                                <span className="value">Direct Invoice</span>
+                                <span className="label">Cashier</span>
+                                <span className="value">{invoice.user.name}</span>
+                            </div>
                         </div>
-                    </div>
+                    )}
                 </div>
 
                 {/* Remarks - Full Width */}
@@ -699,6 +728,22 @@ export default function Show({ invoice }: Props) {
                     </div>
                 </div>
 
+                {/* Signatures */}
+                <div className="signatures-section">
+                    <div className="signature-box">
+                        <div className="signature-line"></div>
+                        <p>Customer Signature</p>
+                    </div>
+                    <div className="signature-box">
+                        <div className="signature-line"></div>
+                        <p>Cashier Signature</p>
+                    </div>
+                    <div className="signature-box">
+                        <div className="signature-line"></div>
+                        <p>Technician / Officer</p>
+                    </div>
+                </div>
+
                 {/* Footer */}
                 <div className="invoice-footer">
                     Thank you for choosing <strong>GT Automech</strong>.
@@ -707,7 +752,7 @@ export default function Show({ invoice }: Props) {
             </div>
 
             {/* Print Styles */}
-            <style jsx global>{`
+            <style>{`
                 @media print {
                     body {
                         margin: 0;
@@ -796,6 +841,30 @@ export default function Show({ invoice }: Props) {
                         grid-template-columns: 70px 1fr;
                         row-gap: 2px;
                         font-size: 11px;
+                    }
+
+                    .signatures-section {
+                        display: grid;
+                        grid-template-columns: 1fr 1fr 1fr;
+                        gap: 30px;
+                        margin-top: 60px;
+                        margin-bottom: 20px;
+                    }
+
+                    .signature-box {
+                        text-align: center;
+                    }
+
+                    .signature-line {
+                        border-top: 1px solid #000;
+                        margin-bottom: 5px;
+                    }
+
+                    .signature-box p {
+                        margin: 0;
+                        font-size: 10px;
+                        font-weight: bold;
+                        text-transform: uppercase;
                     }
 
                     .label {

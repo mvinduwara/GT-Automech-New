@@ -22,6 +22,7 @@ class Invoice extends Model
         'products_total',
         'charges_total',
         'subtotal',
+        'discount_total',
         'advance_payment',
         'total',
         'status',
@@ -39,6 +40,7 @@ class Invoice extends Model
         'products_total' => 'decimal:2',
         'charges_total' => 'decimal:2',
         'subtotal' => 'decimal:2',
+        'discount_total' => 'decimal:2',
         'advance_payment' => 'decimal:2',
         'total' => 'decimal:2',
         'invoice_date' => 'date',
@@ -111,7 +113,7 @@ class Invoice extends Model
 
     public function jobCard(): BelongsTo
     {
-        return $this->belongsTo(JobCard::class);
+        return $this->belongsTo(JobCard::class)->withDefault();
     }
 
     public function user(): BelongsTo

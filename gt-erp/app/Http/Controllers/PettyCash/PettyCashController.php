@@ -174,8 +174,8 @@ class PettyCashController extends Controller
         try {
             $pettyCash = PettyCashVoucher::where('voucher_number', $voucher_number)->firstOrFail();
 
-            // Delete associated items first
-            PettyCashItem::where('petty_cash_voucher_id', $pettyCash->id)->delete();
+            // Delete associated ledger entries
+            $pettyCash->ledgerEntries()->delete();
 
             // Delete the voucher
             $pettyCash->delete();
@@ -364,9 +364,13 @@ class PettyCashController extends Controller
                 'total_amount' => $actualAmount, // syncing with actual spent
                 'balance_amount' => $balanceAmount,
                 'proof_path' => $proofPath,
-                'status' => 'paid', // Keep as paid or add a 'finalized' if you prefer, but we'll use finalized_at to distinguish
+                'status' => 'paid', 
                 'finalized_at' => now(),
             ]);
+
+            // Update ledger entries to match actual spent amount
+            $voucher->ledgerEntries()->where('debit', '>', 0)->update(['debit' => $actualAmount]);
+            $voucher->ledgerEntries()->where('credit', '>', 0)->update(['credit' => $actualAmount]);
 
             DB::commit();
 

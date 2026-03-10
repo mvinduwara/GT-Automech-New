@@ -56,6 +56,7 @@ function CustomerCreateDialog({
         name: '',
         mobile: '',
         address: '',
+        redirect_back: true,
     });
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -68,9 +69,11 @@ function CustomerCreateDialog({
                 clearErrors();
                 toast.success('Customer created successfully!');
 
-                // Call the onSuccess callback if provided
-                if (onSuccess && page.props.customer) {
-                    onSuccess(page.props.customer);
+                // @ts-ignore - flash might not be in types but exists in props
+                const newCustomer = page.props.flash?.customer;
+                
+                if (onSuccess && newCustomer) {
+                    onSuccess(newCustomer);
                 }
             },
             onError: (errors) => {
@@ -100,6 +103,7 @@ function CustomerCreateDialog({
         <AlertDialog open={isOpen} onOpenChange={handleOpenChange}>
             <AlertDialogTrigger asChild>
                 <Button
+                    type="button"
                     variant={triggerButtonVariant}
                     size={triggerButtonSize}
                     disabled={disabled}
