@@ -13,6 +13,10 @@ import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import CustomerCreateDialog from '../customer/CustomerCreateDialog';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { Check, ChevronsUpDown } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface Customer {
     id: number;
@@ -65,6 +69,8 @@ interface FormData {
     payment_method: string;
     advance_payment: number;
     remarks: string;
+    overall_discount: number;
+    overall_discount_type: 'fixed' | 'percentage';
     items: InvoiceItem[];
 }
 
@@ -76,6 +82,8 @@ export default function DirectCreate({ customers, stocks, services, default_invo
         payment_method: 'cash',
         advance_payment: 0,
         remarks: '',
+        overall_discount: 0,
+        overall_discount_type: 'fixed',
         items: [] as InvoiceItem[],
     });
 
@@ -153,25 +161,162 @@ export default function DirectCreate({ customers, stocks, services, default_invo
         setData('items', newItems);
     };
 
-    const totals = useMemo(() => {
-        const subtotal = data.items.reduce((sum: number, item: any) => sum + (item.quantity * item.unit_price), 0);
+    // --- Local Combobox Components ---
+    const ProductCombobox = ({ index, selectedId }: { index: number, selectedId?: number | null }) => {
+        const [open, setOpen] = useState(false);
+        const selectedProduct = stocks.find((s) => s.id === selectedId);
 
-        const totalDiscount = data.items.reduce((sum: number, item: any) => {
-            const itemSubtotal = item.quantity * item.unit_price;
+        return (
+            <Popover open={open} onOpenChange={setOpen}>
+                <PopoverTrigger asChild>
+                    <Button
+                        variant="outline"
+                        role="combobox"
+                        aria-expanded={open}
+                        className="h-9 justify-between bg-white text-xs font-normal w-full"
+                    >
+                        <span className="truncate">
+                            {selectedProduct ? selectedProduct.name : "Select Product"}
+                        </span>
+                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[300px] p-0" align="start">
+                    <Command>
+                        <CommandInput placeholder="Search product..." />
+                        <CommandList>
+                            <CommandEmpty>No product found.</CommandEmpty>
+                            <CommandGroup>
+                                {stocks.map((s) => (
+                                    <CommandItem
+                                        key={s.id}
+                                        value={s.name}
+                                        onSelect={() => {
+                                            updateItem(index, 'stock_id', s.id);
+                                            setOpen(false);
+                                        }}
+                                    >
+                                        <Check
+                                            className={cn(
+                                                "mr-2 h-4 w-4",
+                                                selectedId === s.id ? "opacity-100" : "opacity-0"
+                                            )}
+                                        />
+                                        <div className="flex flex-col">
+                                            <span>{s.name}</span>
+                                            <span className="text-[10px] text-muted-foreground">Qty: {s.available_qty} | Price: LKR {s.price}</span>
+                                        </div>
+                                    </CommandItem>
+                                ))}
+                            </CommandGroup>
+                        </CommandList>
+                    </Command>
+                </PopoverContent>
+            </Popover>
+        );
+    };
+
+    const ServiceCombobox = ({ index, selectedId }: { index: number, selectedId?: number | null }) => {
+        const [open, setOpen] = useState(false);
+        
+        const getSelectedLabel = () => {
+            if (!selectedId) return "Select Service";
+            let label = "Select Service";
+            services.forEach(s => {
+                const opt = s.options.find(o => o.id === selectedId);
+                if (opt) label = `${s.name} - ${opt.name}`;
+            });
+            return label;
+        };
+
+        return (
+            <Popover open={open} onOpenChange={setOpen}>
+                <PopoverTrigger asChild>
+                    <Button
+                        variant="outline"
+                        role="combobox"
+                        aria-expanded={open}
+                        className="h-9 justify-between bg-white text-xs font-normal w-full"
+                    >
+                        <span className="truncate">
+                            {getSelectedLabel()}
+                        </span>
+                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[300px] p-0" align="start">
+                    <Command>
+                        <CommandInput placeholder="Search service..." />
+                        <CommandList>
+                            <CommandEmpty>No service found.</CommandEmpty>
+                            {services.map((s) => (
+                                <CommandGroup key={s.id} heading={s.name}>
+                                    {s.options.map((o) => (
+                                        <CommandItem
+                                            key={o.id}
+                                            value={`${s.name} ${o.name}`}
+                                            onSelect={() => {
+                                                updateItem(index, 'vehicle_service_option_id', o.id);
+                                                setOpen(false);
+                                            }}
+                                        >
+                                            <Check
+                                                className={cn(
+                                                    "mr-2 h-4 w-4",
+                                                    selectedId === o.id ? "opacity-100" : "opacity-0"
+                                                )}
+                                            />
+                                            <div className="flex flex-col">
+                                                <span>{o.name}</span>
+                                                <span className="text-[10px] text-muted-foreground">Price: LKR {o.price}</span>
+                                            </div>
+                                        </CommandItem>
+                                    ))}
+                                </CommandGroup>
+                            ))}
+                        </CommandList>
+                    </Command>
+                </PopoverContent>
+            </Popover>
+        );
+    };
+
+    const totals = useMemo(() => {
+        const itemSubtotal = data.items.reduce((sum: number, item: any) => sum + (item.quantity * item.unit_price), 0);
+
+        const itemDiscounts = data.items.reduce((sum: number, item: any) => {
+            const rowSubtotal = item.quantity * item.unit_price;
             let discount = 0;
             if (item.discount_type === 'percentage') {
-                discount = (itemSubtotal * item.discount_amount) / 100;
+                discount = (rowSubtotal * item.discount_amount) / 100;
             } else {
                 discount = item.discount_amount;
             }
             return sum + discount;
         }, 0);
 
-        const total = subtotal - totalDiscount;
-        const balance = total - data.advance_payment;
+        const netItemsTotal = itemSubtotal - itemDiscounts;
+        
+        // Overall Discount
+        let overallDiscountAmount = 0;
+        if (data.overall_discount_type === 'percentage') {
+            overallDiscountAmount = (netItemsTotal * data.overall_discount) / 100;
+        } else {
+            overallDiscountAmount = data.overall_discount;
+        }
 
-        return { subtotal, totalDiscount, total, balance };
-    }, [data.items, data.advance_payment]);
+        const grandTotal = netItemsTotal - overallDiscountAmount;
+        const balance = grandTotal - data.advance_payment;
+
+        return { 
+            itemSubtotal, 
+            itemDiscounts, 
+            netItemsTotal, 
+            overallDiscountAmount, 
+            grandTotal, 
+            balance 
+        };
+    }, [data.items, data.advance_payment, data.overall_discount, data.overall_discount_type]);
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -346,40 +491,9 @@ export default function DirectCreate({ customers, stocks, services, default_invo
                                                     <TableCell className="align-top py-4">
                                                         <div className="flex flex-col gap-2">
                                                             {item.type === 'product' ? (
-                                                                <Select
-                                                                    value={item.stock_id?.toString() || ''}
-                                                                    onValueChange={val => updateItem(index, 'stock_id', val)}
-                                                                >
-                                                                    <SelectTrigger className="h-9 bg-white text-xs">
-                                                                        <SelectValue placeholder="Select Product" />
-                                                                    </SelectTrigger>
-                                                                    <SelectContent>
-                                                                        {stocks.map(s => (
-                                                                            <SelectItem key={s.id} value={s.id.toString()}>
-                                                                                {s.name} (Stock: {s.available_qty})
-                                                                            </SelectItem>
-                                                                        ))}
-                                                                    </SelectContent>
-                                                                </Select>
+                                                                <ProductCombobox index={index} selectedId={item.stock_id} />
                                                             ) : item.type === 'service' ? (
-                                                                <Select
-                                                                    value={item.vehicle_service_option_id?.toString() || ''}
-                                                                    onValueChange={val => updateItem(index, 'vehicle_service_option_id', val)}
-                                                                >
-                                                                    <SelectTrigger className="h-9 bg-white text-xs">
-                                                                        <SelectValue placeholder="Select Service" />
-                                                                    </SelectTrigger>
-                                                                    <SelectContent>
-                                                                        {services.map(s => (
-                                                                            <div key={s.id}>
-                                                                                <div className="px-2 py-1.5 text-[10px] font-bold text-muted-foreground uppercase bg-gray-50/80">{s.name}</div>
-                                                                                {s.options.map(o => (
-                                                                                    <SelectItem key={o.id} value={o.id.toString()} className="text-xs">{o.name}</SelectItem>
-                                                                                ))}
-                                                                            </div>
-                                                                        ))}
-                                                                    </SelectContent>
-                                                                </Select>
+                                                                <ServiceCombobox index={index} selectedId={item.vehicle_service_option_id} />
                                                             ) : (
                                                                 <div className="h-9 flex items-center px-3 border border-dashed rounded-md text-[10px] font-bold text-muted-foreground uppercase bg-gray-50/50">Charge(s)</div>
                                                             )}
@@ -486,18 +600,26 @@ export default function DirectCreate({ customers, stocks, services, default_invo
                                 <div className="p-8 bg-gray-50/30 border-t flex flex-col items-end gap-3">
                                     <div className="space-y-2 w-full max-w-[280px]">
                                         <div className="flex justify-between text-sm">
-                                            <span className="text-gray-500">Subtotal</span>
-                                            <span className="font-medium text-gray-700">LKR {totals.subtotal.toLocaleString('en-LK', { minimumFractionDigits: 2 })}</span>
+                                            <span className="text-gray-500">Items Subtotal</span>
+                                            <span className="font-medium text-gray-700">LKR {totals.itemSubtotal.toLocaleString('en-LK', { minimumFractionDigits: 2 })}</span>
                                         </div>
-                                        <div className="flex justify-between text-sm text-red-500">
-                                            <span>Total Discounts</span>
-                                            <span className="font-medium">- LKR {totals.totalDiscount.toLocaleString('en-LK', { minimumFractionDigits: 2 })}</span>
-                                        </div>
+                                        {totals.itemDiscounts > 0 && (
+                                            <div className="flex justify-between text-sm text-red-500">
+                                                <span>Item-level Discounts</span>
+                                                <span className="font-medium">- LKR {totals.itemDiscounts.toLocaleString('en-LK', { minimumFractionDigits: 2 })}</span>
+                                            </div>
+                                        )}
+                                        {totals.overallDiscountAmount > 0 && (
+                                            <div className="flex justify-between text-sm text-red-600 font-medium">
+                                                <span>Overall Discount</span>
+                                                <span className="">- LKR {totals.overallDiscountAmount.toLocaleString('en-LK', { minimumFractionDigits: 2 })}</span>
+                                            </div>
+                                        )}
                                         <div className="flex justify-between items-center pt-3 border-t border-gray-200">
                                             <span className="text-base font-semibold text-gray-900">Grand Total</span>
                                             <div className="text-2xl font-bold text-gray-900">
                                                 <span className="text-xs font-medium mr-1 text-gray-500">LKR</span>
-                                                {totals.total.toLocaleString('en-LK', { minimumFractionDigits: 2 })}
+                                                {totals.grandTotal.toLocaleString('en-LK', { minimumFractionDigits: 2 })}
                                             </div>
                                         </div>
                                     </div>
@@ -538,19 +660,53 @@ export default function DirectCreate({ customers, stocks, services, default_invo
                             {/* Summary Box */}
                             <div className="space-y-2 bg-gray-50 p-4 rounded-lg border border-gray-100">
                                 <div className="flex justify-between text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    <span>Nett Total</span>
-                                    <span>LKR {totals.total.toLocaleString('en-LK', { minimumFractionDigits: 2 })}</span>
+                                    <span>Items Total</span>
+                                    <span>LKR {totals.netItemsTotal.toLocaleString('en-LK', { minimumFractionDigits: 2 })}</span>
                                 </div>
+                                {totals.overallDiscountAmount > 0 && (
+                                    <div className="flex justify-between text-xs font-medium text-red-600 uppercase tracking-wider">
+                                        <span>Overall Discount</span>
+                                        <span>- LKR {totals.overallDiscountAmount.toLocaleString('en-LK', { minimumFractionDigits: 2 })}</span>
+                                    </div>
+                                )}
                                 <div className="flex justify-between items-center pt-2 border-t border-gray-200">
-                                    <span className="text-sm font-semibold text-gray-700 uppercase">Amount Due</span>
+                                    <span className="text-sm font-semibold text-gray-700 uppercase">Payable Amount</span>
                                     <span className="text-xl font-bold text-gray-900">
                                         <span className="text-xs font-medium mr-1 text-gray-500">LKR</span>
-                                        {totals.total.toLocaleString('en-LK', { minimumFractionDigits: 2 })}
+                                        {totals.grandTotal.toLocaleString('en-LK', { minimumFractionDigits: 2 })}
                                     </span>
                                 </div>
                             </div>
 
                             <div className="grid gap-4">
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-1">
+                                        <Label className="text-xs font-medium text-gray-500">Discount Type</Label>
+                                        <Select
+                                            value={data.overall_discount_type}
+                                            onValueChange={val => setData('overall_discount_type', val as 'fixed' | 'percentage')}
+                                        >
+                                            <SelectTrigger className="h-9 border-gray-200 text-sm">
+                                                <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="fixed">Fixed (LKR)</SelectItem>
+                                                <SelectItem value="percentage">Percentage (%)</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <Label className="text-xs font-medium text-gray-500">Overall Discount</Label>
+                                        <Input
+                                            type="number"
+                                            className="h-9 border-gray-200 text-sm"
+                                            value={data.overall_discount}
+                                            onChange={e => setData('overall_discount', Number(e.target.value))}
+                                            placeholder="0.00"
+                                        />
+                                    </div>
+                                </div>
+
                                 <div className="space-y-1">
                                     <Label className="text-xs font-medium text-gray-500">Payment Method</Label>
                                     <Select
@@ -585,7 +741,8 @@ export default function DirectCreate({ customers, stocks, services, default_invo
                                     <div className="flex justify-between items-center px-1 mt-1">
                                         <span className="text-[10px] font-medium text-gray-400 uppercase tracking-widest">Balance Due</span>
                                         <span className={`text-sm font-bold ${totals.balance > 0 ? 'text-orange-600' : 'text-emerald-600'}`}>
-                                            LKR {totals.balance.toLocaleString('en-LK', { minimumFractionDigits: 2 })}
+                                            LKR {Math.abs(totals.balance).toLocaleString('en-LK', { minimumFractionDigits: 2 })}
+                                            {totals.balance < 0 && ' (Change/Overpaid)'}
                                         </span>
                                     </div>
                                 </div>

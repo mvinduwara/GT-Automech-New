@@ -154,6 +154,8 @@ class InvoiceController extends Controller
             'advance_payment' => 'nullable|numeric|min:0',
             'remarks' => 'nullable|string|max:1000',
             'terms_conditions' => 'nullable|string|max:2000',
+            'overall_discount' => 'nullable|numeric|min:0',
+            'overall_discount_type' => 'nullable|in:fixed,percentage',
         ]);
 
         try {
@@ -198,6 +200,8 @@ class InvoiceController extends Controller
                     'due_date' => $validated['due_date'] ?? null,
                     'remarks' => $validated['remarks'] ?? null,
                     'terms_conditions' => $validated['terms_conditions'] ?? null,
+                    'overall_discount' => $validated['overall_discount'] ?? 0,
+                    'overall_discount_type' => $validated['overall_discount_type'] ?? 'fixed',
                     'status' => 'draft',
                 ]);
 
@@ -618,6 +622,8 @@ class InvoiceController extends Controller
             'items.*.discount_amount' => 'required|numeric|min:0',
             'items.*.stock_id' => 'nullable|exists:stocks,id',
             'items.*.vehicle_service_option_id' => 'nullable|exists:vehicle_service_options,id',
+            'overall_discount' => 'nullable|numeric|min:0',
+            'overall_discount_type' => 'nullable|in:fixed,percentage',
         ]);
 
         try {
@@ -666,6 +672,8 @@ class InvoiceController extends Controller
                     'invoice_date' => $validated['invoice_date'],
                     'due_date' => $validated['due_date'] ?? null,
                     'remarks' => $validated['remarks'] ?? null,
+                    'overall_discount' => $validated['overall_discount'] ?? 0,
+                    'overall_discount_type' => $validated['overall_discount_type'] ?? 'fixed',
                     'status' => 'draft',
                 ]);
 

@@ -13,6 +13,13 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
 import { useState } from "react";
 import { router } from "@inertiajs/react";
 import { FileText, AlertCircle } from "lucide-react";
@@ -41,6 +48,8 @@ function CreateInvoiceForm({
         advance_payment: '0',
         remarks: '',
         terms_conditions: '',
+        overall_discount: '0',
+        overall_discount_type: 'fixed',
     });
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -73,6 +82,8 @@ function CreateInvoiceForm({
                 advance_payment: advancePayment,
                 remarks: formData.remarks || null,
                 terms_conditions: formData.terms_conditions || null,
+                overall_discount: parseFloat(formData.overall_discount) || 0,
+                overall_discount_type: formData.overall_discount_type,
             },
             {
                 onSuccess: () => {
@@ -97,6 +108,8 @@ function CreateInvoiceForm({
             advance_payment: '0',
             remarks: '',
             terms_conditions: 'All prices are in LKR.',
+            overall_discount: '0',
+            overall_discount_type: 'fixed',
         });
     };
 
@@ -111,9 +124,21 @@ function CreateInvoiceForm({
         }
     };
 
+    const calculateOverallDiscountAmount = () => {
+        const discount = parseFloat(formData.overall_discount) || 0;
+        if (formData.overall_discount_type === 'percentage') {
+            return (grandTotal * discount) / 100;
+        }
+        return discount;
+    };
+
+    const calculateTotalAfterDiscount = () => {
+        return Math.max(0, grandTotal - calculateOverallDiscountAmount());
+    };
+
     const calculateRemaining = () => {
         const advance = parseFloat(formData.advance_payment) || 0;
-        return Math.max(0, grandTotal - advance);
+        return Math.max(0, calculateTotalAfterDiscount() - advance);
     };
 
     if (hasInvoice) {
@@ -153,17 +178,27 @@ function CreateInvoiceForm({
                             <AlertDescription>
                                 <div className="space-y-1 text-sm">
                                     <div className="flex justify-between">
-                                        <span className="font-medium">Total Amount:</span>
-                                        <span className="font-bold">Rs. {grandTotal.toLocaleString()}</span>
+                                        <span className="font-medium text-gray-600">Items Total:</span>
+                                        <span className="font-medium">Rs. {grandTotal.toLocaleString()}</span>
+                                    </div>
+                                    {calculateOverallDiscountAmount() > 0 && (
+                                        <div className="flex justify-between text-red-600">
+                                            <span>Overall Discount ({formData.overall_discount_type === 'percentage' ? `${formData.overall_discount}%` : 'Fixed'}):</span>
+                                            <span>- Rs. {calculateOverallDiscountAmount().toLocaleString()}</span>
+                                        </div>
+                                    )}
+                                    <div className="flex justify-between border-t pt-2 mt-1">
+                                        <span className="text-base font-bold">Payable Total:</span>
+                                        <span className="text-base font-bold">Rs. {calculateTotalAfterDiscount().toLocaleString()}</span>
                                     </div>
                                     {parseFloat(formData.advance_payment) > 0 && (
                                         <>
-                                            <div className="flex justify-between text-gray-600">
+                                            <div className="flex justify-between text-gray-600 mt-1">
                                                 <span>Advance Payment:</span>
                                                 <span>Rs. {parseFloat(formData.advance_payment).toLocaleString()}</span>
                                             </div>
-                                            <div className="flex justify-between border-t pt-1">
-                                                <span className="font-medium">Remaining:</span>
+                                            <div className="flex justify-between border-t border-dashed pt-1 mt-1">
+                                                <span className="font-medium">Remaining balance:</span>
                                                 <span className="font-bold text-indigo-600">
                                                     Rs. {calculateRemaining().toLocaleString()}
                                                 </span>
@@ -186,6 +221,36 @@ function CreateInvoiceForm({
                                 onChange={(e) => setFormData({ ...formData, invoice_date: e.target.value })}
                                 required
                             />
+                        </div>
+
+                        {/* Overall Discount */}
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="overall_discount_type">Discount Type</Label>
+                                <Select
+                                    value={formData.overall_discount_type}
+                                    onValueChange={(value) => setFormData({ ...formData, overall_discount_type: value as 'fixed' | 'percentage' })}
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select type" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="fixed">Fixed Amount (Rs.)</SelectItem>
+                                        <SelectItem value="percentage">Percentage (%)</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="overall_discount">Overall Discount</Label>
+                                <Input
+                                    id="overall_discount"
+                                    type="number"
+                                    step="0.01"
+                                    min="0"
+                                    value={formData.overall_discount}
+                                    onChange={(e) => setFormData({ ...formData, overall_discount: e.target.value })}
+                                />
+                            </div>
                         </div>
 
                         {/* Due Date */}

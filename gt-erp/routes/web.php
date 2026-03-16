@@ -79,3 +79,4 @@ require __DIR__ . '/job-card-charges.php';
 require __DIR__ . '/insurance.php';
 require __DIR__ . '/attendance.php';
 require __DIR__ . '/expense.php';
+require __DIR__ . '/accounts.php';

@@ -90,6 +90,8 @@ interface Invoice {
     payment_method: PaymentMethod;
     remarks: string | null;
     terms_conditions: string | null;
+    overall_discount: number;
+    overall_discount_type: 'fixed' | 'percentage';
     customer: Customer;
     job_card: JobCard;
     user: User;
@@ -541,7 +543,24 @@ export default function Show({ invoice }: Props) {
                                         </Badge>
                                     </div>
                                     <div className="flex justify-between py-2">
-                                        <span className="font-semibold">Rs. {Number(invoice.subtotal).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                                        <span className="text-gray-600">Subtotal:</span>
+                                        <span className="font-medium">Rs. {Number(invoice.subtotal).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                                    </div>
+                                    {invoice.overall_discount > 0 && (
+                                        <div className="flex justify-between py-2 text-red-600">
+                                            <span>Overall Discount ({invoice.overall_discount_type === 'percentage' ? `${invoice.overall_discount}%` : 'Fixed'}):</span>
+                                            <span className="font-medium">
+                                                - Rs. {(invoice.overall_discount_type === 'percentage' 
+                                                    ? (Number(invoice.subtotal) * Number(invoice.overall_discount) / 100) 
+                                                    : Number(invoice.overall_discount)
+                                                ).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                            </span>
+                                        </div>
+                                    )}
+                                    <Separator />
+                                    <div className="flex justify-between py-2 font-bold text-gray-900">
+                                        <span>Total Amount:</span>
+                                        <span>Rs. {Number(invoice.total).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                                     </div>
                                     {totalDiscount > 0 && (
                                         <div className="flex justify-between py-2 text-red-600">
@@ -708,8 +727,17 @@ export default function Show({ invoice }: Props) {
                     </div>
                     <div className="totals-row">
                         <span>Subtotal</span>
-                        <span>{Number(grossTotal).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                        <span>{Number(invoice.subtotal).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                     </div>
+                    {invoice.overall_discount > 0 && (
+                        <div className="totals-row text-red-600">
+                            <span>Overall Discount ({invoice.overall_discount_type === 'percentage' ? `${invoice.overall_discount}%` : 'Fixed'})</span>
+                            <span>- {(invoice.overall_discount_type === 'percentage' 
+                                ? (Number(invoice.subtotal) * Number(invoice.overall_discount) / 100) 
+                                : Number(invoice.overall_discount)
+                            ).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                        </div>
+                    )}
                     {totalDiscount > 0 && (
                         <div className="totals-row">
                             <span>Total Discount (You Saved)</span>
