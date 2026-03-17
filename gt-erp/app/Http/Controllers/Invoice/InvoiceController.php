@@ -156,6 +156,7 @@ class InvoiceController extends Controller
             'terms_conditions' => 'nullable|string|max:2000',
             'overall_discount' => 'nullable|numeric|min:0',
             'overall_discount_type' => 'nullable|in:fixed,percentage',
+            'rounding_adjustment' => 'nullable|numeric',
         ]);
 
         try {
@@ -301,7 +302,10 @@ class InvoiceController extends Controller
             // --- 🚀 END SMS ---
 
             Log::info('Invoice and ledger entries created successfully', ['invoice_id' => $invoice->id]);
-            return redirect()->route('dashboard.invoice.show', $invoice->id)->with('success', 'Invoice created successfully');
+            return redirect()->route('dashboard.invoice.show', $invoice->id)->with([
+                'success' => 'Invoice created successfully',
+                'invoice_id' => $invoice->id
+            ]);
 
             // --- Note: Removed unreachable code that was here ---
 
@@ -715,9 +719,9 @@ class InvoiceController extends Controller
                 $receivablesAccount = Account::where('code', '1100')->firstOrFail();
 
                 CreateLedgerEntries::run(
-                    description: "Direct Sale for Invoice #{$invoice->invoice_no}",
+                    description: "Payment for Invoice #{$invoice->invoice_no}",
                     date: Carbon::parse($invoice->invoice_date),
-                    amount: $invoice->total,
+                    amount: (float)$invoice->total,
                     debitAccount: $receivablesAccount,
                     creditAccount: $salesAccount,
                     transactionable: $invoice
@@ -726,9 +730,9 @@ class InvoiceController extends Controller
                 if ($invoice->advance_payment > 0) {
                     $cashAccount = Account::where('code', '1000')->firstOrFail();
                     CreateLedgerEntries::run(
-                        description: "Initial payment for Direct Invoice #{$invoice->invoice_no}",
+                        description: "Initial payment for Invoice #{$invoice->invoice_no}",
                         date: Carbon::parse($invoice->invoice_date),
-                        amount: $invoice->advance_payment,
+                        amount: (float)$invoice->advance_payment,
                         debitAccount: $cashAccount,
                         creditAccount: $receivablesAccount,
                         transactionable: $invoice
@@ -758,7 +762,10 @@ class InvoiceController extends Controller
                 $this->sendSms($customer->mobile, $message);
             }
 
-            return redirect()->route('dashboard.invoice.show', $invoice->id)->with('success', 'Direct invoice created successfully');
+            return redirect()->route('dashboard.invoice.show', $invoice->id)->with([
+                'success' => 'Direct invoice created successfully',
+                'invoice_id' => $invoice->id
+            ]);
 
         } catch (\Exception $e) {
             Log::error('Failed to create direct invoice', [

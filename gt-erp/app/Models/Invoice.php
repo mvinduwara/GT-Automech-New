@@ -35,6 +35,7 @@ class Invoice extends Model
         'manual_feedback',
         'overall_discount',
         'overall_discount_type',
+        'rounding_adjustment',
     ];
 
     protected $casts = [
@@ -46,6 +47,7 @@ class Invoice extends Model
         'advance_payment' => 'decimal:2',
         'total' => 'decimal:2',
         'overall_discount' => 'decimal:2',
+        'rounding_adjustment' => 'decimal:2',
         'invoice_date' => 'date',
         'due_date' => 'date',
     ];
@@ -75,8 +77,8 @@ class Invoice extends Model
                 $overallDiscountAmount = $invoice->overall_discount ?? 0;
             }
 
-            // Total is subtotal minus overall discount
-            $invoice->total = max(0, $invoice->subtotal - $overallDiscountAmount);
+            // Total is subtotal minus overall discount plus rounding adjustment
+            $invoice->total = max(0, ($invoice->subtotal - $overallDiscountAmount) + ($invoice->rounding_adjustment ?? 0));
 
             // Update status based on payment
             $invoice->updatePaymentStatus();

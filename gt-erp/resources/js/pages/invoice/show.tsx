@@ -92,6 +92,7 @@ interface Invoice {
     terms_conditions: string | null;
     overall_discount: number;
     overall_discount_type: 'fixed' | 'percentage';
+    rounding_adjustment: number;
     customer: Customer;
     job_card: JobCard;
     user: User;
@@ -557,6 +558,14 @@ export default function Show({ invoice }: Props) {
                                             </span>
                                         </div>
                                     )}
+                                    {Math.abs(invoice.rounding_adjustment) > 0 && (
+                                        <div className="flex justify-between py-2 text-gray-600">
+                                            <span>Rounding Adjustment:</span>
+                                            <span className="font-medium">
+                                                {invoice.rounding_adjustment > 0 ? '+' : ''} Rs. {Number(invoice.rounding_adjustment).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                            </span>
+                                        </div>
+                                    )}
                                     <Separator />
                                     <div className="flex justify-between py-2 font-bold text-gray-900">
                                         <span>Total Amount:</span>
@@ -736,6 +745,12 @@ export default function Show({ invoice }: Props) {
                                 ? (Number(invoice.subtotal) * Number(invoice.overall_discount) / 100) 
                                 : Number(invoice.overall_discount)
                             ).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                        </div>
+                    )}
+                    {Math.abs(invoice.rounding_adjustment) > 0 && (
+                        <div className="totals-row">
+                            <span>Rounding Adjustment</span>
+                            <span>{invoice.rounding_adjustment > 0 ? '+' : ''} {Number(invoice.rounding_adjustment).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                         </div>
                     )}
                     {totalDiscount > 0 && (

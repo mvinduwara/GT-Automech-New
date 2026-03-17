@@ -50,6 +50,7 @@ function CreateInvoiceForm({
         terms_conditions: '',
         overall_discount: '0',
         overall_discount_type: 'fixed',
+        rounding_adjustment: '0',
     });
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -84,11 +85,15 @@ function CreateInvoiceForm({
                 terms_conditions: formData.terms_conditions || null,
                 overall_discount: parseFloat(formData.overall_discount) || 0,
                 overall_discount_type: formData.overall_discount_type,
+                rounding_adjustment: parseFloat(formData.rounding_adjustment) || 0,
             },
             {
-                onSuccess: () => {
+                onSuccess: (page: any) => {
                     setIsOpen(false);
                     resetForm();
+                    if (page.props.flash?.invoice_id) {
+                        window.open(route('dashboard.invoice.show', page.props.flash.invoice_id), '_blank');
+                    }
                 },
                 onError: (errors) => {
                     console.error('Failed to create invoice:', errors);
@@ -110,6 +115,7 @@ function CreateInvoiceForm({
             terms_conditions: 'All prices are in LKR.',
             overall_discount: '0',
             overall_discount_type: 'fixed',
+            rounding_adjustment: '0',
         });
     };
 
@@ -133,7 +139,8 @@ function CreateInvoiceForm({
     };
 
     const calculateTotalAfterDiscount = () => {
-        return Math.max(0, grandTotal - calculateOverallDiscountAmount());
+        const afterDiscount = Math.max(0, grandTotal - calculateOverallDiscountAmount());
+        return afterDiscount + (parseFloat(formData.rounding_adjustment) || 0);
     };
 
     const calculateRemaining = () => {
@@ -262,6 +269,36 @@ function CreateInvoiceForm({
                                 value={formData.due_date}
                                 onChange={(e) => setFormData({ ...formData, due_date: e.target.value })}
                                 min={formData.invoice_date}
+                            />
+                        </div>
+
+                        {/* Rounding Adjustment */}
+                        <div className="space-y-2">
+                            <div className="flex justify-between items-center">
+                                <Label htmlFor="rounding_adjustment">Rounding Adjustment</Label>
+                                <Button 
+                                    type="button" 
+                                    variant="ghost" 
+                                    size="sm" 
+                                    className="h-6 text-[10px]"
+                                    onClick={() => {
+                                        const itemsTotal = grandTotal;
+                                        const discount = parseFloat(formData.overall_discount) || 0;
+                                        const discAmt = formData.overall_discount_type === 'percentage' ? (itemsTotal * discount) / 100 : discount;
+                                        const currentTotal = itemsTotal - discAmt;
+                                        const rounded = Math.round(currentTotal);
+                                        setFormData({ ...formData, rounding_adjustment: (rounded - currentTotal).toFixed(2) });
+                                    }}
+                                >
+                                    Round Nearest
+                                </Button>
+                            </div>
+                            <Input
+                                id="rounding_adjustment"
+                                type="number"
+                                step="0.01"
+                                value={formData.rounding_adjustment}
+                                onChange={(e) => setFormData({ ...formData, rounding_adjustment: e.target.value })}
                             />
                         </div>
 
