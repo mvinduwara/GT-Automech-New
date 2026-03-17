@@ -15,6 +15,19 @@ class AccountController extends Controller
             ->orderBy('name')
             ->get();
 
+        // Calculate current balance for each account
+        $accounts->transform(function ($account) {
+            $ledgerBalance = $account->ledgerEntry()
+                ->selectRaw('SUM(debit) - SUM(credit) as balance')
+                ->value('balance') ?: 0;
+            
+            // For Income and Liability, balance is usually Credit - Debit
+            // For Asset and Expense, balance is usually Debit - Credit
+            // But we'll keep it simple for now as requested or standard "Debit - Credit"
+            $account->current_balance = (float)$account->opening_balance + (float)$ledgerBalance;
+            return $account;
+        });
+
         return Inertia::render('accounts/index', [
             'accounts' => $accounts
         ]);
@@ -27,6 +40,7 @@ class AccountController extends Controller
             'code' => 'nullable|string|max:50|unique:accounts,code',
             'type' => 'required|in:asset,liability,equity,income,expense',
             'description' => 'nullable|string',
+            'opening_balance' => 'nullable|numeric',
         ]);
 
         Account::create($validated);
@@ -41,6 +55,7 @@ class AccountController extends Controller
             'code' => 'nullable|string|max:50|unique:accounts,code,' . $account->id,
             'type' => 'required|in:asset,liability,equity,income,expense',
             'description' => 'nullable|string',
+            'opening_balance' => 'nullable|numeric',
         ]);
 
         $account->update($validated);

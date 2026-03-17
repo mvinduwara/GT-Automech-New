@@ -314,32 +314,42 @@ class PettyCashController extends Controller
                 $voucher->update(['status' => 'paid']);
 
                 // 2. Record the transaction in the financial ledger
-                // Use default accounts from settings if available
-                $expenseAccountId = \App\Models\Setting::get('default_petty_cash_account_id', '5000');
-                $cashAccountId = \App\Models\Setting::get('default_cash_account_id', '1000');
-
-                // 2. Record the transaction in the financial ledger
                 $drawerAccountId = \App\Models\Setting::get('default_petty_cash_account_id');
                 $bankAccountId = \App\Models\Setting::get('default_cash_account_id');
+                $expenseAccountId = \App\Models\Setting::get('default_petty_cash_expense_account_id');
 
-                if (!$drawerAccountId || !$bankAccountId) {
-                    throw new \Exception('Please configure Default Petty Cash and Cash/Bank accounts in System Settings.');
+                if (!$drawerAccountId || !$bankAccountId || !$expenseAccountId) {
+                    throw new \Exception('Please configure Default Petty Cash, Cash/Bank, and Expense accounts in System Settings.');
                 }
 
                 $drawerAccount = Account::findOrFail($drawerAccountId);
                 $bankAccount = Account::findOrFail($bankAccountId);
+                $expenseAccount = Account::findOrFail($expenseAccountId);
 
-                CreateLedgerEntries::run(
-                    description: "Petty cash movement for Voucher #{$voucher->voucher_number} - {$voucher->name}",
-                    date: \Carbon\Carbon::parse($voucher->date),
-                    amount: (float) $voucher->requested_amount,
-                    debitAccount: $drawerAccount,
-                    creditAccount: $bankAccount, 
-                    transactionable: $voucher
-                );
+                if ($voucher->is_replenishment) {
+                    // Replenishment: Bank -> Drawer
+                    CreateLedgerEntries::run(
+                        description: "Petty cash replenishment for Voucher #{$voucher->voucher_number}",
+                        date: \Carbon\Carbon::parse($voucher->date),
+                        amount: (float) $voucher->requested_amount,
+                        debitAccount: $drawerAccount,
+                        creditAccount: $bankAccount, 
+                        transactionable: $voucher
+                    );
+                    Log::info('Petty cash replenishment ledger created', ['voucher_id' => $voucher->id]);
+                } else {
+                    // Regular Spend: Drawer -> Expense (Temporary/Requested amount)
+                    CreateLedgerEntries::run(
+                        description: "Petty cash advance for Voucher #{$voucher->voucher_number} - {$voucher->name}",
+                        date: \Carbon\Carbon::parse($voucher->date),
+                        amount: (float) $voucher->requested_amount,
+                        debitAccount: $expenseAccount,
+                        creditAccount: $drawerAccount, 
+                        transactionable: $voucher
+                    );
+                    Log::info('Petty cash expenditure advance ledger created', ['voucher_id' => $voucher->id]);
+                }
             });
-
-            Log::info('Petty cash voucher marked as paid and ledger created', ['voucher_id' => $voucher->id]);
             return back()->with('success', 'Voucher marked as paid!');
 
         } catch (\Exception $e) {
@@ -477,30 +487,49 @@ class PettyCashController extends Controller
                 'finalized_at' => now(),
             ]);
 
-            // 1. Update the "Movement" entry (Bank -> Drawer) to match actual amount
-            // This entry was created during "setPaid"
-            $voucher->ledgerEntries()->where('debit', '>', 0)->update(['debit' => $voucher->actual_amount]);
-            $voucher->ledgerEntries()->where('credit', '>', 0)->update(['credit' => $voucher->actual_amount]);
+            // 1. Update the "Movement" entry (Bank -> Drawer) to match actual amount ONLY if it's a replenishment
+            if ($voucher->is_replenishment) {
+                // This entry was created during "setPaid" for the requested amount
+                $voucher->ledgerEntries()->where('debit', '>', 0)->update(['debit' => $voucher->actual_amount]);
+                $voucher->ledgerEntries()->where('credit', '>', 0)->update(['credit' => $voucher->actual_amount]);
+            } else {
+                // 2. For REGULAR spend voucher, record the ADJUSTMENT (Drawer <-> Expense Account)
+                // The requested amount was already recorded as (Dr Expense / Cr Drawer) during setPaid
+                
+                $diff = (float) $voucher->actual_amount - (float) $voucher->requested_amount;
+                
+                if ($diff != 0) {
+                    $expenseAccountId = \App\Models\Setting::get('default_petty_cash_expense_account_id');
+                    $drawerAccountId = \App\Models\Setting::get('default_petty_cash_account_id');
 
-            // 2. If it's a REGULAR spend voucher, record the ACTUAL expense (Drawer -> Expense Account)
-            if (!$voucher->is_replenishment) {
-                $expenseAccountId = \App\Models\Setting::get('default_petty_cash_expense_account_id');
-                $drawerAccountId = \App\Models\Setting::get('default_petty_cash_account_id');
+                    if ($expenseAccountId && $drawerAccountId) {
+                        $expenseAccount = \App\Models\Account::findOrFail($expenseAccountId);
+                        $drawerAccount = \App\Models\Account::findOrFail($drawerAccountId);
 
-                if ($expenseAccountId && $drawerAccountId && $voucher->actual_amount > 0) {
-                    $expenseAccount = \App\Models\Account::findOrFail($expenseAccountId);
-                    $drawerAccount = \App\Models\Account::findOrFail($drawerAccountId);
-
-                    // Note: We don't use CreateLedgerEntries::run here because it might link to the same voucher 
-                    // and cause confusion with the movement entry. Let's create it manually or with a unique description.
-                    CreateLedgerEntries::run(
-                        description: "Petty cash expenditure for Voucher #{$voucher->voucher_number}",
-                        date: now(),
-                        amount: (float) $voucher->actual_amount,
-                        debitAccount: $expenseAccount,
-                        creditAccount: $drawerAccount,
-                        transactionable: $voucher
-                    );
+                        if ($diff < 0) {
+                            // Change returned: Cash comes back to Drawer
+                            // Dr Drawer / Cr Expense
+                            CreateLedgerEntries::run(
+                                description: "Petty cash adjustment (Change returned) for Voucher #{$voucher->voucher_number}",
+                                date: now(),
+                                amount: abs($diff),
+                                debitAccount: $drawerAccount,
+                                creditAccount: $expenseAccount,
+                                transactionable: $voucher
+                            );
+                        } else {
+                            // Extra spent: More cash leaves Drawer
+                            // Dr Expense / Cr Drawer
+                            CreateLedgerEntries::run(
+                                description: "Petty cash adjustment (Extra spend) for Voucher #{$voucher->voucher_number}",
+                                date: now(),
+                                amount: $diff,
+                                debitAccount: $expenseAccount,
+                                creditAccount: $drawerAccount,
+                                transactionable: $voucher
+                            );
+                        }
+                    }
                 }
             }
 

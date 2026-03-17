@@ -11,8 +11,12 @@ class Account extends Model
         'code',
         'type',
         'description',
+        'opening_balance',
     ];
 
+    protected $casts = [
+        'opening_balance' => 'decimal:2',
+    ];
 
     public function ledgerEntry()
     {

@@ -10,6 +10,16 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
+import { 
+    AlertDialog, 
+    AlertDialogAction, 
+    AlertDialogCancel, 
+    AlertDialogContent, 
+    AlertDialogDescription, 
+    AlertDialogFooter, 
+    AlertDialogHeader, 
+    AlertDialogTitle 
+} from '@/components/ui/alert-dialog';
 
 interface Account {
     id: number;
@@ -17,6 +27,8 @@ interface Account {
     code: string | null;
     type: 'asset' | 'liability' | 'equity' | 'income' | 'expense';
     description: string | null;
+    opening_balance: number;
+    current_balance: number;
 }
 
 interface PageProps {
@@ -40,9 +52,13 @@ export default function AccountIndex() {
     const { data, setData, post, put, delete: destroy, processing, errors, reset, clearErrors } = useForm({
         name: '',
         code: '',
-        type: 'expense',
+        type: 'expense' as 'asset' | 'liability' | 'equity' | 'income' | 'expense',
         description: '',
+        opening_balance: 0,
     });
+    
+    const [accountToDelete, setAccountToDelete] = useState<number | null>(null);
+    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
     const openCreateDialog = () => {
         setEditingAccount(null);
@@ -58,6 +74,7 @@ export default function AccountIndex() {
             code: account.code || '',
             type: account.type,
             description: account.description || '',
+            opening_balance: account.opening_balance || 0,
         });
         clearErrors();
         setIsDialogOpen(true);
@@ -82,15 +99,25 @@ export default function AccountIndex() {
         }
     };
 
-    const handleDelete = (id: number) => {
-        if (confirm('Are you sure you want to delete this account? Accounts with recorded transactions cannot be deleted.')) {
-            destroy(route('dashboard.accounts.destroy', id), {
-                onSuccess: () => toast.success('Account deleted successfully'),
+    const handleDelete = () => {
+        if (accountToDelete) {
+            destroy(route('dashboard.accounts.destroy', accountToDelete), {
+                onSuccess: () => {
+                    setIsDeleteDialogOpen(false);
+                    setAccountToDelete(null);
+                    toast.success('Account deleted successfully');
+                },
                 onError: (errors: any) => {
+                    setIsDeleteDialogOpen(false);
                     if (errors.error) toast.error(errors.error);
                 }
             });
         }
+    };
+
+    const confirmDelete = (id: number) => {
+        setAccountToDelete(id);
+        setIsDeleteDialogOpen(true);
     };
 
     const getTypeColor = (type: string) => {
@@ -136,7 +163,8 @@ export default function AccountIndex() {
                                     <TableHead className="w-[100px]">Code</TableHead>
                                     <TableHead>Account Name</TableHead>
                                     <TableHead>Type</TableHead>
-                                    <TableHead>Description</TableHead>
+                                    <TableHead className="text-right">Opening Balance</TableHead>
+                                    <TableHead className="text-right">Current Balance</TableHead>
                                     <TableHead className="text-right">Actions</TableHead>
                                 </TableRow>
                             </TableHeader>
@@ -151,15 +179,18 @@ export default function AccountIndex() {
                                                     {account.type}
                                                 </Badge>
                                             </TableCell>
-                                            <TableCell className="text-gray-500 text-sm max-w-xs truncate">
-                                                {account.description || '-'}
+                                            <TableCell className="text-right font-mono text-xs">
+                                                LKR {new Intl.NumberFormat('en-LK', { minimumFractionDigits: 2 }).format(account.opening_balance || 0)}
+                                            </TableCell>
+                                            <TableCell className="text-right font-mono text-sm font-bold">
+                                                LKR {new Intl.NumberFormat('en-LK', { minimumFractionDigits: 2 }).format(account.current_balance || 0)}
                                             </TableCell>
                                             <TableCell className="text-right">
                                                 <div className="flex justify-end gap-2">
                                                     <Button variant="ghost" size="icon" className="h-8 w-8 text-amber-600 hover:text-amber-700 hover:bg-amber-50" onClick={() => openEditDialog(account)}>
                                                         <Edit className="h-4 w-4" />
                                                     </Button>
-                                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50" onClick={() => handleDelete(account.id)}>
+                                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50" onClick={() => confirmDelete(account.id)}>
                                                         <Trash2 className="h-4 w-4" />
                                                     </Button>
                                                 </div>
@@ -226,6 +257,19 @@ export default function AccountIndex() {
                                 />
                                 {errors.code && <p className="text-xs text-red-500">{errors.code}</p>}
                             </div>
+
+                            <div className="space-y-2">
+                                <label className="text-sm font-semibold text-gray-700">Opening Balance</label>
+                                <Input
+                                    type="number"
+                                    step="0.01"
+                                    placeholder="0.00"
+                                    value={data.opening_balance}
+                                    onChange={e => setData('opening_balance', parseFloat(e.target.value) || 0)}
+                                    className={errors.opening_balance ? 'border-red-500' : ''}
+                                />
+                                {errors.opening_balance && <p className="text-xs text-red-500">{errors.opening_balance}</p>}
+                            </div>
                         </div>
 
                         <div className="space-y-2">
@@ -246,6 +290,25 @@ export default function AccountIndex() {
                     </form>
                 </DialogContent>
             </Dialog>
+
+            {/* Delete Confirmation Modal */}
+            <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This action cannot be undone. This will permanently delete the account.
+                            Note: Accounts with recorded transactions cannot be deleted.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel onClick={() => setAccountToDelete(null)}>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleDelete} className="bg-red-600 hover:bg-red-700">
+                            Delete Account
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </AppLayout>
     );
 }
