@@ -24,6 +24,7 @@ import { useState } from "react";
 import { router } from "@inertiajs/react";
 import { FileText, AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { toast } from "sonner";
 
 type CreateInvoiceFormProps = {
     jobCardId: number;
@@ -91,8 +92,17 @@ function CreateInvoiceForm({
                 onSuccess: (page: any) => {
                     setIsOpen(false);
                     resetForm();
-                    if (page.props.flash?.invoice_id) {
-                        window.open(route('dashboard.invoice.show', page.props.flash.invoice_id), '_blank');
+                    const invId = page.props.flash?.invoice_id;
+
+                    toast.success('Invoice created successfully', {
+                        action: invId ? {
+                            label: 'View / Print',
+                            onClick: () => window.open(route('dashboard.invoice.show', invId), '_blank')
+                        } : undefined
+                    });
+
+                    if (invId) {
+                        window.open(route('dashboard.invoice.show', invId), '_blank');
                     }
                 },
                 onError: (errors) => {

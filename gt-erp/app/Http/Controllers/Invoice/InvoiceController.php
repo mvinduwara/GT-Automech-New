@@ -203,6 +203,7 @@ class InvoiceController extends Controller
                     'terms_conditions' => $validated['terms_conditions'] ?? null,
                     'overall_discount' => $validated['overall_discount'] ?? 0,
                     'overall_discount_type' => $validated['overall_discount_type'] ?? 'fixed',
+                    'rounding_adjustment' => $validated['rounding_adjustment'] ?? 0,
                     'status' => 'draft',
                 ]);
 
@@ -302,7 +303,7 @@ class InvoiceController extends Controller
             // --- 🚀 END SMS ---
 
             Log::info('Invoice and ledger entries created successfully', ['invoice_id' => $invoice->id]);
-            return redirect()->route('dashboard.invoice.show', $invoice->id)->with([
+            return redirect()->route('dashboard.invoice.index')->with([
                 'success' => 'Invoice created successfully',
                 'invoice_id' => $invoice->id
             ]);
@@ -628,6 +629,7 @@ class InvoiceController extends Controller
             'items.*.vehicle_service_option_id' => 'nullable|exists:vehicle_service_options,id',
             'overall_discount' => 'nullable|numeric|min:0',
             'overall_discount_type' => 'nullable|in:fixed,percentage',
+            'rounding_adjustment' => 'nullable|numeric',
         ]);
 
         try {
@@ -678,6 +680,7 @@ class InvoiceController extends Controller
                     'remarks' => $validated['remarks'] ?? null,
                     'overall_discount' => $validated['overall_discount'] ?? 0,
                     'overall_discount_type' => $validated['overall_discount_type'] ?? 'fixed',
+                    'rounding_adjustment' => $validated['rounding_adjustment'] ?? 0,
                     'status' => 'draft',
                 ]);
 
@@ -762,7 +765,7 @@ class InvoiceController extends Controller
                 $this->sendSms($customer->mobile, $message);
             }
 
-            return redirect()->route('dashboard.invoice.show', $invoice->id)->with([
+            return redirect()->route('dashboard.invoice.index')->with([
                 'success' => 'Direct invoice created successfully',
                 'invoice_id' => $invoice->id
             ]);

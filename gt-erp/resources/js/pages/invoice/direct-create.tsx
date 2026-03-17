@@ -296,18 +296,19 @@ export default function DirectCreate({ customers, stocks, services, default_invo
         if (!data.customer_id) { toast.error('Please select a customer'); return; }
         if (data.items.length === 0) { toast.error('Please add at least one item'); return; }
         post(route('dashboard.invoice.direct-store'), {
-            onSuccess: (page: any) => { 
-                setIsPaymentModalOpen(false); 
-                toast.success('Invoice created successfully');
-                // Open show page in new tab if we have the ID (from redirect or response)
-                // Inertia handles redirect, but we can manually window.open if needed.
-                // Since this is a direct store, it redirects to dashboard.invoice.show
-                // We'll trust the user will see it, but open in new tab might require 
-                // catching the ID. Usually redirect happens.
-                // A better way is to open window.open immediately if possible or 
-                // use flash data. But window.open needs a URL.
-                if (page.props.flash?.invoice_id) {
-                     window.open(route('dashboard.invoice.show', page.props.flash.invoice_id), '_blank');
+            onSuccess: (page: any) => {
+                setIsPaymentModalOpen(false);
+                const invId = page.props.flash?.invoice_id;
+
+                toast.success('Invoice created successfully', {
+                    action: invId ? {
+                        label: 'View / Print',
+                        onClick: () => window.open(route('dashboard.invoice.show', invId), '_blank')
+                    } : undefined
+                });
+
+                if (invId) {
+                    window.open(route('dashboard.invoice.show', invId), '_blank');
                 }
             },
             onError: (err) => { toast.error('Failed to create invoice'); console.error(err); }
@@ -355,13 +356,13 @@ export default function DirectCreate({ customers, stocks, services, default_invo
                                             triggerButtonText="Quick Add" triggerButtonSize="sm" triggerButtonVariant="outline"
                                         />
                                     </div>
-                                    <CustomerCombobox 
-                                        customerId={data.customer_id} 
-                                        customers={allCustomers} 
-                                        onSelect={(id) => setData('customer_id', id)} 
-                                        errors={errors} 
-                                        customerSearch={customerSearch} 
-                                        setCustomerSearch={setCustomerSearch} 
+                                    <CustomerCombobox
+                                        customerId={data.customer_id}
+                                        customers={allCustomers}
+                                        onSelect={(id) => setData('customer_id', id)}
+                                        errors={errors}
+                                        customerSearch={customerSearch}
+                                        setCustomerSearch={setCustomerSearch}
                                     />
                                     {errors.customer_id && <p className="text-xs text-red-500 font-medium">{errors.customer_id}</p>}
                                 </div>
@@ -510,11 +511,11 @@ export default function DirectCreate({ customers, stocks, services, default_invo
                                 <div className="space-y-1.5">
                                     <Label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Discount</Label>
                                     <div className="flex gap-1 items-center">
-                                       <Select value={data.overall_discount_type} onValueChange={val => setData('overall_discount_type', val as 'fixed' | 'percentage')}>
+                                        <Select value={data.overall_discount_type} onValueChange={val => setData('overall_discount_type', val as 'fixed' | 'percentage')}>
                                             <SelectTrigger className="h-9 w-16 text-[9px]"><SelectValue /></SelectTrigger>
                                             <SelectContent><SelectItem value="fixed">Amt</SelectItem><SelectItem value="percentage">%</SelectItem></SelectContent>
-                                       </Select>
-                                       <Input type="number" className="h-9 text-xs font-bold" value={data.overall_discount} onChange={e => setData('overall_discount', Number(e.target.value))} />
+                                        </Select>
+                                        <Input type="number" className="h-9 text-xs font-bold" value={data.overall_discount} onChange={e => setData('overall_discount', Number(e.target.value))} />
                                     </div>
                                 </div>
 
