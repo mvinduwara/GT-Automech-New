@@ -31,11 +31,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     });
 
     Route::get('/dashboard/run-migrations', function () {
-        // Artisan::call('migrate', [
-        //     '--force' => true
-        // ]);
-
-        Artisan::call('migrate');
+        Artisan::call('migrate', [
+            '--force' => true
+        ]);
 
         return "Migrations executed successfully!";
     });

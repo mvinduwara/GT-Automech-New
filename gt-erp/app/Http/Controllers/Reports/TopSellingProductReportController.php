@@ -36,7 +36,7 @@ class TopSellingProductReportController extends Controller
 
     private function getTopSellingData($startDate, $endDate)
     {
-        return JobCardProducts::join('stocks', 'job_card_products.stock_id', '=', 'stocks.id')
+        $topProducts = JobCardProducts::join('stocks', 'job_card_products.stock_id', '=', 'stocks.id')
             ->join('products', 'stocks.product_id', '=', 'products.id')
             ->leftJoin('brands', 'products.brand_id', '=', 'brands.id')
             ->select(
@@ -50,14 +50,26 @@ class TopSellingProductReportController extends Controller
             ->whereBetween('job_card_products.created_at', [$startDate, $endDate])
             ->groupBy('products.id', 'products.name', 'products.part_number', 'products.reorder_level', 'brands.name')
             ->orderByDesc('total_sold')
+            ->get();
+
+        $productIds = $topProducts->pluck('id');
+
+        $products = Product::withoutGlobalScope('not_deleted')
+            ->whereIn('id', $productIds)
+            ->withSum(['stocks as total_quantity' => function ($q) {
+                $q->where('status', 'active');
+            }], 'quantity')
             ->get()
-            ->map(function ($item) {
-                // Use the model attributes for consistency
-                $product = Product::find($item->id);
-                $item->current_stock = $product->total_stock;
-                $item->is_low_stock = $product->is_low_stock;
-                return $item;
-            });
+            ->keyBy('id');
+
+        return $topProducts->map(function ($item) use ($products) {
+            $product = $products->get($item->id);
+
+            $item->current_stock = $product ? (int) $product->total_quantity : 0;
+            $item->is_low_stock = $product ? ($item->current_stock <= $item->reorder_level) : false;
+
+            return $item;
+        });
     }
 
     public function downloadPdf(Request $request)
