@@ -19,7 +19,7 @@ import { type BreadcrumbItem } from '@/types';
 import { pettyCash } from '@/types/types';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
 import { Tooltip } from '@radix-ui/react-tooltip';
-import { ShieldQuestion, TrashIcon, UserPen, X } from 'lucide-react';
+import { ShieldQuestion, TrashIcon, UserPen, X, Wallet, ArrowUpCircle } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
@@ -30,7 +30,10 @@ const breadcrumbs: BreadcrumbItem[] = [
     },
 ];
 
-export default function Index({ petty_cash }: { petty_cash: pettyCash[] }) {
+export default function Index({ petty_cash, imprest_summary }: { 
+    petty_cash: pettyCash[], 
+    imprest_summary: { limit: number, current_balance: number, shortfall: number } 
+}) {
     console.log('petty_cash', petty_cash);
     const { delete: destroy, processing } = useForm();
     const [selectedVoucher, setSelectedVoucher] = useState<pettyCash | null>(null);
@@ -159,6 +162,46 @@ export default function Index({ petty_cash }: { petty_cash: pettyCash[] }) {
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Petty Cash" />
             <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="bg-white p-4 rounded-xl border shadow-sm flex items-center gap-4">
+                        <div className="p-3 bg-blue-100 rounded-full">
+                            <Wallet className="h-6 w-6 text-blue-600" />
+                        </div>
+                        <div>
+                            <p className="text-sm text-gray-500 font-medium">Current Balance</p>
+                            <h2 className="text-xl font-bold">LKR {imprest_summary.current_balance.toLocaleString()}</h2>
+                        </div>
+                    </div>
+                    <div className="bg-white p-4 rounded-xl border shadow-sm flex items-center gap-4">
+                        <div className="p-3 bg-purple-100 rounded-full">
+                            <ShieldQuestion className="h-6 w-6 text-purple-600" />
+                        </div>
+                        <div>
+                            <p className="text-sm text-gray-500 font-medium">Target Imprest</p>
+                            <h2 className="text-xl font-bold">LKR {imprest_summary.limit.toLocaleString()}</h2>
+                        </div>
+                    </div>
+                    <div className="bg-white p-4 rounded-xl border shadow-sm flex items-center gap-4 justify-between">
+                        <div className="flex items-center gap-4">
+                            <div className={`p-3 rounded-full ${imprest_summary.shortfall > 0 ? 'bg-orange-100' : 'bg-green-100'}`}>
+                                <ArrowUpCircle className={`h-6 w-6 ${imprest_summary.shortfall > 0 ? 'text-orange-600' : 'text-green-600'}`} />
+                            </div>
+                            <div>
+                                <p className="text-sm text-gray-500 font-medium">Shortfall</p>
+                                <h2 className="text-xl font-bold">LKR {imprest_summary.shortfall.toLocaleString()}</h2>
+                            </div>
+                        </div>
+                        {imprest_summary.shortfall > 0 && (
+                            <Button 
+                                onClick={() => router.post(route('dashboard.petty-cash.replenish'))}
+                                className="bg-orange-600 hover:bg-orange-700"
+                            >
+                                Replenish
+                            </Button>
+                        )}
+                    </div>
+                </div>
+
                 <div className="flex items-center justify-between">
                     <h1 className="h1 font-bold">All Petty Cash Vouchers</h1>
                     <div className="flex items-center justify-end gap-2">

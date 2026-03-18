@@ -413,7 +413,7 @@ export default function Index() {
                                             ? 'text-red-500 '
                                             : ''
                                             } ${stock.quantity <=
-                                                stock.product.reorder_level
+                                                (stock.product?.reorder_level ?? 0)
                                                 ? 'bg-red-300/50 '
                                                 : ''
                                             }`}
@@ -423,30 +423,29 @@ export default function Index() {
                                                 <Tooltip>
                                                     <TooltipTrigger>
                                                         {
-                                                            stock.product
-                                                                .part_number
+                                                            stock.product?.part_number || 'N/A'
                                                         }
                                                     </TooltipTrigger>
                                                     <TooltipContent className="bg-gray-800 text-white ">
                                                         <p>
-                                                            {stock.product.name}
+                                                            {stock.product?.name || 'Unknown Product'}
                                                         </p>
                                                     </TooltipContent>
                                                 </Tooltip>
                                             </TooltipProvider>
                                         </TableCell>
                                         <TableCell className="whitespace-nowrap px-6 py-4">
-                                            {stock.product.category?.name ||
+                                            {stock.product?.category?.name ||
                                                 'N/A'}
                                         </TableCell>
                                         <TableCell className="whitespace-nowrap px-6 py-4 ">
-                                            {stock.product.brand?.name || 'N/A'}
+                                            {stock.product?.brand?.name || 'N/A'}
                                         </TableCell>
                                         <TableCell className="whitespace-nowrap px-6 py-4">
                                             {stock.quantity}
                                         </TableCell>
                                         <TableCell className="whitespace-nowrap px-6 py-4">
-                                            {stock.product.unit_of_measure
+                                            {stock.product?.unit_of_measure
                                                 ?.abbreviation || 'N/A'}
                                         </TableCell>
                                         <TableCell className="whitespace-nowrap px-6 py-4 text-right">
@@ -517,8 +516,8 @@ export default function Index() {
                             <div className="mt-4 space-y-2 text-gray-700">
                                 <p>
                                     <strong>Main Product:</strong>{' '}
-                                    {selectedStock.product.name} (
-                                    {selectedStock.product.part_number})
+                                    {selectedStock.product?.name || 'Unknown'} (
+                                    {selectedStock.product?.part_number || 'N/A'})
                                 </p>
                                 {selectedStock.alternative_product && (
                                     <p>
@@ -534,13 +533,13 @@ export default function Index() {
                                 )}
                                 <p>
                                     <strong>Category:</strong>{' '}
-                                    {selectedStock.product.category?.name ||
+                                    {selectedStock.product?.category?.name ||
                                         'N/A'}
                                 </p>
                                 <p>
                                     <strong>Quantity:</strong>{' '}
                                     {selectedStock.quantity}{' '}
-                                    {selectedStock.product.unit_of_measure
+                                    {selectedStock.product?.unit_of_measure
                                         ?.abbreviation || 'N/A'}
                                 </p>
                                 <p>

@@ -154,6 +154,9 @@ class InvoiceController extends Controller
             'advance_payment' => 'nullable|numeric|min:0',
             'remarks' => 'nullable|string|max:1000',
             'terms_conditions' => 'nullable|string|max:2000',
+            'overall_discount' => 'nullable|numeric|min:0',
+            'overall_discount_type' => 'nullable|in:fixed,percentage',
+            'rounding_adjustment' => 'nullable|numeric',
         ]);
 
         try {
@@ -198,6 +201,9 @@ class InvoiceController extends Controller
                     'due_date' => $validated['due_date'] ?? null,
                     'remarks' => $validated['remarks'] ?? null,
                     'terms_conditions' => $validated['terms_conditions'] ?? null,
+                    'overall_discount' => $validated['overall_discount'] ?? 0,
+                    'overall_discount_type' => $validated['overall_discount_type'] ?? 'fixed',
+                    'rounding_adjustment' => $validated['rounding_adjustment'] ?? 0,
                     'status' => 'draft',
                 ]);
 
@@ -297,7 +303,10 @@ class InvoiceController extends Controller
             // --- 🚀 END SMS ---
 
             Log::info('Invoice and ledger entries created successfully', ['invoice_id' => $invoice->id]);
-            return redirect()->route('dashboard.invoice.show', $invoice->id)->with('success', 'Invoice created successfully');
+            return redirect()->route('dashboard.invoice.index')->with([
+                'success' => 'Invoice created successfully',
+                'invoice_id' => $invoice->id
+            ]);
 
             // --- Note: Removed unreachable code that was here ---
 
@@ -618,6 +627,9 @@ class InvoiceController extends Controller
             'items.*.discount_amount' => 'required|numeric|min:0',
             'items.*.stock_id' => 'nullable|exists:stocks,id',
             'items.*.vehicle_service_option_id' => 'nullable|exists:vehicle_service_options,id',
+            'overall_discount' => 'nullable|numeric|min:0',
+            'overall_discount_type' => 'nullable|in:fixed,percentage',
+            'rounding_adjustment' => 'nullable|numeric',
         ]);
 
         try {
@@ -666,6 +678,9 @@ class InvoiceController extends Controller
                     'invoice_date' => $validated['invoice_date'],
                     'due_date' => $validated['due_date'] ?? null,
                     'remarks' => $validated['remarks'] ?? null,
+                    'overall_discount' => $validated['overall_discount'] ?? 0,
+                    'overall_discount_type' => $validated['overall_discount_type'] ?? 'fixed',
+                    'rounding_adjustment' => $validated['rounding_adjustment'] ?? 0,
                     'status' => 'draft',
                 ]);
 
@@ -707,9 +722,9 @@ class InvoiceController extends Controller
                 $receivablesAccount = Account::where('code', '1100')->firstOrFail();
 
                 CreateLedgerEntries::run(
-                    description: "Direct Sale for Invoice #{$invoice->invoice_no}",
+                    description: "Payment for Invoice #{$invoice->invoice_no}",
                     date: Carbon::parse($invoice->invoice_date),
-                    amount: $invoice->total,
+                    amount: (float)$invoice->total,
                     debitAccount: $receivablesAccount,
                     creditAccount: $salesAccount,
                     transactionable: $invoice
@@ -718,9 +733,9 @@ class InvoiceController extends Controller
                 if ($invoice->advance_payment > 0) {
                     $cashAccount = Account::where('code', '1000')->firstOrFail();
                     CreateLedgerEntries::run(
-                        description: "Initial payment for Direct Invoice #{$invoice->invoice_no}",
+                        description: "Initial payment for Invoice #{$invoice->invoice_no}",
                         date: Carbon::parse($invoice->invoice_date),
-                        amount: $invoice->advance_payment,
+                        amount: (float)$invoice->advance_payment,
                         debitAccount: $cashAccount,
                         creditAccount: $receivablesAccount,
                         transactionable: $invoice
@@ -750,7 +765,10 @@ class InvoiceController extends Controller
                 $this->sendSms($customer->mobile, $message);
             }
 
-            return redirect()->route('dashboard.invoice.show', $invoice->id)->with('success', 'Direct invoice created successfully');
+            return redirect()->route('dashboard.invoice.index')->with([
+                'success' => 'Direct invoice created successfully',
+                'invoice_id' => $invoice->id
+            ]);
 
         } catch (\Exception $e) {
             Log::error('Failed to create direct invoice', [

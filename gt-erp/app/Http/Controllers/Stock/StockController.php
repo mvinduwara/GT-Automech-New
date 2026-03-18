@@ -23,11 +23,12 @@ class StockController extends Controller
     {
         try {
             $query = Stock::with([
-                'product.category',
-                'product.brand',
-                'product.unitOfMeasure',
-                'alternativeProduct.category',
-                'alternativeProduct.unitOfMeasure'
+                'product' => function ($query) {
+                    $query->withoutGlobalScope('not_deleted')->with(['category', 'brand', 'unitOfMeasure']);
+                },
+                'alternativeProduct' => function ($query) {
+                    $query->withoutGlobalScope('not_deleted')->with(['category', 'unitOfMeasure']);
+                }
             ]);
 
             // Search by part number (main product or alternative product)
