@@ -13,10 +13,18 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
 import { useState } from "react";
 import { router } from "@inertiajs/react";
 import { FileText, AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { toast } from "sonner";
 
 type CreateInvoiceFormProps = {
     jobCardId: number;
@@ -41,6 +49,9 @@ function CreateInvoiceForm({
         advance_payment: '0',
         remarks: '',
         terms_conditions: '',
+        overall_discount: '0',
+        overall_discount_type: 'fixed',
+        rounding_adjustment: '0',
     });
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -73,11 +84,26 @@ function CreateInvoiceForm({
                 advance_payment: advancePayment,
                 remarks: formData.remarks || null,
                 terms_conditions: formData.terms_conditions || null,
+                overall_discount: parseFloat(formData.overall_discount) || 0,
+                overall_discount_type: formData.overall_discount_type,
+                rounding_adjustment: parseFloat(formData.rounding_adjustment) || 0,
             },
             {
-                onSuccess: () => {
+                onSuccess: (page: any) => {
                     setIsOpen(false);
                     resetForm();
+                    const invId = page.props.flash?.invoice_id;
+
+                    toast.success('Invoice created successfully', {
+                        action: invId ? {
+                            label: 'View / Print',
+                            onClick: () => window.open(route('dashboard.invoice.show', invId), '_blank')
+                        } : undefined
+                    });
+
+                    if (invId) {
+                        window.open(route('dashboard.invoice.show', invId), '_blank');
+                    }
                 },
                 onError: (errors) => {
                     console.error('Failed to create invoice:', errors);
@@ -97,6 +123,9 @@ function CreateInvoiceForm({
             advance_payment: '0',
             remarks: '',
             terms_conditions: 'All prices are in LKR.',
+            overall_discount: '0',
+            overall_discount_type: 'fixed',
+            rounding_adjustment: '0',
         });
     };
 
@@ -111,9 +140,22 @@ function CreateInvoiceForm({
         }
     };
 
+    const calculateOverallDiscountAmount = () => {
+        const discount = parseFloat(formData.overall_discount) || 0;
+        if (formData.overall_discount_type === 'percentage') {
+            return (grandTotal * discount) / 100;
+        }
+        return discount;
+    };
+
+    const calculateTotalAfterDiscount = () => {
+        const afterDiscount = Math.max(0, grandTotal - calculateOverallDiscountAmount());
+        return afterDiscount + (parseFloat(formData.rounding_adjustment) || 0);
+    };
+
     const calculateRemaining = () => {
         const advance = parseFloat(formData.advance_payment) || 0;
-        return Math.max(0, grandTotal - advance);
+        return Math.max(0, calculateTotalAfterDiscount() - advance);
     };
 
     if (hasInvoice) {
@@ -153,17 +195,27 @@ function CreateInvoiceForm({
                             <AlertDescription>
                                 <div className="space-y-1 text-sm">
                                     <div className="flex justify-between">
-                                        <span className="font-medium">Total Amount:</span>
-                                        <span className="font-bold">Rs. {grandTotal.toLocaleString()}</span>
+                                        <span className="font-medium text-gray-600">Items Total:</span>
+                                        <span className="font-medium">Rs. {grandTotal.toLocaleString()}</span>
+                                    </div>
+                                    {calculateOverallDiscountAmount() > 0 && (
+                                        <div className="flex justify-between text-red-600">
+                                            <span>Overall Discount ({formData.overall_discount_type === 'percentage' ? `${formData.overall_discount}%` : 'Fixed'}):</span>
+                                            <span>- Rs. {calculateOverallDiscountAmount().toLocaleString()}</span>
+                                        </div>
+                                    )}
+                                    <div className="flex justify-between border-t pt-2 mt-1">
+                                        <span className="text-base font-bold">Payable Total:</span>
+                                        <span className="text-base font-bold">Rs. {calculateTotalAfterDiscount().toLocaleString()}</span>
                                     </div>
                                     {parseFloat(formData.advance_payment) > 0 && (
                                         <>
-                                            <div className="flex justify-between text-gray-600">
+                                            <div className="flex justify-between text-gray-600 mt-1">
                                                 <span>Advance Payment:</span>
                                                 <span>Rs. {parseFloat(formData.advance_payment).toLocaleString()}</span>
                                             </div>
-                                            <div className="flex justify-between border-t pt-1">
-                                                <span className="font-medium">Remaining:</span>
+                                            <div className="flex justify-between border-t border-dashed pt-1 mt-1">
+                                                <span className="font-medium">Remaining balance:</span>
                                                 <span className="font-bold text-indigo-600">
                                                     Rs. {calculateRemaining().toLocaleString()}
                                                 </span>
@@ -188,6 +240,36 @@ function CreateInvoiceForm({
                             />
                         </div>
 
+                        {/* Overall Discount */}
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="overall_discount_type">Discount Type</Label>
+                                <Select
+                                    value={formData.overall_discount_type}
+                                    onValueChange={(value) => setFormData({ ...formData, overall_discount_type: value as 'fixed' | 'percentage' })}
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select type" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="fixed">Fixed Amount (Rs.)</SelectItem>
+                                        <SelectItem value="percentage">Percentage (%)</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="overall_discount">Overall Discount</Label>
+                                <Input
+                                    id="overall_discount"
+                                    type="number"
+                                    step="0.01"
+                                    min="0"
+                                    value={formData.overall_discount}
+                                    onChange={(e) => setFormData({ ...formData, overall_discount: e.target.value })}
+                                />
+                            </div>
+                        </div>
+
                         {/* Due Date */}
                         <div className="space-y-2">
                             <Label htmlFor="due_date">Due Date (Optional)</Label>
@@ -197,6 +279,36 @@ function CreateInvoiceForm({
                                 value={formData.due_date}
                                 onChange={(e) => setFormData({ ...formData, due_date: e.target.value })}
                                 min={formData.invoice_date}
+                            />
+                        </div>
+
+                        {/* Rounding Adjustment */}
+                        <div className="space-y-2">
+                            <div className="flex justify-between items-center">
+                                <Label htmlFor="rounding_adjustment">Rounding Adjustment</Label>
+                                <Button 
+                                    type="button" 
+                                    variant="ghost" 
+                                    size="sm" 
+                                    className="h-6 text-[10px]"
+                                    onClick={() => {
+                                        const itemsTotal = grandTotal;
+                                        const discount = parseFloat(formData.overall_discount) || 0;
+                                        const discAmt = formData.overall_discount_type === 'percentage' ? (itemsTotal * discount) / 100 : discount;
+                                        const currentTotal = itemsTotal - discAmt;
+                                        const rounded = Math.round(currentTotal);
+                                        setFormData({ ...formData, rounding_adjustment: (rounded - currentTotal).toFixed(2) });
+                                    }}
+                                >
+                                    Round Nearest
+                                </Button>
+                            </div>
+                            <Input
+                                id="rounding_adjustment"
+                                type="number"
+                                step="0.01"
+                                value={formData.rounding_adjustment}
+                                onChange={(e) => setFormData({ ...formData, rounding_adjustment: e.target.value })}
                             />
                         </div>
 

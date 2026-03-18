@@ -33,6 +33,9 @@ class Invoice extends Model
         'terms_conditions',
         'manual_rating',
         'manual_feedback',
+        'overall_discount',
+        'overall_discount_type',
+        'rounding_adjustment',
     ];
 
     protected $casts = [
@@ -43,6 +46,8 @@ class Invoice extends Model
         'discount_total' => 'decimal:2',
         'advance_payment' => 'decimal:2',
         'total' => 'decimal:2',
+        'overall_discount' => 'decimal:2',
+        'rounding_adjustment' => 'decimal:2',
         'invoice_date' => 'date',
         'due_date' => 'date',
     ];
@@ -64,8 +69,16 @@ class Invoice extends Model
             // Calculate subtotal from all line items
             $invoice->subtotal = $invoice->services_total + $invoice->products_total + $invoice->charges_total;
 
-            // Total is subtotal (discounts already applied in job card items)
-            $invoice->total = $invoice->subtotal;
+            // Apply overall discount
+            $overallDiscountAmount = 0;
+            if ($invoice->overall_discount_type === 'percentage') {
+                $overallDiscountAmount = ($invoice->subtotal * ($invoice->overall_discount ?? 0)) / 100;
+            } else {
+                $overallDiscountAmount = $invoice->overall_discount ?? 0;
+            }
+
+            // Total is subtotal minus overall discount plus rounding adjustment
+            $invoice->total = max(0, ($invoice->subtotal - $overallDiscountAmount) + ($invoice->rounding_adjustment ?? 0));
 
             // Update status based on payment
             $invoice->updatePaymentStatus();

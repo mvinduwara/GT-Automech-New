@@ -29,7 +29,13 @@ Route::middleware(['auth'])->group(function () {
             Route::get('/{voucher_number}', [PettyCashController::class, 'show'])->name('show');
             Route::get('/{voucher_number}/download-pdf', [PettyCashController::class, 'downloadPdf'])->name('download-pdf');
 
-            // Finalize (recorded after spend)
+            // Submit for Review (recorded after spend)
+            Route::post('/{voucher_number}/submit-for-review', [PettyCashController::class, 'submitForReview'])->name('submit-for-review');
+
+            // Replenish (Imprest System)
+            Route::post('/replenish', [PettyCashController::class, 'replenish'])->name('replenish');
+
+            // Finalize (Admin only, checked in controller)
             Route::post('/{voucher_number}/finalize', [PettyCashController::class, 'finalize'])->name('finalize');
         });
 });

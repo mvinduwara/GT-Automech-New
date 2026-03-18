@@ -21,7 +21,25 @@ class PettyCashController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
 
-        return Inertia::render('petty-cash/index', ['petty_cash' => $petty_cash]);
+        // Imprest Summary
+        $imprestLimit = (float) \App\Models\Setting::get('petty_cash_imprest_limit', 0);
+        $pettyCashAccountId = \App\Models\Setting::get('default_petty_cash_account_id');
+        
+        $currentBalance = 0;
+        if ($pettyCashAccountId) {
+            $currentBalance = \App\Models\LedgerEntry::where('account_id', $pettyCashAccountId)
+                ->selectRaw('SUM(debit) - SUM(credit) as balance')
+                ->value('balance') ?: 0;
+        }
+
+        return Inertia::render('petty-cash/index', [
+            'petty_cash' => $petty_cash,
+            'imprest_summary' => [
+                'limit' => $imprestLimit,
+                'current_balance' => (float)$currentBalance,
+                'shortfall' => max(0, $imprestLimit - $currentBalance),
+            ]
+        ]);
     }
 
     public function show($voucher_number)
@@ -296,20 +314,42 @@ class PettyCashController extends Controller
                 $voucher->update(['status' => 'paid']);
 
                 // 2. Record the transaction in the financial ledger
-                $expenseAccount = Account::where('code', '5000')->firstOrFail(); // Petty Cash Expenses
-                $cashAccount = Account::where('code', '1000')->firstOrFail(); // Cash & Bank
+                $drawerAccountId = \App\Models\Setting::get('default_petty_cash_account_id');
+                $bankAccountId = \App\Models\Setting::get('default_cash_account_id');
+                $expenseAccountId = \App\Models\Setting::get('default_petty_cash_expense_account_id');
 
-                CreateLedgerEntries::run(
-                    description: "Petty cash expense for Voucher #{$voucher->voucher_number} - {$voucher->name}",
-                    date: \Carbon\Carbon::parse($voucher->date),
-                    amount: (float) $voucher->requested_amount,
-                    debitAccount: $expenseAccount, // Expense increases
-                    creditAccount: $cashAccount,    // Cash asset decreases
-                    transactionable: $voucher
-                );
+                if (!$drawerAccountId || !$bankAccountId || !$expenseAccountId) {
+                    throw new \Exception('Please configure Default Petty Cash, Cash/Bank, and Expense accounts in System Settings.');
+                }
+
+                $drawerAccount = Account::findOrFail($drawerAccountId);
+                $bankAccount = Account::findOrFail($bankAccountId);
+                $expenseAccount = Account::findOrFail($expenseAccountId);
+
+                if ($voucher->is_replenishment) {
+                    // Replenishment: Bank -> Drawer
+                    CreateLedgerEntries::run(
+                        description: "Petty cash replenishment for Voucher #{$voucher->voucher_number}",
+                        date: \Carbon\Carbon::parse($voucher->date),
+                        amount: (float) $voucher->requested_amount,
+                        debitAccount: $drawerAccount,
+                        creditAccount: $bankAccount, 
+                        transactionable: $voucher
+                    );
+                    Log::info('Petty cash replenishment ledger created', ['voucher_id' => $voucher->id]);
+                } else {
+                    // Regular Spend: Drawer -> Expense (Temporary/Requested amount)
+                    CreateLedgerEntries::run(
+                        description: "Petty cash advance for Voucher #{$voucher->voucher_number} - {$voucher->name}",
+                        date: \Carbon\Carbon::parse($voucher->date),
+                        amount: (float) $voucher->requested_amount,
+                        debitAccount: $expenseAccount,
+                        creditAccount: $drawerAccount, 
+                        transactionable: $voucher
+                    );
+                    Log::info('Petty cash expenditure advance ledger created', ['voucher_id' => $voucher->id]);
+                }
             });
-
-            Log::info('Petty cash voucher marked as paid and ledger created', ['voucher_id' => $voucher->id]);
             return back()->with('success', 'Voucher marked as paid!');
 
         } catch (\Exception $e) {
@@ -318,12 +358,12 @@ class PettyCashController extends Controller
         }
     }
 
-    public function finalize(Request $request, $voucher_number)
+    public function submitForReview(Request $request, $voucher_number)
     {
         $voucher = PettyCashVoucher::where('voucher_number', $voucher_number)->firstOrFail();
 
-        if ($voucher->status !== 'paid') {
-            return back()->withErrors(['error' => 'Only paid vouchers can be finalized.']);
+        if (!in_array($voucher->status, ['paid', 'processed'])) {
+            return back()->withErrors(['error' => 'Voucher must be in paid or processed status to submit for review.']);
         }
 
         $validated = $request->validate([
@@ -348,6 +388,9 @@ class PettyCashController extends Controller
             }
 
             // Create items
+            // Remove existing items if any (prevents duplicates on resubmit)
+            $voucher->items()->delete();
+            
             foreach ($validated['items'] as $itemData) {
                 PettyCashItem::create([
                     'petty_cash_voucher_id' => $voucher->id,
@@ -358,19 +401,137 @@ class PettyCashController extends Controller
                 ]);
             }
 
-            // Update voucher
+            // Update voucher status to 'processed' (awaiting admin finalization)
             $voucher->update([
                 'actual_amount' => $actualAmount,
-                'total_amount' => $actualAmount, // syncing with actual spent
+                'total_amount' => $actualAmount,
                 'balance_amount' => $balanceAmount,
                 'proof_path' => $proofPath,
-                'status' => 'paid', 
+                'status' => 'processed', 
+            ]);
+
+            DB::commit();
+
+            return redirect()->route('dashboard.petty-cash.show', $voucher_number)->with('success', 'Voucher submitted for review successfully!');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->withErrors(['error' => 'Failed to submit voucher: ' . $e->getMessage()]);
+        }
+    }
+
+    public function finalize(Request $request, $voucher_number)
+    {
+        // Check if user is admin
+        if (auth()->user()->role !== 'admin') {
+            return back()->withErrors(['error' => 'Unauthorized. Only admins can finalize vouchers.']);
+        }
+
+        $voucher = PettyCashVoucher::where('voucher_number', $voucher_number)->firstOrFail();
+
+        if (!in_array($voucher->status, ['paid', 'processed'])) {
+            return back()->withErrors(['error' => 'Voucher must be in paid or processed status for finalization.']);
+        }
+
+        // Optional: Save changes if admin edited items during finalization
+        if ($request->has('items')) {
+            $validated = $request->validate([
+                'items' => 'required|array|min:1',
+                'items.*.item_description' => 'required|string|max:255',
+                'items.*.quantity' => 'required|numeric|min:1',
+                'items.*.unit_price' => 'required|numeric|min:0',
+                'items.*.amount' => 'required|numeric|min:0',
+                'proof' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
+            ]);
+
+            DB::beginTransaction();
+            try {
+                $actualAmount = collect($validated['items'])->sum('amount');
+                $balanceAmount = $voucher->requested_amount - $actualAmount;
+
+                // Handle proof upload
+                $proofPath = $voucher->proof_path;
+                if ($request->hasFile('proof')) {
+                    $proofPath = $request->file('proof')->store('petty-cash-proofs', 'public');
+                }
+
+                $voucher->items()->delete();
+                foreach ($validated['items'] as $itemData) {
+                    PettyCashItem::create([
+                        'petty_cash_voucher_id' => $voucher->id,
+                        'item_description' => $itemData['item_description'],
+                        'quantity' => $itemData['quantity'],
+                        'unit_price' => $itemData['unit_price'],
+                        'amount' => $itemData['amount'],
+                    ]);
+                }
+
+                $voucher->update([
+                    'actual_amount' => $actualAmount,
+                    'total_amount' => $actualAmount,
+                    'balance_amount' => $balanceAmount,
+                    'proof_path' => $proofPath,
+                ]);
+                DB::commit();
+            } catch (\Exception $e) {
+                DB::rollBack();
+                return back()->withErrors(['items' => 'Failed to save items: ' . $e->getMessage()]);
+            }
+        }
+
+        DB::beginTransaction();
+
+        try {
+            // Update voucher status to 'finalized'
+            $voucher->update([
+                'status' => 'finalized', 
                 'finalized_at' => now(),
             ]);
 
-            // Update ledger entries to match actual spent amount
-            $voucher->ledgerEntries()->where('debit', '>', 0)->update(['debit' => $actualAmount]);
-            $voucher->ledgerEntries()->where('credit', '>', 0)->update(['credit' => $actualAmount]);
+            // 1. Update the "Movement" entry (Bank -> Drawer) to match actual amount ONLY if it's a replenishment
+            if ($voucher->is_replenishment) {
+                // This entry was created during "setPaid" for the requested amount
+                $voucher->ledgerEntries()->where('debit', '>', 0)->update(['debit' => $voucher->actual_amount]);
+                $voucher->ledgerEntries()->where('credit', '>', 0)->update(['credit' => $voucher->actual_amount]);
+            } else {
+                // 2. For REGULAR spend voucher, record the ADJUSTMENT (Drawer <-> Expense Account)
+                // The requested amount was already recorded as (Dr Expense / Cr Drawer) during setPaid
+                
+                $diff = (float) $voucher->actual_amount - (float) $voucher->requested_amount;
+                
+                if ($diff != 0) {
+                    $expenseAccountId = \App\Models\Setting::get('default_petty_cash_expense_account_id');
+                    $drawerAccountId = \App\Models\Setting::get('default_petty_cash_account_id');
+
+                    if ($expenseAccountId && $drawerAccountId) {
+                        $expenseAccount = \App\Models\Account::findOrFail($expenseAccountId);
+                        $drawerAccount = \App\Models\Account::findOrFail($drawerAccountId);
+
+                        if ($diff < 0) {
+                            // Change returned: Cash comes back to Drawer
+                            // Dr Drawer / Cr Expense
+                            CreateLedgerEntries::run(
+                                description: "Petty cash adjustment (Change returned) for Voucher #{$voucher->voucher_number}",
+                                date: now(),
+                                amount: abs($diff),
+                                debitAccount: $drawerAccount,
+                                creditAccount: $expenseAccount,
+                                transactionable: $voucher
+                            );
+                        } else {
+                            // Extra spent: More cash leaves Drawer
+                            // Dr Expense / Cr Drawer
+                            CreateLedgerEntries::run(
+                                description: "Petty cash adjustment (Extra spend) for Voucher #{$voucher->voucher_number}",
+                                date: now(),
+                                amount: $diff,
+                                debitAccount: $expenseAccount,
+                                creditAccount: $drawerAccount,
+                                transactionable: $voucher
+                            );
+                        }
+                    }
+                }
+            }
 
             DB::commit();
 
@@ -379,6 +540,56 @@ class PettyCashController extends Controller
             DB::rollBack();
             return back()->withErrors(['error' => 'Failed to finalize voucher: ' . $e->getMessage()]);
         }
+    }
+
+    public function replenish(Request $request)
+    {
+        // 1. Calculate shortfall
+        $imprestLimit = (float) \App\Models\Setting::get('petty_cash_imprest_limit', 0);
+        $pettyCashAccountId = \App\Models\Setting::get('default_petty_cash_account_id');
+        
+        if ($imprestLimit <= 0) {
+            return back()->withErrors(['error' => 'Please set the Imprest Limit in System Settings first.']);
+        }
+
+        $currentBalance = 0;
+        if ($pettyCashAccountId) {
+            $currentBalance = \App\Models\LedgerEntry::where('account_id', $pettyCashAccountId)
+                ->selectRaw('SUM(debit) - SUM(credit) as balance')
+                ->value('balance') ?: 0;
+        }
+
+        $shortfall = $imprestLimit - $currentBalance;
+
+        if ($shortfall <= 0) {
+            return back()->with('info', 'Petty cash is already at or above the target limit.');
+        }
+
+        // 2. Generate voucher number
+        $lastVoucher = PettyCashVoucher::latest()->first();
+        $nextNumber = 1;
+        if ($lastVoucher) {
+            $lastNum = str_replace('PCV-' . date('Ymd') . '-', '', $lastVoucher->voucher_number);
+            if (is_numeric($lastNum)) {
+                $nextNumber = intval($lastNum) + 1;
+            }
+        }
+        $voucherNumber = 'PCV-' . date('Ymd') . '-' . str_pad($nextNumber, 3, '0', STR_PAD_LEFT);
+
+        // 3. Create the voucher
+        $voucher = PettyCashVoucher::create([
+            'voucher_number' => $voucherNumber,
+            'date' => now(),
+            'requested_by_user_id' => auth()->id(),
+            'name' => 'Petty Cash Replenishment',
+            'description' => "Auto-generated replenishment for shortfall of LKR " . number_format($shortfall, 2),
+            'requested_amount' => $shortfall,
+            'total_amount' => 0,
+            'status' => 'pending',
+            'is_replenishment' => true,
+        ]);
+
+        return redirect()->route('dashboard.petty-cash.show', $voucher->voucher_number)->with('success', 'Replenishment voucher created successfully!');
     }
 
     public function downloadPdf($voucher_number)

@@ -29,6 +29,7 @@ class PettyCashVoucher extends Model
         'balance_amount',
         'proof_path',
         'status',
+        'is_replenishment',
         'finalized_at',
         'checked',
     ];

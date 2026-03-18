@@ -3,7 +3,7 @@ import { NavUser } from '@/components/nav-user';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { type NavItem } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
-import { File, Cog, Car, FileText, HandCoins, Home, IdCard, LayoutGrid, NotepadText, StickyNote, TicketCheck, Trash, UserPlus, UserRound, UserRoundCheck, Users, Star, Calendar, TrendingUp, Wallet } from 'lucide-react';
+import { File, Cog, Car, FileText, HandCoins, Home, IdCard, LayoutGrid, NotepadText, StickyNote, TicketCheck, Trash, UserPlus, UserRound, UserRoundCheck, Users, Star, Calendar, TrendingUp, Wallet, BookOpen, Settings2 } from 'lucide-react';
 import { useMemo } from 'react';
 import AppLogo from './app-logo';
 
@@ -74,6 +74,12 @@ const mainNavItems: (NavItem & { roles?: string[] })[] = [
         title: 'Expenses',
         href: '/dashboard/expense',
         icon: Wallet,
+        roles: [USER_ROLES.CASHIER, USER_ROLES.ADMIN, USER_ROLES.SERVICEMANAGER],
+    },
+    {
+        title: 'Accounts',
+        href: '/dashboard/accounts',
+        icon: BookOpen,
         roles: [USER_ROLES.CASHIER, USER_ROLES.ADMIN, USER_ROLES.SERVICEMANAGER],
     },
     {
@@ -153,6 +159,12 @@ const mainNavItems: (NavItem & { roles?: string[] })[] = [
         href: '/dashboard/clear-cache',
         icon: Trash,
         roles: [USER_ROLES.CASHIER, USER_ROLES.ADMIN, USER_ROLES.SERVICEMANAGER],
+    },
+    {
+        title: 'System Settings',
+        href: '/dashboard/settings/system',
+        icon: Settings2,
+        roles: [USER_ROLES.ADMIN],
     },
 ];
 

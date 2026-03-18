@@ -15,7 +15,9 @@ Route::middleware('auth')->group(function () {
     Route::get('settings/password', [PasswordController::class, 'edit'])->name('password.edit');
     Route::put('settings/password', [PasswordController::class, 'update'])->name('password.update');
 
-    // Route::get('settings/appearance', function () {
-    //     return Inertia::render('settings/appearance');
-    // })->name('appearance');
+    // System Settings
+    Route::prefix('dashboard/settings')->name('dashboard.settings.')->group(function () {
+        Route::get('/system', [\App\Http\Controllers\Settings\SystemSettingController::class, 'index'])->name('system.index');
+        Route::patch('/system', [\App\Http\Controllers\Settings\SystemSettingController::class, 'update'])->name('system.update');
+    });
 });

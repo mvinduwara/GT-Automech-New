@@ -4,11 +4,12 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { pettyCash } from '@/types/types';
-import { Head, Link, useForm, router } from '@inertiajs/react';
-import { ArrowLeft, Download, FileText, Plus, Trash2 } from 'lucide-react';
+import { Head, Link, useForm, router, usePage } from '@inertiajs/react';
+import { ArrowLeft, Download, FileText, Plus, Trash2, Edit } from 'lucide-react';
 import React, { useState } from 'react';
 import { toast } from 'sonner';
 
@@ -20,25 +21,34 @@ interface FinalizeItem {
 }
 
 export default function Show({ voucher }: { voucher: pettyCash }) {
+    const { auth } = usePage<any>().props;
+    const userRole = auth.user.role;
+    const isAdmin = userRole === 'admin';
+
     const breadcrumbs: BreadcrumbItem[] = [
         { title: 'Petty Cash', href: '/dashboard/petty-cash' },
         { title: `Voucher ${voucher.voucher_number}`, href: route('dashboard.petty-cash.show', voucher.voucher_number) },
     ];
 
     const { data, setData, post, processing, errors, reset } = useForm<any>({
-        items: [
-            { item_description: '', quantity: 1, unit_price: 0, amount: 0 }
-        ],
+        items: voucher.items?.length > 0 
+            ? voucher.items.map(i => ({ 
+                item_description: i.item_description, 
+                quantity: i.quantity, 
+                unit_price: i.unit_price, 
+                amount: i.amount 
+            }))
+            : [{ item_description: '', quantity: 1, unit_price: 0, amount: 0 }],
         proof: null,
     });
 
     const [isFinalizing, setIsFinalizing] = useState(false);
 
-    const handleItemChange = (index: number, field: keyof FinalizeItem, value: any) => {
+    const handleItemChange = (index: number, field: keyof FinalizeItem, value: string | number) => {
         const newItems = [...data.items];
         newItems[index] = { ...newItems[index], [field]: value };
         if (field === 'quantity' || field === 'unit_price') {
-            newItems[index].amount = newItems[index].quantity * newItems[index].unit_price;
+            newItems[index].amount = Number(newItems[index].quantity) * Number(newItems[index].unit_price);
         }
         setData('items', newItems);
     };
@@ -49,26 +59,51 @@ export default function Show({ voucher }: { voucher: pettyCash }) {
 
     const removeItem = (index: number) => {
         if (data.items.length > 1) {
-            setData('items', data.items.filter((_, i) => i !== index));
+            setData('items', data.items.filter((_: any, i: number) => i !== index));
         }
     };
 
-    const handleFinalize = (e: React.FormEvent) => {
+    const handleSubmitForReview = (e: React.FormEvent) => {
         e.preventDefault();
-        post(route('dashboard.petty-cash.finalize', voucher.voucher_number), {
+        post(route('dashboard.petty-cash.submit-for-review', voucher.voucher_number), {
             onSuccess: () => {
-                toast.success('Voucher finalized successfully!');
+                toast.success('Voucher submitted for review successfully!');
                 setIsFinalizing(false);
                 reset();
             },
             onError: (err) => {
                 console.error(err);
-                toast.error('Failed to finalize voucher.');
+                toast.error('Failed to submit voucher.');
             }
         });
     };
 
-    const totalActualAmount = data.items.reduce((sum, item) => sum + item.amount, 0);
+    const handleAdminFinalize = (e?: React.FormEvent | React.MouseEvent) => {
+        if (e && 'preventDefault' in e) e.preventDefault();
+        
+        post(route('dashboard.petty-cash.finalize', voucher.voucher_number), {
+            onSuccess: () => {
+                toast.success('Voucher finalized successfully!');
+                setIsFinalizing(false);
+            },
+            onError: (err) => {
+                console.error(err);
+                toast.error('Failed to finalize voucher. Please check item details.');
+            }
+        });
+    };
+
+    const totalActualAmount = data.items.reduce((sum: number, item: any) => sum + item.amount, 0);
+
+    const getStatusVariant = (status: string) => {
+        switch (status) {
+            case 'finalized': return 'default'; // primary color
+            case 'processed': return 'secondary';
+            case 'paid': return 'outline';
+            case 'rejected': return 'destructive';
+            default: return 'outline';
+        }
+    };
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -89,7 +124,7 @@ export default function Show({ voucher }: { voucher: pettyCash }) {
                         </a>
 
                         {/* Status Transitions */}
-                        {voucher.status === 'pending' && (
+                        {voucher.status === 'pending' && isAdmin && (
                             <div className="flex gap-2">
                                 <Button
                                     onClick={() => router.patch(route('dashboard.petty-cash.approve', voucher.voucher_number))}
@@ -106,7 +141,7 @@ export default function Show({ voucher }: { voucher: pettyCash }) {
                             </div>
                         )}
 
-                        {voucher.status === 'approved' && (
+                        {voucher.status === 'approved' && (isAdmin || userRole === 'service-manager') && (
                             <Button
                                 onClick={() => router.patch(route('dashboard.petty-cash.set-paid', voucher.voucher_number))}
                                 className="bg-blue-600 hover:bg-blue-700"
@@ -115,10 +150,40 @@ export default function Show({ voucher }: { voucher: pettyCash }) {
                             </Button>
                         )}
 
-                        {voucher.status === 'paid' && !voucher.finalized_at && !isFinalizing && (
+                        {voucher.status === 'paid' && !isFinalizing && (
                             <Button onClick={() => setIsFinalizing(true)} className="bg-orange-600 hover:bg-orange-700">
-                                Finalize Voucher
+                                {isAdmin ? 'Enter Items & Finalize' : 'Submit for Finalization'}
                             </Button>
+                        )}
+
+                        {voucher.status === 'processed' && isAdmin && (
+                            <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                    <Button className="bg-green-700 hover:bg-green-800">
+                                        Confirm & Finalize
+                                    </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                            This will finalize the petty cash voucher and update the financial ledger entries permanently.
+                                        </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                        <AlertDialogAction onClick={handleAdminFinalize} className="bg-green-600 hover:bg-green-700 text-white">
+                                            Confirm & Finalize
+                                        </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
+                        )}
+
+                        {voucher.status === 'processed' && !isAdmin && (
+                            <Badge className="bg-yellow-500 text-white hover:bg-yellow-600 px-4 py-2">
+                                Awaiting Admin Review
+                            </Badge>
                         )}
                     </div>
                 </div>
@@ -131,8 +196,8 @@ export default function Show({ voucher }: { voucher: pettyCash }) {
                                     <CardTitle className="text-2xl">Voucher Details</CardTitle>
                                     <CardDescription>{voucher.voucher_number}</CardDescription>
                                 </div>
-                                <Badge variant={voucher.status === 'paid' ? 'default' : 'outline'}>
-                                    {voucher.finalized_at ? 'FINALIZED' : voucher.status.toUpperCase()}
+                                <Badge variant={getStatusVariant(voucher.status)} className="capitalize px-4 py-1 text-sm">
+                                    {voucher.status === 'processed' ? 'PENDING FINALIZATION' : voucher.status}
                                 </Badge>
                             </div>
                         </CardHeader>
@@ -209,10 +274,20 @@ export default function Show({ voucher }: { voucher: pettyCash }) {
                 </div>
 
                 {/* Finalized Items OR Finalization Form */}
-                {voucher.items && voucher.items.length > 0 ? (
+                {((voucher.status === 'finalized' || voucher.status === 'processed') && !isFinalizing) ? (
                     <Card>
-                        <CardHeader>
-                            <CardTitle>Expenditure Breakdown</CardTitle>
+                        <CardHeader className="flex flex-row items-center justify-between">
+                            <div>
+                                <CardTitle>Expenditure Breakdown</CardTitle>
+                                {voucher.status === 'processed' && (
+                                    <CardDescription>Submitted by cashier, awaiting admin confirmation.</CardDescription>
+                                )}
+                            </div>
+                            {voucher.status === 'processed' && (
+                                <Button variant="outline" size="sm" onClick={() => setIsFinalizing(true)}>
+                                    <Edit className="w-4 h-4 mr-1" /> Edit Items
+                                </Button>
+                            )}
                         </CardHeader>
                         <CardContent>
                             <Table>
@@ -225,7 +300,7 @@ export default function Show({ voucher }: { voucher: pettyCash }) {
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {voucher.items.map((item) => (
+                                    {voucher.items?.map((item) => (
                                         <TableRow key={item.id}>
                                             <TableCell>{item.item_description}</TableCell>
                                             <TableCell className="text-right">{item.quantity}</TableCell>
@@ -233,9 +308,19 @@ export default function Show({ voucher }: { voucher: pettyCash }) {
                                             <TableCell className="text-right font-semibold">{parseFloat(item.amount.toString()).toFixed(2)}</TableCell>
                                         </TableRow>
                                     ))}
-                                    <TableRow className="bg-muted/50 font-bold">
+                                    <TableRow className="border-t-2">
+                                        <TableCell colSpan={3} className="text-right text-muted-foreground font-medium">Requested Amount</TableCell>
+                                        <TableCell className="text-right font-medium">LKR {parseFloat(voucher.requested_amount.toString()).toFixed(2)}</TableCell>
+                                    </TableRow>
+                                    <TableRow className="bg-muted/30 font-bold">
                                         <TableCell colSpan={3} className="text-right">Total Spent</TableCell>
                                         <TableCell className="text-right">LKR {parseFloat(voucher.actual_amount?.toString() || '0').toFixed(2)}</TableCell>
+                                    </TableRow>
+                                    <TableRow className="border-t">
+                                        <TableCell colSpan={3} className="text-right text-muted-foreground font-medium">Balance to Return</TableCell>
+                                        <TableCell className={`text-right font-bold ${Number(voucher.balance_amount) < 0 ? 'text-red-500' : 'text-green-600'}`}>
+                                            LKR {parseFloat(voucher.balance_amount?.toString() || '0').toFixed(2)}
+                                        </TableCell>
                                     </TableRow>
                                 </TableBody>
                             </Table>
@@ -243,100 +328,139 @@ export default function Show({ voucher }: { voucher: pettyCash }) {
                     </Card>
                 ) : isFinalizing ? (
                     <Card className="border-green-200">
-                        <form onSubmit={handleFinalize}>
+                        <form onSubmit={isAdmin ? handleAdminFinalize : handleSubmitForReview}>
                             <CardHeader className="bg-green-50/50">
-                                <CardTitle className="text-green-800">Finalize Voucher Expenses</CardTitle>
+                                <CardTitle className="text-green-800">
+                                    {isAdmin ? 'Finalize Voucher Expenses' : 'Submit Expenses for Review'}
+                                </CardTitle>
                                 <CardDescription>Enter the actual items purchased and upload the bill.</CardDescription>
                             </CardHeader>
                             <CardContent className="pt-6 space-y-6">
+                                {Object.keys(errors).length > 0 && typeof errors.error === 'string' && (
+                                    <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm font-medium">
+                                        {errors.error}
+                                    </div>
+                                )}
+
                                 <div className="space-y-4">
-                                    <div className="flex justify-between items-center">
-                                        <h3 className="font-semibold">Items Purchased</h3>
-                                        <Button type="button" variant="outline" size="sm" onClick={addItem} className="gap-1">
-                                            <Plus className="w-4 h-4" /> Add Item
+                                    <div className="flex justify-between items-center mb-2 px-1">
+                                        <h3 className="font-semibold text-gray-700">Expenditure Items</h3>
+                                        <Button type="button" variant="outline" size="sm" onClick={addItem} className="h-8 border-dashed hover:bg-green-50 hover:text-green-600 transition-colors">
+                                            <Plus className="w-4 h-4 mr-1" /> Add Business Expense
                                         </Button>
                                     </div>
-                                    <div className="space-y-3">
-                                        {data.items.map((item, index) => (
-                                            <div key={index} className="flex gap-2 items-end">
-                                                <div className="flex-1 space-y-1">
-                                                    <Label className="text-xs">Description</Label>
-                                                    <Input
-                                                        placeholder="e.g. Sugar 500g"
-                                                        value={item.item_description}
-                                                        onChange={(e) => handleItemChange(index, 'item_description', e.target.value)}
-                                                        required
-                                                    />
-                                                </div>
-                                                <div className="w-20 space-y-1">
-                                                    <Label className="text-xs">Qty</Label>
-                                                    <Input
-                                                        type="number"
-                                                        value={item.quantity}
-                                                        onChange={(e) => handleItemChange(index, 'quantity', parseFloat(e.target.value) || 0)}
-                                                        required
-                                                    />
-                                                </div>
-                                                <div className="w-32 space-y-1">
-                                                    <Label className="text-xs">Unit Price</Label>
-                                                    <Input
-                                                        type="number"
-                                                        step="0.01"
-                                                        value={item.unit_price}
-                                                        onChange={(e) => handleItemChange(index, 'unit_price', parseFloat(e.target.value) || 0)}
-                                                        required
-                                                    />
-                                                </div>
-                                                <div className="w-32 space-y-1">
-                                                    <Label className="text-xs">Amount</Label>
-                                                    <Input
-                                                        readOnly
-                                                        value={item.amount.toFixed(2)}
-                                                        className="bg-muted"
-                                                    />
-                                                </div>
-                                                <Button
-                                                    type="button"
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className="text-red-500"
-                                                    onClick={() => removeItem(index)}
-                                                    disabled={data.items.length === 1}
-                                                >
-                                                    <Trash2 className="w-4 h-4" />
-                                                </Button>
-                                            </div>
-                                        ))}
+                                    
+                                    <div className="rounded-md border bg-white overflow-hidden shadow-sm">
+                                        <Table>
+                                            <TableHeader className="bg-muted/30">
+                                                <TableRow className="hover:bg-transparent">
+                                                    <TableHead className="w-[45%] text-xs font-bold uppercase tracking-wider">Description</TableHead>
+                                                    <TableHead className="w-[15%] text-center text-xs font-bold uppercase tracking-wider">Qty</TableHead>
+                                                    <TableHead className="w-[20%] text-right text-xs font-bold uppercase tracking-wider">Unit Price</TableHead>
+                                                    <TableHead className="w-[15%] text-right text-xs font-bold uppercase tracking-wider">Total</TableHead>
+                                                    <TableHead className="w-[5%]"></TableHead>
+                                                </TableRow>
+                                            </TableHeader>
+                                            <TableBody>
+                                                {data.items.map((item: any, index: number) => (
+                                                    <React.Fragment key={index}>
+                                                        <TableRow className="group transition-colors hover:bg-muted/10">
+                                                            <TableCell className="align-top py-4">
+                                                                <Input
+                                                                    placeholder="e.g. Printer Toner"
+                                                                    value={item.item_description}
+                                                                    onChange={(e) => handleItemChange(index, 'item_description', e.target.value)}
+                                                                    className={`h-9 shadow-none ${errors[`items.${index}.item_description`] ? 'border-red-500 bg-red-50' : ''}`}
+                                                                />
+                                                                {errors[`items.${index}.item_description`] && <p className="text-[10px] text-red-500 mt-1 pl-1">{errors[`items.${index}.item_description`]}</p>}
+                                                            </TableCell>
+                                                            <TableCell className="align-top py-4">
+                                                                <Input
+                                                                    type="number"
+                                                                    value={item.quantity}
+                                                                    onChange={(e) => handleItemChange(index, 'quantity', parseFloat(e.target.value) || 0)}
+                                                                    className={`h-9 text-center shadow-none ${errors[`items.${index}.quantity`] ? 'border-red-500 bg-red-50' : ''}`}
+                                                                />
+                                                                {errors[`items.${index}.quantity`] && <p className="text-[10px] text-red-500 mt-1 text-center">{errors[`items.${index}.quantity`]}</p>}
+                                                            </TableCell>
+                                                            <TableCell className="align-top py-4">
+                                                                <Input
+                                                                    type="number"
+                                                                    step="0.01"
+                                                                    value={item.unit_price}
+                                                                    onChange={(e) => handleItemChange(index, 'unit_price', parseFloat(e.target.value) || 0)}
+                                                                    className={`h-9 text-right shadow-none ${errors[`items.${index}.unit_price`] ? 'border-red-500 bg-red-50' : ''}`}
+                                                                />
+                                                                {errors[`items.${index}.unit_price`] && <p className="text-[10px] text-red-500 mt-1 text-right">{errors[`items.${index}.unit_price`]}</p>}
+                                                            </TableCell>
+                                                            <TableCell className="align-top pt-5 text-right font-semibold text-sm text-gray-700">
+                                                                {item.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                            </TableCell>
+                                                            <TableCell className="align-top py-4">
+                                                                <Button
+                                                                    type="button"
+                                                                    variant="ghost"
+                                                                    size="icon"
+                                                                    className="h-9 w-9 text-muted-foreground hover:text-red-600 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                                    onClick={() => removeItem(index)}
+                                                                    disabled={data.items.length === 1}
+                                                                >
+                                                                    <Trash2 className="w-4 h-4" />
+                                                                </Button>
+                                                            </TableCell>
+                                                        </TableRow>
+                                                    </React.Fragment>
+                                                ))}
+                                            </TableBody>
+                                        </Table>
                                     </div>
+                                    {errors.items && <p className="text-sm text-red-500 text-center py-2 bg-red-50 rounded-md border border-red-100 italic">⚠️ {errors.items}</p>}
                                 </div>
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t">
-                                    <div className="space-y-2">
-                                        <Label>Proof of Purchase (Bill/Receipt)</Label>
-                                        <Input
-                                            type="file"
-                                            onChange={(e) => setData('proof', e.target.files?.[0] || null)}
-                                            accept="image/*,.pdf"
-                                        />
-                                        <p className="text-xs text-muted-foreground italic">Upload a photo of the bill or a PDF receipt.</p>
-                                        {errors.proof && <p className="text-xs text-red-500">{errors.proof}</p>}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-6 border-t border-dashed">
+                                    <div className="space-y-3">
+                                        <Label className="text-sm font-bold text-gray-700 flex items-center gap-2">
+                                            <Download className="w-4 h-4" /> Proof of Purchase (Bill/Receipt)
+                                        </Label>
+                                        <div className="p-4 border-2 border-dashed rounded-xl bg-muted/20 hover:bg-muted/40 transition-colors cursor-pointer group relative">
+                                            <Input
+                                                type="file"
+                                                className="absolute inset-0 opacity-0 cursor-pointer z-10"
+                                                onChange={(e) => setData('proof', e.target.files?.[0] || null)}
+                                                accept="image/*,.pdf"
+                                            />
+                                            <div className="flex flex-col items-center justify-center text-muted-foreground group-hover:text-primary transition-colors">
+                                                <FileText className="w-8 h-8 mb-2" />
+                                                <p className="text-xs font-medium">{data.proof ? (data.proof as File).name : 'Click or Drag to upload receipt'}</p>
+                                                <p className="text-[10px] opacity-60 mt-1">Images or PDF (max 2MB)</p>
+                                            </div>
+                                        </div>
+                                        {errors.proof && <p className="text-xs text-red-500 mt-1">{errors.proof}</p>}
                                     </div>
-                                    <div className="bg-muted/30 p-4 rounded-lg flex flex-col justify-center items-end">
-                                        <div className="text-right space-y-1">
-                                            <p className="text-sm text-muted-foreground">Total Actual Spent:</p>
-                                            <p className="text-2xl font-bold">LKR {totalActualAmount.toFixed(2)}</p>
-                                            <p className="text-sm text-muted-foreground">Balance to Return:</p>
-                                            <p className={`font-semibold ${voucher.requested_amount - totalActualAmount < 0 ? 'text-red-500' : 'text-green-600'}`}>
-                                                LKR {(voucher.requested_amount - totalActualAmount).toFixed(2)}
-                                            </p>
+                                    <div className="bg-gray-50 border p-6 rounded-xl flex flex-col justify-center items-end shadow-inner">
+                                        <div className="text-right space-y-2">
+                                            <div className="flex justify-between items-center gap-8 border-b pb-2">
+                                                <span className="text-sm text-muted-foreground">Requested Limit:</span>
+                                                <span className="font-semibold">LKR {parseFloat(voucher.requested_amount.toString()).toLocaleString()}</span>
+                                            </div>
+                                            <div className="flex justify-between items-center gap-8 border-b pb-2">
+                                                <span className="text-sm text-muted-foreground">Total Actual Spent:</span>
+                                                <span className="text-xl font-bold text-blue-700">LKR {totalActualAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                                            </div>
+                                            <div className="flex justify-between items-center gap-8 pt-1">
+                                                <span className="text-sm font-bold">Balance to Return:</span>
+                                                <span className={`text-xl font-black ${voucher.requested_amount - totalActualAmount < 0 ? 'text-red-500' : 'text-green-600'}`}>
+                                                    LKR {(voucher.requested_amount - totalActualAmount).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                                </span>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
                             </CardContent>
-                            <CardFooter className="bg-green-50/50 flex justify-end gap-3 pt-6">
-                                <Button type="button" variant="ghost" onClick={() => setIsFinalizing(false)}>Cancel</Button>
-                                <Button type="submit" className="bg-green-600 hover:bg-green-700" disabled={processing}>
-                                    {processing ? 'Saving...' : 'Confirm & Finalize'}
+                            <CardFooter className="bg-muted/30 flex justify-end gap-3 pt-6 border-t px-6 py-4">
+                                <Button type="button" variant="ghost" onClick={() => { setIsFinalizing(false); reset(); }} disabled={processing}>Cancel</Button>
+                                <Button type="submit" className="bg-green-600 hover:bg-green-700 font-bold px-8 shadow-md hover:shadow-lg transition-all" disabled={processing}>
+                                    {processing ? 'Processing...' : (isAdmin ? 'Confirm & Finalize' : 'Submit for Review')}
                                 </Button>
                             </CardFooter>
                         </form>
