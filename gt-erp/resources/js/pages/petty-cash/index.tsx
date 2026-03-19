@@ -287,7 +287,7 @@ export default function Index({ petty_cash, imprest_summary }: {
                                                 </Link>
                                             )}
 
-                                            {auth?.user?.role === 'admin' && petty_cash.status === 'pending' && (
+                                            {(auth?.user?.role === 'admin' || auth?.user?.role === 'cashier') && petty_cash.status === 'pending' && (
                                                 <AlertDialog
                                                     open={isApproveDialogOpen && selectedVoucher?.voucher_number === petty_cash.voucher_number}
                                                     onOpenChange={setIsApproveDialogOpen}
@@ -335,7 +335,7 @@ export default function Index({ petty_cash, imprest_summary }: {
                                                 </AlertDialog>
                                             )}
 
-                                            {(auth?.user?.role === 'admin' || auth?.user?.role === 'service-manager') && petty_cash.status === 'approved' && (
+                                            {(auth?.user?.role === 'admin' || auth?.user?.role === 'cashier' || auth?.user?.role === 'service-manager') && petty_cash.status === 'approved' && (
                                                 <AlertDialog
                                                     open={isPaidDialogOpen && selectedVoucher?.voucher_number === petty_cash.voucher_number}
                                                     onOpenChange={setIsPaidDialogOpen}

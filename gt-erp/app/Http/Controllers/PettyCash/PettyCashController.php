@@ -210,9 +210,9 @@ class PettyCashController extends Controller
     // Admin methods for approve/reject
     public function approve($voucher_number)
     {
-        // Check if user is admin
-        if (auth()->user()->role !== 'admin') {
-            return back()->withErrors(['error' => 'Unauthorized. Admin access required.']);
+        // Check if user is admin or cashier
+        if (!in_array(auth()->user()->role, ['admin', 'cashier'])) {
+            return back()->withErrors(['error' => 'Unauthorized. Admin or Cashier access required.']);
         }
 
         $pettyCash = PettyCashVoucher::where('voucher_number', $voucher_number)->firstOrFail();
@@ -232,9 +232,9 @@ class PettyCashController extends Controller
 
     public function reject($voucher_number)
     {
-        // Check if user is admin
-        if (auth()->user()->role !== 'admin') {
-            return back()->withErrors(['error' => 'Unauthorized. Admin access required.']);
+        // Check if user is admin or cashier
+        if (!in_array(auth()->user()->role, ['admin', 'cashier'])) {
+            return back()->withErrors(['error' => 'Unauthorized. Admin or Cashier access required.']);
         }
 
         $pettyCash = PettyCashVoucher::where('voucher_number', $voucher_number)->firstOrFail();
@@ -295,9 +295,9 @@ class PettyCashController extends Controller
 
     public function setPaid($voucher_number)
     {
-        // Check if user is service manager or admin
+        // Check if user is service manager, admin, or cashier
         $userRole = auth()->user()->role;
-        if (!in_array($userRole, ['service-manager', 'admin'])) {
+        if (!in_array($userRole, ['service-manager', 'admin', 'cashier'])) {
             return back()->withErrors(['error' => 'Unauthorized Access.']);
         }
 
