@@ -24,6 +24,8 @@ export default function Show({ voucher }: { voucher: pettyCash }) {
     const { auth } = usePage<any>().props;
     const userRole = auth.user.role;
     const isAdmin = userRole === 'admin';
+    const isCashier = userRole === 'cashier';
+    const canApproveReject = isAdmin || isCashier;
 
     const breadcrumbs: BreadcrumbItem[] = [
         { title: 'Petty Cash', href: '/dashboard/petty-cash' },
@@ -124,7 +126,7 @@ export default function Show({ voucher }: { voucher: pettyCash }) {
                         </a>
 
                         {/* Status Transitions */}
-                        {voucher.status === 'pending' && isAdmin && (
+                        {voucher.status === 'pending' && canApproveReject && (
                             <div className="flex gap-2">
                                 <Button
                                     onClick={() => router.patch(route('dashboard.petty-cash.approve', voucher.voucher_number))}
@@ -141,7 +143,7 @@ export default function Show({ voucher }: { voucher: pettyCash }) {
                             </div>
                         )}
 
-                        {voucher.status === 'approved' && (isAdmin || userRole === 'service-manager') && (
+                        {voucher.status === 'approved' && (isAdmin || isCashier || userRole === 'service-manager') && (
                             <Button
                                 onClick={() => router.patch(route('dashboard.petty-cash.set-paid', voucher.voucher_number))}
                                 className="bg-blue-600 hover:bg-blue-700"
