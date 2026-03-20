@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Stock;
 use App\Models\Product;
 use App\Models\Category;
+use App\Models\Brand;
 use App\Models\UnitOfMeasure;
 use App\Models\VehicleModel;
 use Illuminate\Http\Request;
@@ -48,6 +49,13 @@ class StockController extends Controller
             if ($request->has('category_id') && $request->input('category_id')) {
                 $query->whereHas('product', function ($q) use ($request) {
                     $q->where('category_id', $request->input('category_id'));
+                });
+            }
+
+            // Filter by brand
+            if ($request->has('brand_id') && $request->input('brand_id')) {
+                $query->whereHas('product', function ($q) use ($request) {
+                    $q->where('brand_id', $request->input('brand_id'));
                 });
             }
 
@@ -110,14 +118,16 @@ class StockController extends Controller
             $stocks = $query->paginate(20)->withQueryString();
 
             $categories = Category::select('id', 'name')->get();
+            $brands = Brand::select('id', 'name')->get();
             $unitOfMeasures = UnitOfMeasure::select('id', 'name', 'abbreviation')->get();
 
             Log::info('Stock index data fetched successfully.');
 
             return Inertia::render('inventory/stock/index', [
                 'stocks' => $stocks,
-                'filters' => $request->only(['search', 'category_id', 'unit_of_measure_id', 'min_qty', 'max_qty', 'min_buying_price', 'max_buying_price', 'min_selling_price', 'max_selling_price', 'vehicle_model_id']),
+                'filters' => $request->only(['search', 'category_id', 'brand_id', 'unit_of_measure_id', 'min_qty', 'max_qty', 'min_buying_price', 'max_buying_price', 'min_selling_price', 'max_selling_price', 'vehicle_model_id']),
                 'categories' => $categories,
+                'brands' => $brands,
                 'unitOfMeasures' => $unitOfMeasures,
                 'totalStockBuyingValue' => (float) $totalStockBuyingValue,
                 'totalStockSellingValue' => (float) $totalStockSellingValue,
@@ -127,8 +137,9 @@ class StockController extends Controller
             Log::error('Error fetching stock index data: ' . $e->getMessage());
             return Inertia::render('inventory/stock/index', [
                 'stocks' => [],
-                'filters' => $request->only(['search', 'category_id', 'unit_of_measure_id', 'min_qty', 'max_qty', 'min_buying_price', 'max_buying_price', 'min_selling_price', 'max_selling_price']),
+                'filters' => $request->only(['search', 'category_id', 'brand_id', 'unit_of_measure_id', 'min_qty', 'max_qty', 'min_buying_price', 'max_buying_price', 'min_selling_price', 'max_selling_price']),
                 'categories' => [],
+                'brands' => [],
                 'unitOfMeasures' => [],
                 'error' => 'Failed to load stock data. Please try again.',
             ])->with('error', 'Failed to load stock data. Please try again.');

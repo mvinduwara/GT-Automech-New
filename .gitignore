@@ -11,3 +11,5 @@ gt-erp/.env.prod
 gt-erp/gt-erp.zip
 gt-erp/*.zip
 gt-erp/gt-erp.zip
+gt-erp/public/index.php
+gt-erp/gt-erp.zip
