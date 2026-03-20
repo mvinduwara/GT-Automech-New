@@ -52,6 +52,7 @@ interface StocksPageProps {
     filters: {
         search?: string;
         category_id?: string;
+        brand_id?: string;
         unit_of_measure_id?: string;
         min_qty?: string;
         max_qty?: string;
@@ -63,6 +64,7 @@ interface StocksPageProps {
     };
     selectedVehicleModels?: VehicleModel[];
     categories: Category[];
+    brands: { id: number; name: string }[];
     unitOfMeasures: UnitOfMeasure[];
     totalStockBuyingValue: number;
     totalStockSellingValue: number;
@@ -83,12 +85,13 @@ const breadcrumbs: BreadcrumbItem[] = [
 ];
 
 export default function Index() {
-    const { stocks, filters, categories, unitOfMeasures, success, error, totalStockBuyingValue, totalStockSellingValue, selectedVehicleModels } =
+    const { stocks, filters, categories, brands, unitOfMeasures, success, error, totalStockBuyingValue, totalStockSellingValue, selectedVehicleModels } =
         usePage<StocksPageProps>().props;
 
     const { auth } = usePage().props;
     const [search, setSearch] = useState(filters.search || '');
     const [categoryId, setCategoryId] = useState(filters.category_id || '');
+    const [brandId, setBrandId] = useState(filters.brand_id || '');
     const [unitOfMeasureId, setUnitOfMeasureId] = useState(
         filters.unit_of_measure_id || ''
     );
@@ -133,6 +136,7 @@ export default function Index() {
             {
                 search,
                 category_id: categoryId,
+                brand_id: brandId,
                 unit_of_measure_id: unitOfMeasureId,
                 min_qty: minQty,
                 max_qty: maxQty,
@@ -174,6 +178,7 @@ export default function Index() {
     const clearFilters = () => {
         setSearch('');
         setCategoryId('');
+        setBrandId('');
         setUnitOfMeasureId('');
         setMinQty('');
         setMaxQty('');
@@ -259,6 +264,25 @@ export default function Index() {
                                         value={String(category.id)}
                                     >
                                         {category.name}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                        <Select
+                            value={brandId}
+                            onValueChange={setBrandId}
+                        >
+                            <SelectTrigger className="rounded-md border border-gray-300 p-2 ">
+                                <SelectValue placeholder="Filter by Brand" />
+                            </SelectTrigger>
+                            <SelectContent className=" ">
+                                <SelectItem value="all">All Brands</SelectItem>
+                                {brands.map((brand) => (
+                                    <SelectItem
+                                        key={brand.id}
+                                        value={String(brand.id)}
+                                    >
+                                        {brand.name}
                                     </SelectItem>
                                 ))}
                             </SelectContent>
