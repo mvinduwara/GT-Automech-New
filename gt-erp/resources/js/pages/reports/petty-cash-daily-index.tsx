@@ -15,6 +15,7 @@ interface Summary {
     total_requested: number;
     total_spent: number;
     total_balance: number;
+    total_replenished: number;
     finalized_count: number;
 }
 
@@ -112,6 +113,7 @@ export default function DailyReportIndex({ summaries, filters }: Props) {
                                 <TableHead className="text-right">Total Requested</TableHead>
                                 <TableHead className="text-right">Total Spent</TableHead>
                                 <TableHead className="text-right">Total Balance</TableHead>
+                                <TableHead className="text-right">Replenished</TableHead>
                                 <TableHead className="text-center">Status</TableHead>
                                 <TableHead className="text-center">Actions</TableHead>
                             </TableRow>
@@ -124,6 +126,7 @@ export default function DailyReportIndex({ summaries, filters }: Props) {
                                     <TableCell className="text-right">LKR {parseFloat(summary.total_requested.toString()).toLocaleString()}</TableCell>
                                     <TableCell className="text-right font-medium text-blue-600">LKR {parseFloat(summary.total_spent?.toString() || '0').toLocaleString()}</TableCell>
                                     <TableCell className="text-right font-medium text-green-600">LKR {parseFloat(summary.total_balance?.toString() || '0').toLocaleString()}</TableCell>
+                                    <TableCell className="text-right font-medium text-purple-600">LKR {parseFloat(summary.total_replenished?.toString() || '0').toLocaleString()}</TableCell>
                                     <TableCell className="text-center">
                                         <Badge variant={summary.finalized_count === summary.voucher_count ? 'default' : 'outline'}>
                                             {summary.finalized_count} / {summary.voucher_count} Finalized

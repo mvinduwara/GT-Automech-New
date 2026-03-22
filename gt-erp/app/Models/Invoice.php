@@ -138,4 +138,9 @@ class Invoice extends Model
     {
         return $this->hasOne(CustomerReview::class);
     }
+
+    public function payments(): HasMany
+    {
+        return $this->hasMany(InvoicePayment::class);
+    }
 }

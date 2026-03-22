@@ -36,7 +36,7 @@ function CreateInsuranceForm({
     const [isOpen, setIsOpen] = useState(false);
     const [loading, setLoading] = useState(false);
     const [formData, setFormData] = useState({
-        claim_date: new Date().toISOString().split('T')[0],
+        claim_date: new Date().toLocaleDateString('sv-SE'),
         insurance_company: '',
         policy_number: '',
         claim_number: '',
@@ -102,7 +102,7 @@ function CreateInsuranceForm({
 
     const resetForm = () => {
         setFormData({
-            claim_date: new Date().toISOString().split('T')[0],
+            claim_date: new Date().toLocaleDateString('sv-SE'),
             insurance_company: '',
             policy_number: '',
             claim_number: '',

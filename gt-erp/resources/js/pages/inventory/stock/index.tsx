@@ -215,11 +215,13 @@ export default function Index() {
                     <h1 className="text-2xl font-bold text-gray-800 ">
                         Stock Management
                     </h1>
-                    <Link href='/dashboard/stock/create'>
-                        <Button>
-                            Create New Stock
-                        </Button>
-                    </Link>
+                    {auth?.user?.role !== 'cashier' && (
+                        <Link href='/dashboard/stock/create'>
+                            <Button>
+                                Create New Stock
+                            </Button>
+                        </Link>
+                    )}
                 </div>
                 {auth?.user?.role === "admin" && (
                     <div className="flex  gap-4 justify-start items-center">
@@ -597,62 +599,66 @@ export default function Index() {
                         )}
                         <div className="mt-6 flex justify-between">
                             {/* Delete Button with Warning */}
-                            <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                    <Button
-                                        variant="destructive"
-                                        className="rounded-md px-4 py-2"
-                                        disabled={processing}
-                                    >
-                                        <Trash2 className="mr-2 h-4 w-4" />
-                                        Delete
-                                    </Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                    <AlertDialogHeader>
-                                        <AlertDialogTitle>
-                                            Are you absolutely sure?
-                                        </AlertDialogTitle>
-                                        <AlertDialogDescription>
-                                            This will either deactivate or
-                                            permanently delete the stock item.{' '}
-                                            <br />
-                                            If the item has history, it will be
-                                            deactivated. If it has no history, it
-                                            will be permanently deleted.
-                                        </AlertDialogDescription>
-                                    </AlertDialogHeader>
-                                    <AlertDialogFooter>
-                                        <AlertDialogCancel disabled={processing}>
-                                            Cancel
-                                        </AlertDialogCancel>
-                                        <AlertDialogAction
-                                            onClick={handleDelete}
+                            {auth?.user?.role !== 'cashier' && (
+                                <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                        <Button
+                                            variant="destructive"
+                                            className="rounded-md px-4 py-2"
                                             disabled={processing}
-                                            className="bg-red-600 hover:bg-red-700"
                                         >
-                                            {processing
-                                                ? 'Deleting...'
-                                                : 'Yes, delete it'}
-                                        </AlertDialogAction>
-                                    </AlertDialogFooter>
-                                </AlertDialogContent>
-                            </AlertDialog>
+                                            <Trash2 className="mr-2 h-4 w-4" />
+                                            Delete
+                                        </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                            <AlertDialogTitle>
+                                                Are you absolutely sure?
+                                            </AlertDialogTitle>
+                                            <AlertDialogDescription>
+                                                This will either deactivate or
+                                                permanently delete the stock item.{' '}
+                                                <br />
+                                                If the item has history, it will be
+                                                deactivated. If it has no history, it
+                                                will be permanently deleted.
+                                            </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                            <AlertDialogCancel disabled={processing}>
+                                                Cancel
+                                            </AlertDialogCancel>
+                                            <AlertDialogAction
+                                                onClick={handleDelete}
+                                                disabled={processing}
+                                                className="bg-red-600 hover:bg-red-700"
+                                            >
+                                                {processing
+                                                    ? 'Deleting...'
+                                                    : 'Yes, delete it'}
+                                            </AlertDialogAction>
+                                        </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                </AlertDialog>
+                            )}
 
                             {/* Edit Button */}
-                            <Link
-                                href={
-                                    selectedStock
-                                        ? route('dashboard.stock.edit', {
-                                            stock: selectedStock.id,
-                                        })
-                                        : '#'
-                                }
-                            >
-                                <Button className="rounded-md bg-green-600 px-4 py-2 text-white hover:bg-green-700 ">
-                                    Edit Stock Item
-                                </Button>
-                            </Link>
+                            {auth?.user?.role !== 'cashier' && (
+                                <Link
+                                    href={
+                                        selectedStock
+                                            ? route('dashboard.stock.edit', {
+                                                stock: selectedStock.id,
+                                            })
+                                            : '#'
+                                    }
+                                >
+                                    <Button className="rounded-md bg-green-600 px-4 py-2 text-white hover:bg-green-700 ">
+                                        Edit Stock Item
+                                    </Button>
+                                </Link>
+                            )}
                         </div>
                     </DialogContent>
                 </Dialog>

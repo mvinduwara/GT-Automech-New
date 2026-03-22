@@ -34,6 +34,7 @@ class PettyCashDailySummariesExport implements FromCollection, WithHeadings, Wit
             'Total Requested (LKR)',
             'Total Spent (LKR)',
             'Total Balance (LKR)',
+            'Total Replenished (LKR)',
             'Finalized Count'
         ];
     }
@@ -46,6 +47,7 @@ class PettyCashDailySummariesExport implements FromCollection, WithHeadings, Wit
             number_format($summary->total_requested, 2, '.', ''),
             number_format($summary->total_spent, 2, '.', ''),
             number_format($summary->total_balance, 2, '.', ''),
+            number_format($summary->total_replenished, 2, '.', ''),
             $summary->finalized_count
         ];
     }

@@ -16,6 +16,7 @@ interface Props {
         total_requested: number;
         total_spent: number;
         total_balance: number;
+        total_replenished: number;
         voucher_count: number;
         finalized_count: number;
     };
@@ -57,13 +58,21 @@ export default function DailyReportShow({ vouchers, summary }: Props) {
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
                     <Card>
                         <CardHeader className="pb-2">
                             <CardTitle className="text-sm font-medium text-muted-foreground uppercase">Vouchers</CardTitle>
                         </CardHeader>
                         <CardContent>
                             <p className="text-2xl font-bold">{summary.voucher_count}</p>
+                        </CardContent>
+                    </Card>
+                    <Card className="border-purple-100 bg-purple-50/10">
+                        <CardHeader className="pb-2">
+                            <CardTitle className="text-sm font-medium text-purple-600 uppercase">Total Replenished</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <p className="text-2xl font-bold text-purple-700">LKR {parseFloat(summary.total_replenished?.toString() || '0').toLocaleString()}</p>
                         </CardContent>
                     </Card>
                     <Card>
