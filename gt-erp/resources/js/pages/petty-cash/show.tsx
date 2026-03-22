@@ -32,8 +32,8 @@ export default function Show({ voucher }: { voucher: pettyCash }) {
         { title: `Voucher ${voucher.voucher_number}`, href: route('dashboard.petty-cash.show', voucher.voucher_number) },
     ];
 
-    const { data, setData, post, processing, errors, reset } = useForm<any>({
-        items: voucher.items?.length > 0 
+    const { data, setData, post, delete: destroy, processing, errors, reset } = useForm<any>({
+        items: (voucher.items && voucher.items.length > 0)
             ? voucher.items.map(i => ({ 
                 item_description: i.item_description, 
                 quantity: i.quantity, 
@@ -57,6 +57,20 @@ export default function Show({ voucher }: { voucher: pettyCash }) {
 
     const addItem = () => {
         setData('items', [...data.items, { item_description: '', quantity: 1, unit_price: 0, amount: 0 }]);
+    };
+
+    const handleDelete = () => {
+        if (confirm('Are you sure you want to delete this Petty Cash Voucher? This action cannot be undone.')) {
+            destroy(route('dashboard.petty-cash.destroy', voucher.voucher_number), {
+                onSuccess: () => {
+                    toast.success('Petty Cash Voucher deleted successfully!');
+                },
+                onError: (formErrors) => {
+                    console.error('Deletion failed:', formErrors);
+                    toast.error('Failed to delete petty cash record.');
+                },
+            });
+        }
     };
 
     const removeItem = (index: number) => {
@@ -141,6 +155,16 @@ export default function Show({ voucher }: { voucher: pettyCash }) {
                                     Reject
                                 </Button>
                             </div>
+                        )}
+
+                        {isAdmin && (
+                            <Button
+                                variant="destructive"
+                                onClick={handleDelete}
+                                disabled={processing}
+                            >
+                                <Trash2 className="w-4 h-4 mr-2" /> Delete
+                            </Button>
                         )}
 
                         {voucher.status === 'approved' && (isAdmin || isCashier || userRole === 'service-manager') && (

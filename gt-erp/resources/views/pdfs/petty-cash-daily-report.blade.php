@@ -79,7 +79,7 @@
             border: 1px solid #eee;
             padding: 10px;
             text-align: center;
-            width: 25%;
+            width: 20%;
         }
 
         .summary-label {
@@ -178,6 +178,10 @@
             <td class="summary-card">
                 <div class="summary-label">Vouchers</div>
                 <div class="summary-value">{{ $summary['voucher_count'] }}</div>
+            </td>
+            <td class="summary-card" style="background-color: #faf5ff;">
+                <div class="summary-label" style="color: #7e22ce;">Replenished</div>
+                <div class="summary-value" style="color: #7e22ce;">LKR {{ number_format($summary['total_replenished'], 2) }}</div>
             </td>
             <td class="summary-card">
                 <div class="summary-label">Total Requested</div>

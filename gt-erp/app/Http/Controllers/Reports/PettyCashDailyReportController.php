@@ -14,11 +14,12 @@ class PettyCashDailyReportController extends Controller
     {
         $query = PettyCashVoucher::select(
             DB::raw('DATE(date) as report_date'),
-            DB::raw('COUNT(*) as voucher_count'),
-            DB::raw('SUM(requested_amount) as total_requested'),
-            DB::raw('SUM(actual_amount) as total_spent'),
-            DB::raw('SUM(balance_amount) as total_balance'),
-            DB::raw('SUM(CASE WHEN finalized_at IS NOT NULL THEN 1 ELSE 0 END) as finalized_count')
+            DB::raw('COUNT(CASE WHEN is_replenishment = 0 THEN 1 ELSE NULL END) as voucher_count'),
+            DB::raw('SUM(CASE WHEN is_replenishment = 0 THEN requested_amount ELSE 0 END) as total_requested'),
+            DB::raw('SUM(CASE WHEN is_replenishment = 0 THEN actual_amount ELSE 0 END) as total_spent'),
+            DB::raw('SUM(CASE WHEN is_replenishment = 0 THEN balance_amount ELSE 0 END) as total_balance'),
+            DB::raw('SUM(CASE WHEN is_replenishment = 1 THEN requested_amount ELSE 0 END) as total_replenished'),
+            DB::raw('SUM(CASE WHEN finalized_at IS NOT NULL AND is_replenishment = 0 THEN 1 ELSE 0 END) as finalized_count')
         );
 
         if ($request->date_from) {
@@ -41,21 +42,25 @@ class PettyCashDailyReportController extends Controller
 
     public function show($date)
     {
-        $vouchers = PettyCashVoucher::with(['requestedBy', 'approvedBy', 'items'])
+        $allVouchers = PettyCashVoucher::with(['requestedBy', 'approvedBy', 'items'])
             ->whereDate('date', $date)
             ->get();
+
+        $vouchers = $allVouchers->where('is_replenishment', false);
+        $replenishments = $allVouchers->where('is_replenishment', true);
 
         $summary = [
             'date' => $date,
             'total_requested' => $vouchers->sum('requested_amount'),
             'total_spent' => $vouchers->sum('actual_amount'),
             'total_balance' => $vouchers->sum('balance_amount'),
+            'total_replenished' => $replenishments->sum('requested_amount'),
             'voucher_count' => $vouchers->count(),
             'finalized_count' => $vouchers->whereNotNull('finalized_at')->count(),
         ];
 
         return Inertia::render('reports/petty-cash-daily-show', [
-            'vouchers' => $vouchers,
+            'vouchers' => $vouchers->values(),
             'summary' => $summary
         ]);
     }
@@ -64,11 +69,12 @@ class PettyCashDailyReportController extends Controller
     {
         $query = PettyCashVoucher::select(
             DB::raw('DATE(date) as report_date'),
-            DB::raw('COUNT(*) as voucher_count'),
-            DB::raw('SUM(requested_amount) as total_requested'),
-            DB::raw('SUM(actual_amount) as total_spent'),
-            DB::raw('SUM(balance_amount) as total_balance'),
-            DB::raw('SUM(CASE WHEN finalized_at IS NOT NULL THEN 1 ELSE 0 END) as finalized_count')
+            DB::raw('COUNT(CASE WHEN is_replenishment = 0 THEN 1 ELSE NULL END) as voucher_count'),
+            DB::raw('SUM(CASE WHEN is_replenishment = 0 THEN requested_amount ELSE 0 END) as total_requested'),
+            DB::raw('SUM(CASE WHEN is_replenishment = 0 THEN actual_amount ELSE 0 END) as total_spent'),
+            DB::raw('SUM(CASE WHEN is_replenishment = 0 THEN balance_amount ELSE 0 END) as total_balance'),
+            DB::raw('SUM(CASE WHEN is_replenishment = 1 THEN requested_amount ELSE 0 END) as total_replenished'),
+            DB::raw('SUM(CASE WHEN finalized_at IS NOT NULL AND is_replenishment = 0 THEN 1 ELSE 0 END) as finalized_count')
         );
 
         if ($request->date_from) {
@@ -92,6 +98,7 @@ class PettyCashDailyReportController extends Controller
     {
         $vouchers = PettyCashVoucher::with(['requestedBy', 'approvedBy'])
             ->whereDate('date', $date)
+            ->where('is_replenishment', false)
             ->get();
 
         return \Maatwebsite\Excel\Facades\Excel::download(
@@ -102,15 +109,19 @@ class PettyCashDailyReportController extends Controller
 
     public function downloadDailyPdf($date)
     {
-        $vouchers = PettyCashVoucher::with(['requestedBy', 'approvedBy', 'items'])
+        $allVouchers = PettyCashVoucher::with(['requestedBy', 'approvedBy', 'items'])
             ->whereDate('date', $date)
             ->get();
+
+        $vouchers = $allVouchers->where('is_replenishment', false);
+        $replenishments = $allVouchers->where('is_replenishment', true);
 
         $summary = [
             'date' => $date,
             'total_requested' => $vouchers->sum('requested_amount'),
             'total_spent' => $vouchers->sum('actual_amount'),
             'total_balance' => $vouchers->sum('balance_amount'),
+            'total_replenished' => $replenishments->sum('requested_amount'),
             'voucher_count' => $vouchers->count(),
             'finalized_count' => $vouchers->whereNotNull('finalized_at')->count(),
         ];

@@ -43,12 +43,15 @@ Route::middleware(['auth', 'is_admin_or_cashier'])->group(function () {
                 ->name('stock.')
                 ->group(function () {
                     Route::get('/', [StockController::class, 'index'])->name('index');
-                    Route::get('/create', [StockController::class, 'create'])->name('create');
-                    Route::post('/store', [StockController::class, 'store'])->name('store');
-                    Route::get('/{stock}/edit', [StockController::class, 'edit'])->name('edit');
-                    Route::put('/{stock}/update', [StockController::class, 'update'])->name('update');
-                    Route::delete('/{stock}', [StockController::class, 'destroy'])->name('destroy');
                     Route::get('/search-products', [StockController::class, 'searchProducts'])->name('search-products');
+
+                    Route::middleware(['is_service_manager_or_admin'])->group(function () {
+                        Route::get('/create', [StockController::class, 'create'])->name('create');
+                        Route::post('/store', [StockController::class, 'store'])->name('store');
+                        Route::get('/{stock}/edit', [StockController::class, 'edit'])->name('edit');
+                        Route::put('/{stock}/update', [StockController::class, 'update'])->name('update');
+                        Route::delete('/{stock}', [StockController::class, 'destroy'])->name('destroy');
+                    });
                 });
         });
 });

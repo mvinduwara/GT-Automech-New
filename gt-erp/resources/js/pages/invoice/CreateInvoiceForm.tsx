@@ -44,9 +44,10 @@ function CreateInvoiceForm({
     const [isOpen, setIsOpen] = useState(false);
     const [loading, setLoading] = useState(false);
     const [formData, setFormData] = useState({
-        invoice_date: new Date().toISOString().split('T')[0],
+        invoice_date: new Date().toLocaleDateString('sv-SE'),
         due_date: '',
         advance_payment: '0',
+        payment_method: 'cash',
         remarks: '',
         terms_conditions: '',
         overall_discount: '0',
@@ -82,6 +83,7 @@ function CreateInvoiceForm({
                 invoice_date: formData.invoice_date,
                 due_date: formData.due_date || null,
                 advance_payment: advancePayment,
+                payment_method: formData.payment_method,
                 remarks: formData.remarks || null,
                 terms_conditions: formData.terms_conditions || null,
                 overall_discount: parseFloat(formData.overall_discount) || 0,
@@ -118,9 +120,10 @@ function CreateInvoiceForm({
 
     const resetForm = () => {
         setFormData({
-            invoice_date: new Date().toISOString().split('T')[0],
+            invoice_date: new Date().toLocaleDateString('sv-SE'),
             due_date: '',
             advance_payment: '0',
+            payment_method: 'cash',
             remarks: '',
             terms_conditions: 'All prices are in LKR.',
             overall_discount: '0',
@@ -331,6 +334,28 @@ function CreateInvoiceForm({
                                 Maximum: Rs. {grandTotal.toLocaleString()}
                             </p>
                         </div>
+                        
+                        {/* Payment Method */}
+                        {parseFloat(formData.advance_payment) > 0 && (
+                            <div className="space-y-2">
+                                <Label htmlFor="payment_method">Payment Method</Label>
+                                <Select
+                                    value={formData.payment_method}
+                                    onValueChange={(value) => setFormData({ ...formData, payment_method: value })}
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select Method" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="cash">Cash</SelectItem>
+                                        <SelectItem value="card">Card</SelectItem>
+                                        <SelectItem value="online">Online/Bank Transfer</SelectItem>
+                                        <SelectItem value="cheque">Cheque</SelectItem>
+                                        <SelectItem value="credit">Credit</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        )}
 
                         {/* Remarks */}
                         <div className="space-y-2">

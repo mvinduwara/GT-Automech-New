@@ -26,7 +26,7 @@ export default function Create({ auto_voucher_number }: { auto_voucher_number: s
 
     const { data, setData, post, processing, errors } = useForm({
         voucher_number: auto_voucher_number || '',
-        date: new Date().toISOString().split('T')[0],
+        date: new Date().toLocaleDateString('sv-SE'),
         requested_by_user_id: auth.user.id,
         name: '',
         description: '',
@@ -78,7 +78,7 @@ export default function Create({ auto_voucher_number }: { auto_voucher_number: s
                                     <Calendar
                                         mode="single"
                                         selected={new Date(data.date)}
-                                        onSelect={(d) => setData('date', d?.toISOString().split('T')[0] ?? data.date)}
+                                        onSelect={(d) => setData('date', d ? format(d, 'yyyy-MM-dd') : data.date)}
                                     />
                                 </PopoverContent>
                             </Popover>

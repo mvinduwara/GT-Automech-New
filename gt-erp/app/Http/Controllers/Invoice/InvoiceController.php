@@ -56,14 +56,17 @@ class InvoiceController extends Controller
         // if the dataset isn't huge. If it is huge, run separate sums on the query builder.
         // For typical invoicing apps, getting the collection for a day/month is fine.
         $periodInvoices = $statsQuery->get();
+        // Fetch specific payments for these invoices for accurate Stats
+        $periodPayments = \App\Models\InvoicePayment::whereIn('invoice_id', $periodInvoices->pluck('id'))->get();
 
         $dailyStats = [
-            'total' => $periodInvoices->sum('advance_payment'),
-            'cash' => $periodInvoices->where('payment_method', 'cash')->sum('advance_payment'),
-            'card' => $periodInvoices->where('payment_method', 'card')->sum('advance_payment'),
-            'online' => $periodInvoices->where('payment_method', 'online')->sum('advance_payment'),
-            'cheque' => $periodInvoices->where('payment_method', 'cheque')->sum('advance_payment'),
-            'credit' => $periodInvoices->where('payment_method', 'credit')->sum('advance_payment'),
+            'total' => $periodPayments->sum('amount'),
+            'cash' => $periodPayments->where('payment_method', 'cash')->sum('amount'),
+            'card' => $periodPayments->where('payment_method', 'card')->sum('amount'),
+            'online' => $periodPayments->where('payment_method', 'online')->sum('amount'),
+            'cheque' => $periodPayments->where('payment_method', 'cheque')->sum('amount'),
+            'credit' => $periodPayments->where('payment_method', 'credit')->sum('amount'),
+            'direct_invoice_count' => $periodInvoices->whereNull('job_card_id')->count(),
         ];
 
         $query = Invoice::with(['customer', 'jobCard', 'user'])
@@ -152,6 +155,7 @@ class InvoiceController extends Controller
             'invoice_date' => 'required|date',
             'due_date' => 'nullable|date|after_or_equal:invoice_date',
             'advance_payment' => 'nullable|numeric|min:0',
+            'payment_method' => 'required_with:advance_payment|nullable|in:cash,card,online,cheque,credit',
             'remarks' => 'nullable|string|max:1000',
             'terms_conditions' => 'nullable|string|max:2000',
             'overall_discount' => 'nullable|numeric|min:0',
@@ -197,6 +201,7 @@ class InvoiceController extends Controller
                     'products_total' => $productsTotal,
                     'charges_total' => $chargesTotal,
                     'advance_payment' => $validated['advance_payment'] ?? 0,
+                    'payment_method' => $validated['payment_method'] ?? null,
                     'invoice_date' => $validated['invoice_date'],
                     'due_date' => $validated['due_date'] ?? null,
                     'remarks' => $validated['remarks'] ?? null,
@@ -206,6 +211,15 @@ class InvoiceController extends Controller
                     'rounding_adjustment' => $validated['rounding_adjustment'] ?? 0,
                     'status' => 'draft',
                 ]);
+
+                // Create initial payment record if advance payment exists
+                if (($validated['advance_payment'] ?? 0) > 0) {
+                    \App\Models\InvoicePayment::create([
+                        'invoice_id' => $invoice->id,
+                        'amount' => $validated['advance_payment'],
+                        'payment_method' => $validated['payment_method'],
+                    ]);
+                }
 
                 // Create invoice items from services
                 foreach ($jobCard->jobCardVehicleServices()->where('is_included', true)->get() as $service) {
@@ -346,7 +360,8 @@ class InvoiceController extends Controller
             'items.jobCardProduct',
             'items.jobCardVehicleService',
             'items.jobCardCharge',
-            'user'
+            'user',
+            'payments'
         ]);
 
         Log::info('Invoice viewed', [
@@ -367,6 +382,7 @@ class InvoiceController extends Controller
     {
         $validated = $request->validate([
             'payment_amount' => 'required|numeric|min:0.01|max:' . $invoice->remaining,
+            'payment_method' => 'required|in:cash,card,online,cheque,credit',
         ]);
 
         try {
@@ -376,7 +392,14 @@ class InvoiceController extends Controller
             DB::transaction(function () use ($invoice, $validated) {
                 $paymentAmount = (float) $validated['payment_amount'];
 
+                \App\Models\InvoicePayment::create([
+                    'invoice_id' => $invoice->id,
+                    'amount' => $paymentAmount,
+                    'payment_method' => $validated['payment_method'],
+                ]);
+
                 $invoice->increment('advance_payment', $paymentAmount);
+                $invoice->update(['payment_method' => $validated['payment_method']]);
 
                 // Get the *new* remaining balance
                 $newRemaining = $invoice->fresh()->remaining;
@@ -611,7 +634,7 @@ class InvoiceController extends Controller
 
     public function directStore(Request $request)
     {
-        $validated = $request->validate([
+        $validator = \Illuminate\Support\Facades\Validator::make($request->all(), [
             'customer_id' => 'required|exists:customers,id',
             'invoice_date' => 'required|date',
             'due_date' => 'nullable|date|after_or_equal:invoice_date',
@@ -631,6 +654,14 @@ class InvoiceController extends Controller
             'overall_discount_type' => 'nullable|in:fixed,percentage',
             'rounding_adjustment' => 'nullable|numeric',
         ]);
+
+        if ($validator->fails()) {
+            \Log::error('Direct Invoice Validation Failed', $validator->errors()->toArray());
+            Log::info('Direct Invoice Request Data:', $request->all());
+            return redirect()->back()->withErrors($validator)->withInput();
+        }
+
+        $validated = $validator->validated();
 
         try {
             $invoice = DB::transaction(function () use ($validated) {
@@ -683,6 +714,14 @@ class InvoiceController extends Controller
                     'rounding_adjustment' => $validated['rounding_adjustment'] ?? 0,
                     'status' => 'draft',
                 ]);
+
+                if ($validated['advance_payment'] > 0) {
+                    \App\Models\InvoicePayment::create([
+                        'invoice_id' => $invoice->id,
+                        'amount' => $validated['advance_payment'],
+                        'payment_method' => $validated['payment_method'],
+                    ]);
+                }
 
                 foreach ($validated['items'] as $itemData) {
                     $itemSubtotal = $itemData['quantity'] * $itemData['unit_price'];

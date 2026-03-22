@@ -16,7 +16,7 @@ export default function Create() {
     const { accounts } = usePage<PageProps>().props;
     const { data, setData, post, processing, errors } = useForm({
         account_id: '',
-        date: new Date().toISOString().split('T')[0],
+        date: new Date().toLocaleDateString('sv-SE'),
         amount: '',
         description: '',
         payment_method: 'cash',

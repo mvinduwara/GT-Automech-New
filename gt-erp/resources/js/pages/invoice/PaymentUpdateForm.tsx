@@ -17,6 +17,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { DollarSign, AlertCircle } from "lucide-react";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
 
 interface PaymentUpdateFormProps {
     invoiceId: number;
@@ -36,6 +43,7 @@ export default function PaymentUpdateForm({
     const [isOpen, setIsOpen] = useState(false);
     const [loading, setLoading] = useState(false);
     const [paymentAmount, setPaymentAmount] = useState("");
+    const [paymentMethod, setPaymentMethod] = useState("cash");
     console.log("remaining", remaining)
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -59,7 +67,10 @@ export default function PaymentUpdateForm({
         // 🔻 SEND 'payment_amount' INSTEAD OF 'advance_payment' - THIS IS THE FIX 🔻
         router.patch(
             route('dashboard.invoice.payment', invoiceId),
-            { payment_amount: amount }, // Send only the new payment amount
+            { 
+                payment_amount: amount,
+                payment_method: paymentMethod
+            }, // Send only the new payment amount
             {
                 onSuccess: () => {
                     setIsOpen(false);
@@ -76,42 +87,7 @@ export default function PaymentUpdateForm({
         );
     };
 
-    const handleSubmitx = (e: React.FormEvent) => {
-        e.preventDefault();
 
-        const amount = parseFloat(paymentAmount);
-
-        if (!amount || amount <= 0) {
-            alert("Please enter a valid payment amount");
-            return;
-        }
-        console.log("currentAdvancePayment", currentAdvancePayment)
-        const newTotalPayment = parseFloat(currentAdvancePayment) + amount;
-        if (newTotalPayment > totalAmount) {
-            alert(`Payment exceeds remaining amount. Maximum: Rs. ${remaining}`);
-            return;
-        }
-
-        setLoading(true);
-        console.log("newTotalPayment", newTotalPayment)
-        router.patch(
-            route('dashboard.invoice.payment', invoiceId),
-            { payment_amount: newTotalPayment },
-            {
-                onSuccess: () => {
-                    setIsOpen(false);
-                    setPaymentAmount("");
-                },
-                onError: (errors) => {
-                    console.error('Failed to update payment:', errors);
-                    alert('Failed to update payment. Please try again.');
-                },
-                onFinish: () => {
-                    setLoading(false);
-                }
-            }
-        );
-    };
 
     // Don't show for paid or cancelled invoices
     if (status === 'paid' || status === 'cancelled') {
@@ -174,6 +150,25 @@ export default function PaymentUpdateForm({
                             <p className="text-xs text-gray-500">
                                 Maximum: Rs. {Number(remaining).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </p>
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="payment_method">Payment Method</Label>
+                            <Select
+                                value={paymentMethod}
+                                onValueChange={(value) => setPaymentMethod(value)}
+                            >
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select Method" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="cash">Cash</SelectItem>
+                                    <SelectItem value="card">Card</SelectItem>
+                                    <SelectItem value="online">Online/Bank Transfer</SelectItem>
+                                    <SelectItem value="cheque">Cheque</SelectItem>
+                                    <SelectItem value="credit">Credit</SelectItem>
+                                </SelectContent>
+                            </Select>
                         </div>
                     </div>
 
