@@ -385,6 +385,19 @@ export default function Index({ petty_cash, imprest_summary }: {
                                                     </AlertDialogContent>
                                                 </AlertDialog>
                                             )}
+                                            
+                                            {auth?.user?.role === 'admin' && (
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                                                    onClick={() => handleDelete(petty_cash.voucher_number)}
+                                                    disabled={processing}
+                                                    title="Delete Voucher"
+                                                >
+                                                    <TrashIcon className="w-4 h-4" />
+                                                </Button>
+                                            )}
                                         </div>
                                     </TableCell>
                                 </TableRow>

@@ -187,6 +187,10 @@ class PettyCashController extends Controller
 
     public function destroy($voucher_number)
     {
+        if (auth()->user()->role !== 'admin') {
+            return back()->withErrors(['error' => 'Unauthorized. Only admins can delete vouchers.']);
+        }
+
         DB::beginTransaction();
 
         try {

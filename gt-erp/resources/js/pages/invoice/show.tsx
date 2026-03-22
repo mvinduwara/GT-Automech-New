@@ -7,7 +7,6 @@ import { Printer, ArrowLeft, CreditCard, Globe, ScrollText, Banknote } from "luc
 import { Separator } from "@/components/ui/separator";
 import PaymentUpdateForm from "./PaymentUpdateForm";
 import InvoiceStatusForm from "./InvoiceStatusForm";
-import PaymentMethodForm from "./PaymentMethodForm";
 
 type InvoiceStatus = "draft" | "unpaid" | "partial" | "paid" | "cancelled";
 type PaymentMethod = 'cash' | 'card' | 'online' | 'cheque' | 'credit';
@@ -75,6 +74,13 @@ interface InvoiceItem {
     job_card_charge?: JobCardDiscountInfo;
 }
 
+interface InvoicePayment {
+    id: number;
+    amount: number;
+    payment_method: PaymentMethod;
+    created_at: string;
+}
+
 interface Invoice {
     id: number;
     invoice_no: string;
@@ -97,6 +103,7 @@ interface Invoice {
     job_card: JobCard;
     user: User;
     items: InvoiceItem[];
+    payments: InvoicePayment[];
     remaining: number;
 }
 
@@ -282,12 +289,6 @@ export default function Show({ invoice }: Props) {
                             Back
                         </Button>
                         <div className="flex gap-2">
-                            <PaymentMethodForm
-                                invoiceId={invoice.id}
-                                currentPaymentMethod={invoice.payment_method}
-                                invoiceNo={invoice.invoice_no}
-                                disabled={invoice.status === 'cancelled'}
-                            />
                             <InvoiceStatusForm
                                 invoiceId={invoice.id}
                                 currentStatus={invoice.status}
@@ -577,11 +578,20 @@ export default function Show({ invoice }: Props) {
                                             <span className="font-medium">- Rs. {Number(totalDiscount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                                         </div>
                                     )}
-                                    {invoice.advance_payment > 0 && (
-                                        <div className="flex justify-between py-2 text-green-600">
-                                            <span>Advance Payment:</span>
-                                            <span className="font-medium">- Rs. {Number(invoice.advance_payment).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                                        </div>
+                                    {invoice.payments && invoice.payments.length > 0 ? (
+                                        invoice.payments.map((payment, index) => (
+                                            <div key={payment.id} className="flex justify-between py-2 text-green-600">
+                                                <span>Payment {index + 1} ({formatPaymentMethod(payment.payment_method)}):</span>
+                                                <span className="font-medium">- Rs. {Number(payment.amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                                            </div>
+                                        ))
+                                    ) : (
+                                        invoice.advance_payment > 0 && (
+                                            <div className="flex justify-between py-2 text-green-600">
+                                                <span>Advance Payment:</span>
+                                                <span className="font-medium">- Rs. {Number(invoice.advance_payment).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                                            </div>
+                                        )
                                     )}
                                     <Separator />
                                     <div className="flex justify-between py-3 bg-indigo-50 px-4 rounded-lg">
@@ -759,11 +769,20 @@ export default function Show({ invoice }: Props) {
                             <span>- {Number(totalDiscount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                         </div>
                     )}
-                    {invoice.advance_payment > 0 && (
-                        <div className="totals-row">
-                            <span>Advance Payment</span>
-                            <span>- {Number(invoice.advance_payment).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                        </div>
+                    {invoice.payments && invoice.payments.length > 0 ? (
+                        invoice.payments.map((payment, index) => (
+                            <div key={payment.id} className="totals-row">
+                                <span>Payment {index + 1} ({formatPaymentMethod(payment.payment_method)})</span>
+                                <span>- {Number(payment.amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                            </div>
+                        ))
+                    ) : (
+                        invoice.advance_payment > 0 && (
+                            <div className="totals-row">
+                                <span>Advance Payment</span>
+                                <span>- {Number(invoice.advance_payment).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                            </div>
+                        )
                     )}
                     <div className="totals-row grand-total">
                         <span>Amount Due</span>

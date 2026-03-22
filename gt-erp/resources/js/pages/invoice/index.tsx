@@ -42,6 +42,7 @@ interface DailyStats {
     online: number;
     cheque: number;
     credit: number;
+    direct_invoice_count: number;
 }
 
 interface PaginationLink {
@@ -184,7 +185,7 @@ export default function Index({ invoices, filters = {}, statusOptions,dailyStats
                     </Link>
                 </div>
 
-                <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-3">
+                <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-4">
                     <Card className="bg-primary text-primary-foreground">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                             <CardTitle className="text-sm font-medium">
@@ -254,6 +255,18 @@ export default function Index({ invoices, filters = {}, statusOptions,dailyStats
                         </CardHeader>
                         <CardContent>
                             <div className="text-2xl font-bold text-gray-900">{formatCurrency(dailyStats.cheque)}</div>
+                        </CardContent>
+                    </Card>
+
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium text-indigo-600">
+                                Direct Invoices
+                            </CardTitle>
+                            <ScrollText className="h-4 w-4 text-indigo-600" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold text-gray-900">{dailyStats.direct_invoice_count} <span className="text-sm font-normal text-gray-500">Sales</span></div>
                         </CardContent>
                     </Card>
                 </div>

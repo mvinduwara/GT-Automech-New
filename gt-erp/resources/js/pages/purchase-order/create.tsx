@@ -114,7 +114,7 @@ export default function Create({ categories, brands, generatedPoNumber }: Props)
 
     const { data, setData, post, processing, errors, reset } = useForm<Form>({
         name: generatedPoNumber || '',
-        date: new Date().toISOString().split('T')[0],
+        date: new Date().toLocaleDateString('sv-SE'),
         supplier_id: null,
         notes: '',
         items: [],
